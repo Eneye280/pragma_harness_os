@@ -11,6 +11,7 @@ import { useCost } from "./cost/use-cost";
 import { useDream } from "./dream/use-dream";
 import { useSettings } from "./settings/use-settings";
 import { useUpdater } from "./settings/use-updater";
+import { useWorkspace } from "./workspace/use-workspace";
 import { INITIAL_PANEL_STATE, actionForShortcut, panelReducer } from "./shell/panel-state";
 import { isEditableTarget, resolveShellShortcut } from "./shell/shortcuts";
 import { ONBOARDING_STORAGE_KEY, shouldShowOnboarding } from "./shell/onboarding";
@@ -32,6 +33,7 @@ export function App(): React.ReactElement {
   const dreamLearned = useDream();
   const settingsState = useSettings();
   const updater = useUpdater();
+  const workspace = useWorkspace();
 
   useEffect(() => {
     const bridge = window.harness;
@@ -137,6 +139,10 @@ export function App(): React.ReactElement {
         terminalHeight={panels.terminalHeight}
         onTerminalResize={resizeTerminal}
         onCloseTerminal={closeTerminal}
+        onOpenFolder={() => void workspace.pick()}
+        recents={workspace.recents}
+        onPickRecent={(path) => void workspace.activate(path)}
+        openingFolder={workspace.busy}
       />
       <CommandPalette
         open={panels.paletteOpen}

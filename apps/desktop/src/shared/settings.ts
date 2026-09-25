@@ -31,6 +31,11 @@ export interface SandboxFlags {
   image: string;
 }
 
+export interface WorkspaceSettings {
+  active: string;
+  recents: string[];
+}
+
 export interface ProviderSettings {
   provider: ProviderName;
   apiKey: string;
@@ -47,6 +52,7 @@ export interface HarnessSettings {
   gates: { pre: PreGateFlags; post: PostGateFlags };
   plugins: Record<string, boolean>;
   sandbox: SandboxFlags;
+  workspace: WorkspaceSettings;
 }
 
 export const DEFAULT_SETTINGS: HarnessSettings = {
@@ -63,6 +69,7 @@ export const DEFAULT_SETTINGS: HarnessSettings = {
   },
   plugins: { "commit-guard": false, "secret-scan": true, "no-console-log": true },
   sandbox: { enabled: false, image: "node:22" },
+  workspace: { active: "", recents: [] },
 };
 
 export function maskSecret(secret: string): string {

@@ -9,10 +9,11 @@ import { registerExplorerHandlers } from "./ipc/explorer-handlers";
 import { registerTerminalHandlers } from "./ipc/terminal-handlers";
 import { registerSettingsHandlers } from "./ipc/settings-handlers";
 import { registerUpdaterHandlers } from "./ipc/updater-handlers";
-import { resolveHarnessWorkspace } from "./workspace-path";
+import { registerWorkspaceHandlers } from "./ipc/workspace-handlers";
 import { SettingsController, SettingsStore } from "./settings";
 import { CostTracker } from "./cost";
 import { createUpdaterHost } from "./updater";
+import { WorkspaceFolderController } from "./workspace-folder";
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
 
@@ -48,15 +49,17 @@ function createWindow(): void {
 app.whenReady().then(() => {
   const settingsController = new SettingsController(new SettingsStore());
   const costTracker = new CostTracker();
+  const workspace = new WorkspaceFolderController({ store: settingsController.store });
   const updater = createUpdaterHost();
   createWindow();
   startHarnessServer(4096);
-  registerIpcHandlers(() => mainWindow, settingsController, costTracker);
+  registerIpcHandlers(() => mainWindow, settingsController, costTracker, workspace);
   registerWindowControls(() => mainWindow);
-  registerExplorerHandlers(() => mainWindow, resolveHarnessWorkspace());
-  registerTerminalHandlers(() => mainWindow, resolveHarnessWorkspace());
+  registerExplorerHandlers(() => mainWindow, workspace);
+  registerTerminalHandlers(() => mainWindow, workspace);
   registerSettingsHandlers(() => mainWindow, settingsController);
   registerUpdaterHandlers(() => mainWindow, updater);
+  registerWorkspaceHandlers(() => mainWindow, workspace);
   updater.init();
 
   app.on("activate", () => {
