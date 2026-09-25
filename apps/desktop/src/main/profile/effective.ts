@@ -23,6 +23,7 @@ export function resolveEffectiveSettings(global: HarnessSettings, profile: Proje
     },
     plugins: { ...global.plugins, ...profile.plugins },
     skills: { ...global.skills, ...profile.skills },
+    agent: profile.agent ?? global.agent,
     sandbox: { ...global.sandbox, ...profile.sandbox },
     workspace: global.workspace,
   };

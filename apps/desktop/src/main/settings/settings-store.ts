@@ -44,6 +44,7 @@ export const SettingsSchema = z.object({
   gates: z.object({ pre: PreGateSchema, post: PostGateSchema }),
   plugins: z.record(z.boolean()),
   skills: z.record(z.boolean()).default({}),
+  agent: z.string().default(""),
   sandbox: z.object({ enabled: z.boolean(), image: z.string() }),
   workspace: z.object({ active: z.string().default(""), recents: z.array(z.string()).default([]) }).default({ active: "", recents: [] }),
 });
@@ -68,6 +69,7 @@ export function sanitizeIncoming(current: HarnessSettings, incoming: HarnessSett
     gates: incoming.gates,
     plugins: incoming.plugins,
     skills: incoming.skills ?? current.skills,
+    agent: incoming.agent ?? current.agent,
     sandbox: incoming.sandbox,
     workspace: incoming.workspace ?? current.workspace,
   };
@@ -132,6 +134,12 @@ export class SettingsStore {
 
   updateSkills(skills: Record<string, boolean>): HarnessSettings {
     this.settings = { ...this.settings, skills: { ...skills } };
+    this.persist();
+    return this.get();
+  }
+
+  updateAgent(agent: string): HarnessSettings {
+    this.settings = { ...this.settings, agent };
     this.persist();
     return this.get();
   }
