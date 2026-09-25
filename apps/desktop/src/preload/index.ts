@@ -7,6 +7,7 @@ import type { CostSnapshot } from "../shared/cost";
 import type { DreamNotification } from "../shared/dream";
 import type { UpdateStatus } from "../shared/updater";
 import type { GitStatus } from "../shared/git";
+import type { SkillSummary } from "../shared/skills";
 import type { WorkspaceChangedPayload, WorkspacePickResult, WorkspaceState } from "../shared/workspace";
 
 export interface WindowControlsBridge {
@@ -72,6 +73,11 @@ export interface GitBridge {
   status: () => Promise<GitStatus>;
 }
 
+export interface SkillsBridge {
+  list: () => Promise<SkillSummary[]>;
+  setEnabled: (name: string, enabled: boolean) => Promise<{ error: string | null; skills: SkillSummary[] }>;
+}
+
 export interface SendMessageOptions {
   sessionId?: string;
   bypassHarness?: boolean;
@@ -93,6 +99,7 @@ export interface HarnessBridge {
   updater: UpdaterBridge;
   workspace: WorkspaceBridge;
   git: GitBridge;
+  skills: SkillsBridge;
   windowControls: WindowControlsBridge;
 }
 
@@ -187,6 +194,11 @@ const git: GitBridge = {
   status: () => ipcRenderer.invoke("git:status")
 };
 
+const skills: SkillsBridge = {
+  list: () => ipcRenderer.invoke("skills:list"),
+  setEnabled: (name: string, enabled: boolean) => ipcRenderer.invoke("skills:setEnabled", { name, enabled })
+};
+
 const harness: HarnessBridge = {
   ping: () => ipcRenderer.invoke("harness:ping"),
   sendMessage: (message: string, options?: SendMessageOptions) =>
@@ -212,6 +224,7 @@ const harness: HarnessBridge = {
   updater,
   workspace,
   git,
+  skills,
   windowControls
 };
 

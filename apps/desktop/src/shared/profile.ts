@@ -10,6 +10,7 @@ export interface ProjectProfile {
   budget?: Partial<BudgetSettings>;
   gates?: { pre?: Partial<PreGateFlags>; post?: Partial<PostGateFlags> };
   plugins?: Record<string, boolean>;
+  skills?: Record<string, boolean>;
   sandbox?: Partial<SandboxFlags>;
 }
 

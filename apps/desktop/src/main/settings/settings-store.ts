@@ -43,6 +43,7 @@ export const SettingsSchema = z.object({
   budget: z.object({ tokensPerDay: z.number().int().nonnegative(), usdPerDay: z.number().nonnegative() }),
   gates: z.object({ pre: PreGateSchema, post: PostGateSchema }),
   plugins: z.record(z.boolean()),
+  skills: z.record(z.boolean()).default({}),
   sandbox: z.object({ enabled: z.boolean(), image: z.string() }),
   workspace: z.object({ active: z.string().default(""), recents: z.array(z.string()).default([]) }).default({ active: "", recents: [] }),
 });
@@ -66,6 +67,7 @@ export function sanitizeIncoming(current: HarnessSettings, incoming: HarnessSett
     budget: incoming.budget,
     gates: incoming.gates,
     plugins: incoming.plugins,
+    skills: incoming.skills ?? current.skills,
     sandbox: incoming.sandbox,
     workspace: incoming.workspace ?? current.workspace,
   };
@@ -124,6 +126,12 @@ export class SettingsStore {
 
   updateWorkspace(workspace: HarnessSettings["workspace"]): HarnessSettings {
     this.settings = { ...this.settings, workspace: { active: workspace.active, recents: [...workspace.recents] } };
+    this.persist();
+    return this.get();
+  }
+
+  updateSkills(skills: Record<string, boolean>): HarnessSettings {
+    this.settings = { ...this.settings, skills: { ...skills } };
     this.persist();
     return this.get();
   }

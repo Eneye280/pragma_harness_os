@@ -31,5 +31,6 @@ export const ProjectProfileSchema = z.object({
     })
     .optional(),
   plugins: z.record(z.boolean()).optional(),
+  skills: z.record(z.boolean()).optional(),
   sandbox: z.object({ enabled: z.boolean().optional(), image: z.string().optional() }).optional(),
 });

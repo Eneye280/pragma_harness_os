@@ -11,6 +11,8 @@ import { registerSettingsHandlers } from "./ipc/settings-handlers";
 import { registerUpdaterHandlers } from "./ipc/updater-handlers";
 import { registerWorkspaceHandlers } from "./ipc/workspace-handlers";
 import { registerGitHandlers } from "./ipc/git-handlers";
+import { registerSkillsHandlers } from "./ipc/skills-handlers";
+import { skillCompiler } from "./harness/skills/skill-compiler";
 import { SettingsController, SettingsStore } from "./settings";
 import { CostTracker } from "./cost";
 import { createUpdaterHost } from "./updater";
@@ -56,6 +58,13 @@ app.whenReady().then(() => {
   const profileStore = new ProjectProfileStore();
   settingsStore.useProfile(() => profileStore.read(workspace.current()));
   settingsController.useProfileInfo(() => profileStore.info(workspace.current()));
+  skillCompiler.useRoots(() => [
+    workspace.current(),
+    join(process.cwd(), "..", ".."),
+    join(process.cwd(), ".."),
+    process.cwd(),
+  ]);
+  skillCompiler.useEnabled(() => settingsStore.get().skills);
   const updater = createUpdaterHost();
   createWindow();
   startHarnessServer(4096);
@@ -67,6 +76,7 @@ app.whenReady().then(() => {
   registerUpdaterHandlers(() => mainWindow, updater);
   registerWorkspaceHandlers(() => mainWindow, workspace);
   registerGitHandlers(workspace);
+  registerSkillsHandlers(() => mainWindow, settingsController);
   updater.init();
 
   app.on("activate", () => {

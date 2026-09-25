@@ -42,6 +42,7 @@ export function registerSettingsHandlers(
       budget: { ...globalSettings.budget },
       gates: { pre: { ...globalSettings.gates.pre }, post: { ...globalSettings.gates.post } },
       plugins: { ...globalSettings.plugins },
+      skills: { ...globalSettings.skills },
       sandbox: { ...globalSettings.sandbox },
     };
     const info = profileStore.write(workspace.current(), profile);

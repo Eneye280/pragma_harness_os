@@ -22,6 +22,7 @@ export function resolveEffectiveSettings(global: HarnessSettings, profile: Proje
       post: { ...global.gates.post, ...profile.gates?.post },
     },
     plugins: { ...global.plugins, ...profile.plugins },
+    skills: { ...global.skills, ...profile.skills },
     sandbox: { ...global.sandbox, ...profile.sandbox },
     workspace: global.workspace,
   };
