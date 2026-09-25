@@ -76,6 +76,10 @@ export class MemoryEventLog {
     return this.events.filter((e) => e.sessionId === sessionId).length;
   }
 
+  allEvents(): HarnessEvent[] {
+    return [...this.events].sort((a, b) => a.ts - b.ts);
+  }
+
   clearSession(sessionId: string): void {
     this.events = this.events.filter((e) => e.sessionId !== sessionId);
   }

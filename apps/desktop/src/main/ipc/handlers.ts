@@ -6,8 +6,33 @@ import { MemoryEventLog } from "../db/memory-event-log";
 import { createChatService } from "../chat";
 import { resolveHarnessWorkspace } from "../workspace-path";
 import { PlanController } from "../plan";
+import { DreamingScheduler } from "../dreaming";
+import { vault } from "../memory/vault";
+import { AgentGateway } from "../llm/gateway";
+import { CORRECTION_PATTERN, extractCorrectionTrigger } from "../../shared/dream";
 import type { SettingsController } from "../settings";
 import type { CostTracker } from "../cost";
+
+function buildAnalyzer(settingsController: SettingsController) {
+  return async (candidate: { kind: string; trigger: string; content: string; count: number }): Promise<string> => {
+    const settings = settingsController.store.get();
+    if (settings.provider.provider === "mock" || !settings.provider.apiKey) return candidate.content;
+    try {
+      const gateway = new AgentGateway({
+        provider: settings.provider.provider,
+        apiKey: settings.provider.apiKey,
+        baseURL: settings.provider.baseURL || undefined,
+        model: settings.provider.models.classifier,
+      });
+      const summary = await gateway.collect(
+        `Resume en una frase accionable este aprendizaje detectado por el harness (kind=${candidate.kind}, repeticiones=${candidate.count}). Sé conciso, sin rodeos.\n${candidate.content}`
+      );
+      return summary.trim() || candidate.content;
+    } catch {
+      return candidate.content;
+    }
+  };
+}
 
 const sendMessageSchema = z.object({
   message: z.string().min(1).max(20000),
@@ -33,6 +58,21 @@ export function registerIpcHandlers(
     const settings = settingsController.store.get();
     return costTracker.snapshot({ tokensPerDay: settings.budget.tokensPerDay, usdPerDay: settings.budget.usdPerDay });
   });
+
+  const dreamingScheduler = new DreamingScheduler({
+    getEvents: () => memoryLog.allEvents(),
+    workspacePath: () => resolveHarnessWorkspace(),
+    deps: { addInstinct: (workspacePath, data) => vault.addInstinct(workspacePath, data), analyze: buildAnalyzer(settingsController) },
+    onLearned: (results) => {
+      const win = getMainWindow();
+      if (!win) return;
+      const workspaceHash = resolveHarnessWorkspace();
+      for (const result of results) {
+        win.webContents.send("dream:learned", { ...result, workspaceHash, ts: Date.now() });
+      }
+    },
+  });
+  dreamingScheduler.start();
 
   ipcMain.handle("plan:decide", async (_event, rawPayload: unknown) => {
     const payload = z
@@ -77,6 +117,20 @@ export function registerIpcHandlers(
 
     const pipeline = await runPipelineStub(context);
 
+    if (CORRECTION_PATTERN.test(context.normalized)) {
+      memoryLog.append({
+        type: "harness:memory-write",
+        payload: {
+          kind: "correction",
+          trigger: extractCorrectionTrigger(context.normalized),
+          content: context.normalized,
+          domain: "general",
+        },
+        sessionId: context.sessionId,
+        workspaceHash: context.workspaceHash,
+      });
+    }
+
     const win = getMainWindow();
     if (win) win.webContents.send("harness:event", harnessEvent);
 
@@ -91,7 +145,7 @@ export function registerIpcHandlers(
         const targetWindow = getMainWindow();
         if (targetWindow) targetWindow.webContents.send("harness:chat", chatEvent);
       }
-    );
+    ).finally(() => dreamingScheduler.schedule());
 
     return {
       received: context.normalized,
