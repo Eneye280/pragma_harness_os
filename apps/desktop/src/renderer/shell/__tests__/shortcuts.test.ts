@@ -17,6 +17,11 @@ describe("Shell shortcuts", () => {
     expect(resolveShellShortcut({ key: "K", metaKey: true })).toBe("command-palette");
   });
 
+  it("maps primary+p to file search", () => {
+    expect(resolveShellShortcut({ key: "p", ctrlKey: true })).toBe("search-files");
+    expect(resolveShellShortcut({ key: "P", metaKey: true })).toBe("search-files");
+  });
+
   it("ignores chords without primary modifier or with alt", () => {
     expect(resolveShellShortcut({ key: "b" })).toBeNull();
     expect(resolveShellShortcut({ key: "b", shiftKey: true })).toBeNull();

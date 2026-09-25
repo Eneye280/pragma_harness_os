@@ -1,11 +1,18 @@
 import { contextBridge, ipcRenderer } from "electron";
 import type { ChatStreamEvent } from "../shared/chat-events";
+import type { ExplorerFile, ExplorerTreeResult } from "../shared/explorer";
 
 export interface WindowControlsBridge {
   minimize: () => Promise<void>;
   maximizeOrRestore: () => Promise<boolean>;
   close: () => Promise<void>;
   isMaximized: () => Promise<boolean>;
+}
+
+export interface ExplorerBridge {
+  getTree: () => Promise<ExplorerTreeResult>;
+  readFile: (path: string) => Promise<ExplorerFile | { error: string }>;
+  onChanged: (cb: (payload: { paths: string[]; ts: number }) => void) => () => void;
 }
 
 export interface SendMessageOptions {
@@ -20,6 +27,7 @@ export interface HarnessBridge {
   health: () => Promise<{ status: string; ts: number }>;
   onEvent: (cb: (event: unknown) => void) => () => void;
   onChatEvent: (cb: (event: ChatStreamEvent) => void) => () => void;
+  explorer: ExplorerBridge;
   windowControls: WindowControlsBridge;
 }
 
@@ -28,6 +36,16 @@ const windowControls: WindowControlsBridge = {
   maximizeOrRestore: () => ipcRenderer.invoke("window:maximizeOrRestore"),
   close: () => ipcRenderer.invoke("window:close"),
   isMaximized: () => ipcRenderer.invoke("window:isMaximized")
+};
+
+const explorer: ExplorerBridge = {
+  getTree: () => ipcRenderer.invoke("explorer:getTree"),
+  readFile: (path: string) => ipcRenderer.invoke("explorer:readFile", path),
+  onChanged: (cb) => {
+    const handler = (_e: unknown, payload: { paths: string[]; ts: number }) => cb(payload);
+    ipcRenderer.on("explorer:changed", handler as never);
+    return () => ipcRenderer.removeListener("explorer:changed", handler as never);
+  }
 };
 
 const harness: HarnessBridge = {
@@ -46,6 +64,7 @@ const harness: HarnessBridge = {
     ipcRenderer.on("harness:chat", handler as never);
     return () => ipcRenderer.removeListener("harness:chat", handler as never);
   },
+  explorer,
   windowControls
 };
 

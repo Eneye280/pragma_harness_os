@@ -4,6 +4,7 @@ import { ingress } from "../harness/ingress";
 import { runPipelineStub } from "../harness/pipeline/stub";
 import { MemoryEventLog } from "../db/memory-event-log";
 import { createChatService } from "../chat";
+import { resolveHarnessWorkspace } from "../workspace-path";
 
 const sendMessageSchema = z.object({
   message: z.string().min(1).max(20000),
@@ -28,7 +29,7 @@ export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null): 
 
     const { context, eventId } = ingress.intercept(parsed.data.message, {
       sessionId: parsed.data.sessionId,
-      workspacePath: process.cwd(),
+      workspacePath: resolveHarnessWorkspace(),
     });
     const harnessEvent = ingress.createHarnessEvent(context, eventId);
 

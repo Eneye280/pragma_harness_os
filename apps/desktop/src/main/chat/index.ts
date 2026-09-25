@@ -1,8 +1,6 @@
 import { AgentGateway } from "../llm/gateway";
-import { existsSync, mkdirSync } from "fs";
-import { tmpdir } from "os";
-import { join } from "path";
 import { ToolRunner } from "../tools";
+import { resolveHarnessWorkspace } from "../workspace-path";
 import { ChatService, type ChatGateway } from "./chat-service";
 
 const TOOL_INTENT_PATTERN = /(archivo|file|crea|create|write|escribe|guarda|save)/i;
@@ -39,8 +37,7 @@ export function createChatService(): ChatService {
     ? new AgentGateway({ provider: "deepseek", apiKey })
     : new AgentGateway({ provider: "mock" }, mockResponder);
 
-  const scratchPath = join(tmpdir(), "pragma-harness", "chat-scratch");
-  if (!existsSync(scratchPath)) mkdirSync(scratchPath, { recursive: true });
+  const scratchPath = resolveHarnessWorkspace();
   const toolRunner = new ToolRunner({ permission: "allow" });
 
   return new ChatService({ gateway, toolRunner, toolWorkspacePath: scratchPath });
