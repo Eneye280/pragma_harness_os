@@ -7,6 +7,7 @@
     "paths": {
       "@/*": ["src/renderer/*"],
       "@main/*": ["src/main/*"],
+      "@shared/*": ["src/shared/*"],
       "harness-core": ["../../packages/harness-core/src"],
       "harness-sdk": ["../../packages/harness-sdk/src"],
       "ui-tokens": ["../../packages/ui-tokens/src"]

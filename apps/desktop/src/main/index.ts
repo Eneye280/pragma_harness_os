@@ -1,9 +1,12 @@
 import { app, BrowserWindow } from "electron";
-import { join } from "path";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
 import { is } from "@electron-toolkit/utils";
 import { startHarnessServer } from "./server/hono";
 import { registerIpcHandlers } from "./ipc/handlers";
 import { registerWindowControls } from "./ipc/window-controls";
+
+const currentDir = dirname(fileURLToPath(import.meta.url));
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -18,7 +21,7 @@ function createWindow(): void {
     titleBarStyle: "hiddenInset",
     backgroundColor: "#09090b",
     webPreferences: {
-      preload: join(__dirname, "../preload/index.js"),
+      preload: join(currentDir, "../preload/index.cjs"),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true
@@ -30,7 +33,7 @@ function createWindow(): void {
   if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {
     mainWindow.loadURL(process.env["ELECTRON_RENDERER_URL"]);
   } else {
-    mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
+    mainWindow.loadFile(join(currentDir, "../renderer/index.html"));
   }
 }
 
