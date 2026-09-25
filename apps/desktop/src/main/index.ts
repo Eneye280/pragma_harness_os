@@ -10,6 +10,7 @@ import { registerTerminalHandlers } from "./ipc/terminal-handlers";
 import { registerSettingsHandlers } from "./ipc/settings-handlers";
 import { resolveHarnessWorkspace } from "./workspace-path";
 import { SettingsController, SettingsStore } from "./settings";
+import { CostTracker } from "./cost";
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
 
@@ -44,9 +45,10 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   const settingsController = new SettingsController(new SettingsStore());
+  const costTracker = new CostTracker();
   createWindow();
   startHarnessServer(4096);
-  registerIpcHandlers(() => mainWindow, settingsController);
+  registerIpcHandlers(() => mainWindow, settingsController, costTracker);
   registerWindowControls(() => mainWindow);
   registerExplorerHandlers(() => mainWindow, resolveHarnessWorkspace());
   registerTerminalHandlers(() => mainWindow, resolveHarnessWorkspace());

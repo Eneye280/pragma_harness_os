@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { layout } from "ui-tokens";
+import type { CostSnapshot } from "@shared/cost";
 import { cn } from "../lib/cn";
 import { IconCommand, IconClose, IconMaximize, IconMinimize } from "./icons";
 
 interface TitleBarProps {
   status: string;
+  cost: CostSnapshot | null;
   onOpenPalette: () => void;
   onToggleExplorer: () => void;
   onToggleContext: () => void;
@@ -14,6 +16,7 @@ interface TitleBarProps {
 
 export function TitleBar({
   status,
+  cost,
   onOpenPalette,
   onToggleExplorer,
   onToggleContext,
@@ -58,6 +61,22 @@ export function TitleBar({
       <span className="ml-auto flex items-center gap-2 text-[10px] uppercase tracking-widest text-zinc-500">
         harness-first · ts
       </span>
+
+      {cost ? (
+        <span
+          title={`${cost.today.tokens.toLocaleString()} tokens hoy · ${cost.today.calls} llamadas\npor dominio: ${
+            cost.perDomain.map((domain) => `${domain.domain}:${domain.tokens}`).join(", ") || "—"
+          }`}
+          className={cn(
+            "rounded-full border px-2 py-[3px] font-mono text-[10px]",
+            cost.today.usd >= cost.budget.usdPerDay
+              ? "border-red-500/40 bg-red-500/10 text-red-300"
+              : "border-hairline bg-surface-raised text-zinc-400",
+          )}
+        >
+          ${cost.today.usd.toFixed(2)} / ${cost.budget.usdPerDay.toFixed(2)}
+        </span>
+      ) : null}
 
       <nav className="no-drag flex items-center gap-1">
         <TitleBarButton label="Command palette (Ctrl/Cmd+K)" onClick={onOpenPalette}>

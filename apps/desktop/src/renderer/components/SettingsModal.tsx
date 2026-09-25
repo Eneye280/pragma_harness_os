@@ -5,6 +5,7 @@ import {
   type HarnessSettings,
   type ProviderName,
 } from "@shared/settings";
+import type { CostSnapshot } from "@shared/cost";
 import { cn } from "../lib/cn";
 import { IconClose } from "./icons";
 import type { UseSettingsResult } from "../settings/use-settings";
@@ -13,6 +14,7 @@ interface SettingsModalProps {
   open: boolean;
   onClose: () => void;
   settingsState: UseSettingsResult;
+  cost: CostSnapshot | null;
 }
 
 const POST_GATE_LABELS: Array<{ key: keyof HarnessSettings["gates"]["post"]; label: string }> = [
@@ -24,7 +26,7 @@ const POST_GATE_LABELS: Array<{ key: keyof HarnessSettings["gates"]["post"]; lab
   { key: "visual", label: "visual" },
 ];
 
-export function SettingsModal({ open, onClose, settingsState }: SettingsModalProps): React.ReactElement | null {
+export function SettingsModal({ open, onClose, settingsState, cost }: SettingsModalProps): React.ReactElement | null {
   const { settings, resolved, saving, error, testResult, save, testProvider } = settingsState;
   const [draft, setDraft] = useState<HarnessSettings | null>(settings);
   const [revealKey, setRevealKey] = useState(false);
@@ -152,6 +154,50 @@ export function SettingsModal({ open, onClose, settingsState }: SettingsModalPro
                 </span>
               ) : null}
             </div>
+          </Section>
+
+          <Section title="Costo de hoy">
+            {cost ? (
+              <>
+                <div className="grid grid-cols-3 gap-3">
+                  <Field label="USD hoy">
+                    <p className="font-mono text-[13px] text-zinc-200">
+                      ${cost.today.usd.toFixed(4)} <span className="text-zinc-600">/ ${cost.budget.usdPerDay.toFixed(2)}</span>
+                    </p>
+                  </Field>
+                  <Field label="Tokens hoy">
+                    <p className="font-mono text-[13px] text-zinc-200">
+                      {cost.today.tokens.toLocaleString()} <span className="text-zinc-600">/ {cost.budget.tokensPerDay.toLocaleString()}</span>
+                    </p>
+                  </Field>
+                  <Field label="Llamadas">
+                    <p className="font-mono text-[13px] text-zinc-200">{cost.today.calls}</p>
+                  </Field>
+                </div>
+                <div className="mt-1 rounded-control border border-hairline bg-surface p-2">
+                  <p className="text-[10px] uppercase tracking-widest text-zinc-600">Por dominio</p>
+                  {cost.perDomain.length === 0 ? (
+                    <p className="mt-1 text-[11px] text-zinc-500">sin uso todavía</p>
+                  ) : (
+                    <ul className="mt-1 space-y-0.5">
+                      {cost.perDomain.map((domain) => (
+                        <li key={domain.domain} className="flex items-center justify-between text-[11px]">
+                          <span className="text-zinc-400">{domain.domain}</span>
+                          <span className="font-mono text-zinc-500">
+                            {domain.tokens.toLocaleString()} tok · ${domain.usd.toFixed(4)} · {domain.calls} calls
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                <p className="text-[10px] text-zinc-600">
+                  token+USD se cuentan por llamada y se persisten en metrics.json
+                </p>
+              </>
+            ) : (
+              <p className="text-[11px] text-zinc-500">sin datos de costo</p>
+            )}
           </Section>
 
           <Section title="Budget diario">

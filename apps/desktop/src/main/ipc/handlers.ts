@@ -7,6 +7,7 @@ import { createChatService } from "../chat";
 import { resolveHarnessWorkspace } from "../workspace-path";
 import { PlanController } from "../plan";
 import type { SettingsController } from "../settings";
+import type { CostTracker } from "../cost";
 
 const sendMessageSchema = z.object({
   message: z.string().min(1).max(20000),
@@ -19,10 +20,19 @@ const memoryLog = new MemoryEventLog();
 
 export function registerIpcHandlers(
   getMainWindow: () => BrowserWindow | null,
-  settingsController: SettingsController
+  settingsController: SettingsController,
+  costTracker: CostTracker
 ): void {
   const planController = new PlanController();
-  const chatService = createChatService(settingsController, planController);
+  const chatService = createChatService(settingsController, costTracker, planController, (snapshot) => {
+    const win = getMainWindow();
+    if (win) win.webContents.send("cost:updated", snapshot);
+  });
+
+  ipcMain.handle("cost:get", async () => {
+    const settings = settingsController.store.get();
+    return costTracker.snapshot({ tokensPerDay: settings.budget.tokensPerDay, usdPerDay: settings.budget.usdPerDay });
+  });
 
   ipcMain.handle("plan:decide", async (_event, rawPayload: unknown) => {
     const payload = z

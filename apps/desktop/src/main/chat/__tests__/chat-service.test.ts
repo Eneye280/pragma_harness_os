@@ -165,4 +165,40 @@ describe("ChatService", () => {
     const finalDelta = events.filter((event) => event.kind === "assistant-delta").at(-1);
     expect(finalDelta).toMatchObject({ text: expect.stringContaining("descartado") });
   });
+
+  it("blocks before calling the model when a pre-gate rejects the request", async () => {
+    const events: ChatStreamEvent[] = [];
+    let gatewayUsed = false;
+    const service = new ChatService({
+      gateway: {
+        stream: () => {
+          gatewayUsed = true;
+          return streamChunks(["no debería ejecutarse"]);
+        },
+      },
+      toolRunner: makeRunner({}),
+      toolWorkspacePath: "/tmp/ws",
+      budgetWindow: () => ({ tokensUsed: 500, tokensLimit: 100, costUsedUsd: 0, costLimitUsd: 5 }),
+      preGateRunner: () => ({ verdict: "block", blockedBy: "budget-gate", userResponse: "presupuesto diario agotado" }),
+    });
+    await service.run({ message: "hola", sessionId: "s", workspacePath: "/w" }, (event) => events.push(event));
+    expect(gatewayUsed).toBe(false);
+    expect(events.some((event) => event.kind === "assistant-delta" && (event as { text: string }).text.includes("presupuesto"))).toBe(true);
+    expect(events.some((event) => event.kind === "harness-step" && (event as { status?: string }).status === "blocked")).toBe(true);
+  });
+
+  it("reports token usage for the domain after a successful call", async () => {
+    const usages: Array<{ domain: string; inputTokens: number; outputTokens: number }> = [];
+    const service = new ChatService({
+      gateway: { stream: () => streamChunks(["respuesta del agente"]) },
+      toolRunner: makeRunner({}),
+      toolWorkspacePath: "/tmp/ws",
+      onUsage: (usage) => usages.push(usage),
+    });
+    await service.run({ message: "agrega auth", sessionId: "s", workspacePath: "/w" }, () => undefined);
+    expect(usages).toHaveLength(1);
+    expect(usages[0].domain).toBe("backend");
+    expect(usages[0].inputTokens).toBeGreaterThan(0);
+    expect(usages[0].outputTokens).toBeGreaterThan(0);
+  });
 });
