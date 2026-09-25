@@ -1,0 +1,69 @@
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# Build outputs
+dist/
+out/
+build/
+.next/
+.turbo/
+.cache/
+
+# Electron
+*.AppImage
+*.dmg
+*.exe
+*.msi
+*.deb
+*.snap
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Env & secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# SQLite DB (generated at runtime)
+*.db
+*.db-journal
+*.sqlite
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Temp
+tmp/
+temp/
+.utmp/
+
+# Pragma Harness docs (NOT COMMITABLE — 100% local planning, like pragma-unity Documentation/Pragma 2.3/)
+/docs/
+
+# Local harness config (NOT COMMITABLE)
+.harness/
+memory/
+.opencode/
