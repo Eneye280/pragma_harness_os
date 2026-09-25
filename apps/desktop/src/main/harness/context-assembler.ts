@@ -96,15 +96,29 @@ export class ContextAssembler {
     let truncatedFiles = filesResult.content;
     let truncatedRag = ragBlock;
     let truncatedInstincts = instinctsBlock;
+    let truncatedSkills = skillsBlock;
+    let truncatedRules = rulesBlock;
+
+    const buildPromptText = (
+      rules: string,
+      skills: string,
+      rag: string,
+      files: string,
+      instincts: string,
+      history: string
+    ) => `# SYSTEM — HARNESS COMPILED (do not search skills, they are already here)
+
+${rules}
+
+# SKILLS (compiled pre-agent, sources: ${skillsResult.sources.join(", ")})
+${skills}
+
+${rag ? `# RAG HITS\n${rag}\n` : ""}${files ? `# PREFETCHED FILES\n${files}\n` : ""}${instincts ? `# INSTINCTS\n${instincts}\n` : ""}${history ? `# HISTORY (last 6)\n${history}\n` : ""}# USER MESSAGE
+${input.message}
+`;
 
     const calcTotal = () =>
-      tokenCount(input.message) +
-      tokenCount(rulesBlock) +
-      tokenCount(skillsBlock) +
-      tokenCount(truncatedRag) +
-      tokenCount(truncatedFiles) +
-      tokenCount(truncatedInstincts) +
-      tokenCount(truncatedHistory);
+      tokenCount(buildPromptText(truncatedRules, truncatedSkills, truncatedRag, truncatedFiles, truncatedInstincts, truncatedHistory));
 
     let total = calcTotal();
 
@@ -117,6 +131,10 @@ export class ContextAssembler {
         truncatedRag = "";
       } else if (truncatedInstincts.length > 0) {
         truncatedInstincts = "";
+      } else if (tokenCount(truncatedSkills) > 20) {
+        truncatedSkills = truncatedSkills.slice(0, Math.ceil(truncatedSkills.length * 0.5));
+      } else if (tokenCount(truncatedRules) > 20) {
+        truncatedRules = truncatedRules.slice(0, Math.ceil(truncatedRules.length * 0.5));
       } else {
         break;
       }
@@ -125,20 +143,11 @@ export class ContextAssembler {
       total = newTotal;
     }
 
-    const finalPrompt = `# SYSTEM — HARNESS COMPILED (do not search skills, they are already here)
-
-${rulesBlock}
-
-# SKILLS (compiled pre-agent, sources: ${skillsResult.sources.join(", ")})
-${skillsBlock}
-
-${truncatedRag ? `# RAG HITS\n${truncatedRag}\n` : ""}${truncatedFiles ? `# PREFETCHED FILES\n${truncatedFiles}\n` : ""}${truncatedInstincts ? `# INSTINCTS\n${truncatedInstincts}\n` : ""}${truncatedHistory ? `# HISTORY (last 6)\n${truncatedHistory}\n` : ""}# USER MESSAGE
-${input.message}
-`;
+    const finalPrompt = buildPromptText(truncatedRules, truncatedSkills, truncatedRag, truncatedFiles, truncatedInstincts, truncatedHistory);
 
     const breakdown = {
-      rules: { tokens: tokenCount(rulesBlock), chars: rulesBlock.length },
-      skills: { tokens: tokenCount(skillsBlock), chars: skillsBlock.length, sources: skillsResult.sources },
+      rules: { tokens: tokenCount(truncatedRules), chars: truncatedRules.length },
+      skills: { tokens: tokenCount(truncatedSkills), chars: truncatedSkills.length, sources: skillsResult.sources },
       rag: { tokens: tokenCount(truncatedRag), hits: input.ragHits?.length ?? 0 },
       files: { tokens: tokenCount(truncatedFiles), files: filesResult.paths.length, paths: filesResult.paths },
       instincts: { tokens: tokenCount(truncatedInstincts), count: input.instincts?.length ?? 0 },
