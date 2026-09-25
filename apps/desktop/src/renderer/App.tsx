@@ -1,13 +1,17 @@
 import { useCallback, useEffect, useReducer, useState } from "react";
+import type { ExplorerFile } from "@shared/explorer";
 import { CommandPalette } from "./components/CommandPalette";
 import { ShellLayout } from "./components/ShellLayout";
 import { TitleBar } from "./components/TitleBar";
+import { useExplorer } from "./explorer/use-explorer";
 import { INITIAL_PANEL_STATE, actionForShortcut, panelReducer } from "./shell/panel-state";
 import { isEditableTarget, resolveShellShortcut } from "./shell/shortcuts";
 
 export function App(): React.ReactElement {
   const [panels, dispatch] = useReducer(panelReducer, INITIAL_PANEL_STATE);
   const [status, setStatus] = useState("connecting…");
+  const [previewFile, setPreviewFile] = useState<ExplorerFile | null>(null);
+  const explorer = useExplorer();
 
   useEffect(() => {
     const bridge = window.harness;
@@ -22,6 +26,26 @@ export function App(): React.ReactElement {
   }, []);
 
   useEffect(() => {
+    const bridge = window.harness?.explorer;
+    if (!panels.previewPath || !bridge) {
+      setPreviewFile(null);
+      return;
+    }
+    let cancelled = false;
+    bridge
+      .readFile(panels.previewPath)
+      .then((result) => {
+        if (!cancelled) setPreviewFile("error" in result ? null : result);
+      })
+      .catch(() => {
+        if (!cancelled) setPreviewFile(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [panels.previewPath]);
+
+  useEffect(() => {
     function handleKeyDown(event: KeyboardEvent): void {
       const shortcut = resolveShellShortcut({
         key: event.key,
@@ -34,7 +58,7 @@ export function App(): React.ReactElement {
       const target = event.target as HTMLElement | null;
       const targetTag = typeof target?.tagName === "string" ? target.tagName : "";
       const typingInField = isEditableTarget(targetTag, Boolean(target?.isContentEditable));
-      if (typingInField && shortcut !== "command-palette") return;
+      if (typingInField && shortcut !== "command-palette" && shortcut !== "search-files") return;
       event.preventDefault();
       dispatch(actionForShortcut(shortcut));
     }
@@ -46,6 +70,8 @@ export function App(): React.ReactElement {
   const closePalette = useCallback(() => dispatch({ type: "close-palette" }), []);
   const toggleExplorer = useCallback(() => dispatch({ type: "toggle-explorer" }), []);
   const toggleContext = useCallback(() => dispatch({ type: "toggle-context" }), []);
+  const openFile = useCallback((path: string) => dispatch({ type: "open-preview", path }), []);
+  const closePreview = useCallback(() => dispatch({ type: "close-preview" }), []);
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-surface text-zinc-100">
@@ -55,12 +81,23 @@ export function App(): React.ReactElement {
         onToggleExplorer={toggleExplorer}
         onToggleContext={toggleContext}
       />
-      <ShellLayout explorerOpen={panels.explorerOpen} contextOpen={panels.contextOpen} />
+      <ShellLayout
+        explorerOpen={panels.explorerOpen}
+        contextOpen={panels.contextOpen}
+        explorer={explorer}
+        selectedPath={panels.previewPath}
+        onSelectFile={openFile}
+        previewFile={previewFile}
+        previewOpen={Boolean(panels.previewPath)}
+        onClosePreview={closePreview}
+      />
       <CommandPalette
         open={panels.paletteOpen}
         onClose={closePalette}
         onToggleExplorer={toggleExplorer}
         onToggleContext={toggleContext}
+        files={explorer.files}
+        onOpenFile={openFile}
       />
     </div>
   );

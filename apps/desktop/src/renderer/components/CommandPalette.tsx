@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "../lib/cn";
-import { IconCommand, IconFolder, IconPanelLeft, IconPanelRight, IconSearch } from "./icons";
+import { IconCommand, IconFile, IconFolder, IconPanelLeft, IconPanelRight, IconSearch } from "./icons";
 
-interface PaletteCommand {
+interface PaletteItem {
   id: string;
   label: string;
   hint: string;
+  group: "commands" | "files";
   icon: React.ReactNode;
+  run: () => void;
 }
 
 interface CommandPaletteProps {
@@ -14,28 +16,47 @@ interface CommandPaletteProps {
   onClose: () => void;
   onToggleExplorer: () => void;
   onToggleContext: () => void;
+  files: string[];
+  onOpenFile: (path: string) => void;
 }
 
-function buildCommands(onToggleExplorer: () => void, onToggleContext: () => void): PaletteCommand[] {
-  return [
-    { id: "toggle-explorer", label: "Toggle Explorer", hint: "Ctrl/Cmd+B", icon: <IconPanelLeft width={14} height={14} /> },
-    { id: "toggle-context", label: "Toggle Context", hint: "Ctrl/Cmd+Shift+C", icon: <IconPanelRight width={14} height={14} /> },
-    { id: "open-workspace", label: "Open workspace", hint: "TASK 14/20", icon: <IconFolder width={14} height={14} /> },
-    { id: "settings", label: "Open settings", hint: "TASK 22", icon: <IconCommand width={14} height={14} /> },
-  ];
-}
+const MAX_FILE_RESULTS = 8;
 
-export function CommandPalette({ open, onClose, onToggleExplorer, onToggleContext }: CommandPaletteProps): React.ReactElement | null {
+export function CommandPalette({
+  open,
+  onClose,
+  onToggleExplorer,
+  onToggleContext,
+  files,
+  onOpenFile,
+}: CommandPaletteProps): React.ReactElement | null {
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  const commands = useMemo(() => buildCommands(onToggleExplorer, onToggleContext), [onToggleExplorer, onToggleContext]);
-  const filtered = useMemo(() => {
+  const items = useMemo<PaletteItem[]>(() => {
+    const commands: PaletteItem[] = [
+      { id: "toggle-explorer", label: "Toggle Explorer", hint: "Ctrl/Cmd+B", group: "commands", icon: <IconPanelLeft width={14} height={14} />, run: onToggleExplorer },
+      { id: "toggle-context", label: "Toggle Context", hint: "Ctrl/Cmd+Shift+C", group: "commands", icon: <IconPanelRight width={14} height={14} />, run: onToggleContext },
+      { id: "open-workspace", label: "Open workspace", hint: "TASK 14/20", group: "commands", icon: <IconFolder width={14} height={14} />, run: () => undefined },
+      { id: "settings", label: "Open settings", hint: "TASK 22", group: "commands", icon: <IconCommand width={14} height={14} />, run: () => undefined },
+    ];
+    const fileItems: PaletteItem[] = files.map((filePath) => ({
+      id: `file:${filePath}`,
+      label: filePath,
+      hint: "abrir",
+      group: "files",
+      icon: <IconFile width={14} height={14} />,
+      run: () => onOpenFile(filePath),
+    }));
+
     const normalizedQuery = query.trim().toLowerCase();
-    if (!normalizedQuery) return commands;
-    return commands.filter((command) => command.label.toLowerCase().includes(normalizedQuery));
-  }, [commands, query]);
+    const matchingCommands = commands.filter((item) => item.label.toLowerCase().includes(normalizedQuery));
+    const matchingFiles = normalizedQuery
+      ? fileItems.filter((item) => item.label.toLowerCase().includes(normalizedQuery)).slice(0, MAX_FILE_RESULTS)
+      : fileItems.slice(0, MAX_FILE_RESULTS);
+    return [...matchingCommands, ...matchingFiles];
+  }, [query, files, onToggleExplorer, onToggleContext, onOpenFile]);
 
   useEffect(() => {
     if (open) {
@@ -46,14 +67,13 @@ export function CommandPalette({ open, onClose, onToggleExplorer, onToggleContex
   }, [open]);
 
   useEffect(() => {
-    if (activeIndex > filtered.length - 1) setActiveIndex(0);
-  }, [filtered, activeIndex]);
+    if (activeIndex > items.length - 1) setActiveIndex(0);
+  }, [items, activeIndex]);
 
   if (!open) return null;
 
-  function runCommand(command: PaletteCommand): void {
-    if (command.id === "toggle-explorer") onToggleExplorer();
-    if (command.id === "toggle-context") onToggleContext();
+  function runItem(item: PaletteItem): void {
+    item.run();
     onClose();
   }
 
@@ -65,20 +85,22 @@ export function CommandPalette({ open, onClose, onToggleExplorer, onToggleContex
     }
     if (event.key === "ArrowDown") {
       event.preventDefault();
-      setActiveIndex((index) => (filtered.length === 0 ? 0 : (index + 1) % filtered.length));
+      setActiveIndex((index) => (items.length === 0 ? 0 : (index + 1) % items.length));
       return;
     }
     if (event.key === "ArrowUp") {
       event.preventDefault();
-      setActiveIndex((index) => (filtered.length === 0 ? 0 : (index - 1 + filtered.length) % filtered.length));
+      setActiveIndex((index) => (items.length === 0 ? 0 : (index - 1 + items.length) % items.length));
       return;
     }
     if (event.key === "Enter") {
       event.preventDefault();
-      const command = filtered[activeIndex];
-      if (command) runCommand(command);
+      const item = items[activeIndex];
+      if (item) runItem(item);
     }
   }
+
+  let lastGroup: PaletteItem["group"] | null = null;
 
   return (
     <div
@@ -100,33 +122,42 @@ export function CommandPalette({ open, onClose, onToggleExplorer, onToggleContex
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Escribe un comando…"
+            placeholder="Comando o archivo… (Ctrl/Cmd+P)"
             className="flex-1 bg-transparent text-[13px] text-zinc-100 outline-none placeholder:text-zinc-600"
           />
           <kbd className="rounded bg-zinc-800 px-1.5 py-0.5 font-mono text-[10px] text-zinc-400">Esc</kbd>
         </div>
 
         <ul className="max-h-[320px] overflow-y-auto p-1.5">
-          {filtered.length === 0 ? (
+          {items.length === 0 ? (
             <li className="px-3 py-6 text-center text-[12px] text-zinc-500">Sin resultados</li>
           ) : (
-            filtered.map((command, index) => (
-              <li key={command.id}>
-                <button
-                  type="button"
-                  onMouseEnter={() => setActiveIndex(index)}
-                  onClick={() => runCommand(command)}
-                  className={cn(
-                    "flex w-full items-center gap-2.5 rounded-control px-2.5 py-2 text-left text-[12px] outline-none transition-colors",
-                    index === activeIndex ? "bg-harness/15 text-zinc-100" : "text-zinc-400 hover:bg-zinc-800/70",
-                  )}
-                >
-                  <span className={index === activeIndex ? "text-harness-soft" : "text-zinc-500"}>{command.icon}</span>
-                  <span className="flex-1">{command.label}</span>
-                  <span className="font-mono text-[10px] text-zinc-600">{command.hint}</span>
-                </button>
-              </li>
-            ))
+            items.map((item, index) => {
+              const showHeader = item.group !== lastGroup;
+              lastGroup = item.group;
+              return (
+                <li key={item.id}>
+                  {showHeader ? (
+                    <p className="px-2.5 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-600">
+                      {item.group === "commands" ? "Comandos" : "Archivos"}
+                    </p>
+                  ) : null}
+                  <button
+                    type="button"
+                    onMouseEnter={() => setActiveIndex(index)}
+                    onClick={() => runItem(item)}
+                    className={cn(
+                      "flex w-full items-center gap-2.5 rounded-control px-2.5 py-2 text-left text-[12px] outline-none transition-colors",
+                      index === activeIndex ? "bg-harness/15 text-zinc-100" : "text-zinc-400 hover:bg-zinc-800/70",
+                    )}
+                  >
+                    <span className={index === activeIndex ? "text-harness-soft" : "text-zinc-500"}>{item.icon}</span>
+                    <span className="flex-1 truncate">{item.label}</span>
+                    <span className="font-mono text-[10px] text-zinc-600">{item.hint}</span>
+                  </button>
+                </li>
+              );
+            })
           )}
         </ul>
       </div>
