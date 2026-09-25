@@ -5,6 +5,7 @@ import { SettingsModal } from "./components/SettingsModal";
 import { ShellLayout } from "./components/ShellLayout";
 import { TitleBar } from "./components/TitleBar";
 import { useExplorer } from "./explorer/use-explorer";
+import { useChat } from "./chat/use-chat";
 import { useSettings } from "./settings/use-settings";
 import { INITIAL_PANEL_STATE, actionForShortcut, panelReducer } from "./shell/panel-state";
 import { isEditableTarget, resolveShellShortcut } from "./shell/shortcuts";
@@ -14,6 +15,7 @@ export function App(): React.ReactElement {
   const [status, setStatus] = useState("connecting…");
   const [previewFile, setPreviewFile] = useState<ExplorerFile | null>(null);
   const explorer = useExplorer();
+  const chat = useChat();
   const settingsState = useSettings();
 
   useEffect(() => {
@@ -98,6 +100,7 @@ export function App(): React.ReactElement {
         explorerOpen={panels.explorerOpen}
         contextOpen={panels.contextOpen}
         explorer={explorer}
+        chat={chat}
         selectedPath={panels.previewPath}
         onSelectFile={openFile}
         previewFile={previewFile}

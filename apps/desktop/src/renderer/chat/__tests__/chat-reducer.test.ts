@@ -68,4 +68,23 @@ describe("Chat reducer", () => {
     );
     expect(state).toEqual(INITIAL_CHAT_STATE);
   });
+
+  it("stores a proposed plan and clears it once resolved", () => {
+    const plan = {
+      sessionId: SESSION,
+      title: "Plan — agrega módulo",
+      markdown: "# Plan",
+      files: ["src/modules/x/index.ts"],
+      intent: { domain: "backend", type: "feature", effort: "medium", needs: ["tdd-workflow"] },
+      revised: false,
+      createdAt: 1,
+    };
+    let state = chatReducer(INITIAL_CHAT_STATE, { type: "send", id: "m1", text: "agrega módulo" });
+    state = chatReducer(state, { type: "stream", event: { kind: "plan-proposed", sessionId: SESSION, plan } });
+    expect(state.planStatus).toBe("proposed");
+    expect(state.plan?.files).toEqual(["src/modules/x/index.ts"]);
+    state = chatReducer(state, { type: "stream", event: { kind: "plan-resolved", sessionId: SESSION, action: "approve" } });
+    expect(state.planStatus).toBe("approved");
+    expect(state.plan).toBeNull();
+  });
 });

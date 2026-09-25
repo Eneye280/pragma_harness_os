@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { classify } from "../harness/classifier";
+import { buildPlan, shouldProposePlan } from "../plan";
+import type { PlanGate } from "../plan";
 import type { ToolRunner } from "../tools";
 import type { ChatSendRequest, ChatStreamEvent } from "../../shared/chat-events";
 
@@ -32,16 +34,18 @@ export interface ChatServiceDeps {
   gateway: ChatGateway;
   toolRunner: ToolRunner;
   toolWorkspacePath: string;
+  planGate?: PlanGate;
 }
 
-export function buildAgentPrompt(request: ChatSendRequest, needs: string[]): string {
-  return [
+export function buildAgentPrompt(request: ChatSendRequest, needs: string[], approvedPlan?: string): string {
+  const sections = [
     "[harness] compila reglas, skills y contexto antes de despertar al agente.",
     `[intent] needs=${needs.join(",") || "none"}`,
     "[style] responde en markdown, conciso, sin relleno.",
-    "[user]",
-    request.message,
-  ].join("\n");
+  ];
+  if (approvedPlan) sections.push("[plan aprobado por el usuario]", approvedPlan);
+  sections.push("[user]", request.message);
+  return sections.join("\n");
 }
 
 export class ChatService {
@@ -76,9 +80,26 @@ export class ChatService {
         emit({ kind: "harness-step", sessionId, phase: "pre-gates", status: "done", label: "gates pre ok" });
       }
 
+      let approvedPlanMarkdown: string | undefined;
+
+      if (!request.bypassHarness && this.deps.planGate && shouldProposePlan(intent, request.message)) {
+        const plan = buildPlan(request.message, intent, sessionId);
+        emit({ kind: "harness-step", sessionId, phase: "plan", status: "running", label: "plan propuesto" });
+        const decision = await this.deps.planGate.propose(plan, emit);
+        if (decision.action === "discard") {
+          emit({ kind: "harness-step", sessionId, phase: "plan", status: "blocked", label: "plan descartado" });
+          emit({ kind: "assistant-delta", sessionId, text: "_Plan descartado. No se ejecutó nada._" });
+          emit({ kind: "assistant-done", sessionId });
+          emit({ kind: "harness-step", sessionId, phase: "agent", status: "done", label: "sin ejecución" });
+          return;
+        }
+        approvedPlanMarkdown = decision.markdown;
+        emit({ kind: "harness-step", sessionId, phase: "plan", status: "done", label: "plan aprobado" });
+      }
+
       emit({ kind: "harness-step", sessionId, phase: "agent", status: "running", label: "agente escribiendo…" });
 
-      const prompt = buildAgentPrompt(request, intent.needs);
+      const prompt = buildAgentPrompt(request, intent.needs, approvedPlanMarkdown);
       let fullText = "";
       for await (const chunk of this.deps.gateway.stream(prompt)) {
         if (chunk.isDone) break;

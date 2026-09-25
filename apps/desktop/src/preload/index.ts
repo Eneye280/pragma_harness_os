@@ -30,6 +30,12 @@ export interface SettingsBridge {
   onChanged: (cb: (settings: HarnessSettings) => void) => () => void;
 }
 
+export interface PlanBridge {
+  approve: (sessionId: string, markdown: string) => Promise<{ ok: boolean }>;
+  discard: (sessionId: string) => Promise<{ ok: boolean }>;
+  revise: (sessionId: string, markdown: string) => Promise<{ ok: boolean }>;
+}
+
 export interface SendMessageOptions {
   sessionId?: string;
   bypassHarness?: boolean;
@@ -45,6 +51,7 @@ export interface HarnessBridge {
   explorer: ExplorerBridge;
   terminal: TerminalBridge;
   settings: SettingsBridge;
+  plan: PlanBridge;
   windowControls: WindowControlsBridge;
 }
 
@@ -87,6 +94,12 @@ const settings: SettingsBridge = {
   }
 };
 
+const plan: PlanBridge = {
+  approve: (sessionId: string, markdown: string) => ipcRenderer.invoke("plan:decide", { sessionId, action: "approve", markdown }),
+  discard: (sessionId: string) => ipcRenderer.invoke("plan:decide", { sessionId, action: "discard" }),
+  revise: (sessionId: string, markdown: string) => ipcRenderer.invoke("plan:revise", { sessionId, markdown })
+};
+
 const harness: HarnessBridge = {
   ping: () => ipcRenderer.invoke("harness:ping"),
   sendMessage: (message: string, options?: SendMessageOptions) =>
@@ -106,6 +119,7 @@ const harness: HarnessBridge = {
   explorer,
   terminal,
   settings,
+  plan,
   windowControls
 };
 

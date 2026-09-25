@@ -1,4 +1,5 @@
 import type { ChatStreamEvent, HarnessPhase, HarnessStepStatus } from "@shared/chat-events";
+import type { PlanProposal } from "@shared/plan";
 
 export interface ChatMessage {
   id: string;
@@ -29,6 +30,8 @@ export interface ChatState {
   steps: HarnessStepState[];
   toolCalls: ToolCallState[];
   agentPhase: "idle" | "running" | "done";
+  plan: PlanProposal | null;
+  planStatus: "idle" | "proposed" | "approved" | "discarded";
   error: string | null;
 }
 
@@ -37,6 +40,8 @@ export const INITIAL_CHAT_STATE: ChatState = {
   steps: [],
   toolCalls: [],
   agentPhase: "idle",
+  plan: null,
+  planStatus: "idle",
   error: null,
 };
 
@@ -119,6 +124,10 @@ function applyStreamEvent(state: ChatState, event: ChatStreamEvent): ChatState {
         agentPhase: "done",
         messages: updateLastAssistant(state.messages, (message) => ({ ...message, streaming: false })),
       };
+    case "plan-proposed":
+      return { ...state, plan: event.plan, planStatus: "proposed" };
+    case "plan-resolved":
+      return { ...state, plan: null, planStatus: event.action === "approve" ? "approved" : "discarded" };
   }
 }
 
@@ -135,6 +144,8 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         steps: [],
         toolCalls: [],
         agentPhase: "running",
+        plan: null,
+        planStatus: "idle",
         error: null,
       };
     case "stream":
