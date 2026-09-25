@@ -27,6 +27,7 @@
     "harness-core": "workspace:*",
     "harness-sdk": "workspace:*",
     "hono": "^4.13.9",
+    "simple-git": "^4.0.1",
     "ui-tokens": "workspace:*",
     "zod": "^3.25.76"
   },
