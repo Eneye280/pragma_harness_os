@@ -79,7 +79,7 @@ export function ShellLayout({
           style={{ width: contextOpen ? PANEL_WIDTHS.context : 0 }}
         >
           <div className="h-full" style={{ width: PANEL_WIDTHS.context }}>
-            <ContextPanel />
+            <ContextPanel snapshot={chat.state.context} onOpenFile={onSelectFile} />
           </div>
         </aside>
       </div>

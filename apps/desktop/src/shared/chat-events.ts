@@ -59,6 +59,12 @@ export interface PlanResolvedEvent {
   action: "approve" | "discard";
 }
 
+export interface ContextAssembledEvent {
+  kind: "context-assembled";
+  sessionId: string;
+  snapshot: import("./context-snapshot").HarnessContextSnapshot;
+}
+
 export type ChatStreamEvent =
   | HarnessStepEvent
   | AssistantDeltaEvent
@@ -67,7 +73,8 @@ export type ChatStreamEvent =
   | ToolObservationEvent
   | ChatErrorEvent
   | PlanProposedEvent
-  | PlanResolvedEvent;
+  | PlanResolvedEvent
+  | ContextAssembledEvent;
 
 export interface ChatSendRequest {
   message: string;
