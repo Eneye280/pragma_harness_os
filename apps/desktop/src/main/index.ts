@@ -13,6 +13,7 @@ import { registerWorkspaceHandlers } from "./ipc/workspace-handlers";
 import { registerGitHandlers } from "./ipc/git-handlers";
 import { registerSkillsHandlers } from "./ipc/skills-handlers";
 import { registerAgentsHandlers } from "./ipc/agents-handlers";
+import { registerBundlesHandlers } from "./ipc/bundles-handlers";
 import { skillCompiler } from "./harness/skills/skill-compiler";
 import { AgentCatalog } from "./agents";
 import { configureAgentProvider } from "./context";
@@ -86,6 +87,7 @@ app.whenReady().then(() => {
   registerGitHandlers(workspace);
   registerSkillsHandlers(() => mainWindow, settingsController);
   registerAgentsHandlers(() => mainWindow, settingsController, agentCatalog);
+  registerBundlesHandlers(workspace, profileStore, agentCatalog);
   updater.init();
 
   app.on("activate", () => {
