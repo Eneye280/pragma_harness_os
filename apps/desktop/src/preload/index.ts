@@ -15,6 +15,12 @@ export interface ExplorerBridge {
   onChanged: (cb: (payload: { paths: string[]; ts: number }) => void) => () => void;
 }
 
+export interface TerminalBridge {
+  start: () => Promise<{ cwd: string; banner: string }>;
+  write: (line: string) => Promise<{ ok?: boolean; error?: string }>;
+  onData: (cb: (payload: { data: string }) => void) => () => void;
+}
+
 export interface SendMessageOptions {
   sessionId?: string;
   bypassHarness?: boolean;
@@ -28,6 +34,7 @@ export interface HarnessBridge {
   onEvent: (cb: (event: unknown) => void) => () => void;
   onChatEvent: (cb: (event: ChatStreamEvent) => void) => () => void;
   explorer: ExplorerBridge;
+  terminal: TerminalBridge;
   windowControls: WindowControlsBridge;
 }
 
@@ -48,6 +55,16 @@ const explorer: ExplorerBridge = {
   }
 };
 
+const terminal: TerminalBridge = {
+  start: () => ipcRenderer.invoke("terminal:start"),
+  write: (line: string) => ipcRenderer.invoke("terminal:write", line),
+  onData: (cb) => {
+    const handler = (_e: unknown, payload: { data: string }) => cb(payload);
+    ipcRenderer.on("terminal:data", handler as never);
+    return () => ipcRenderer.removeListener("terminal:data", handler as never);
+  }
+};
+
 const harness: HarnessBridge = {
   ping: () => ipcRenderer.invoke("harness:ping"),
   sendMessage: (message: string, options?: SendMessageOptions) =>
@@ -65,6 +82,7 @@ const harness: HarnessBridge = {
     return () => ipcRenderer.removeListener("harness:chat", handler as never);
   },
   explorer,
+  terminal,
   windowControls
 };
 

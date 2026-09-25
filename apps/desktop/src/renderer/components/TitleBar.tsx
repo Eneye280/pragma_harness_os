@@ -8,9 +8,10 @@ interface TitleBarProps {
   onOpenPalette: () => void;
   onToggleExplorer: () => void;
   onToggleContext: () => void;
+  onToggleTerminal: () => void;
 }
 
-export function TitleBar({ status, onOpenPalette, onToggleExplorer, onToggleContext }: TitleBarProps): React.ReactElement {
+export function TitleBar({ status, onOpenPalette, onToggleExplorer, onToggleContext, onToggleTerminal }: TitleBarProps): React.ReactElement {
   const [isMaximized, setIsMaximized] = useState(false);
 
   const controls = window.harness?.windowControls;
@@ -40,6 +41,9 @@ export function TitleBar({ status, onOpenPalette, onToggleExplorer, onToggleCont
         </TitleBarButton>
         <TitleBarButton label="Context (Ctrl/Cmd+Shift+C)" onClick={onToggleContext}>
           <span className="text-[11px]">Context</span>
+        </TitleBarButton>
+        <TitleBarButton label="Terminal (Ctrl/Cmd+`)" onClick={onToggleTerminal}>
+          <span className="text-[11px]">Terminal</span>
         </TitleBarButton>
       </nav>
 
