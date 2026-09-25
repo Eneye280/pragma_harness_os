@@ -21,3 +21,10 @@ export interface BundleValidation {
 export interface BundleSummary extends StackBundle {
   validation: BundleValidation;
 }
+
+export interface StackDetection {
+  blank: boolean;
+  entries: number;
+  suggestions: string[];
+  markers: string[];
+}
