@@ -33,12 +33,12 @@ export function App(): React.ReactElement {
   });
   const [stackWizardOpen, setStackWizardOpen] = useState(false);
   const explorer = useExplorer();
-  const chat = useChat();
   const cost = useCost();
   const dreamLearned = useDream();
   const settingsState = useSettings();
   const updater = useUpdater();
   const workspace = useWorkspace();
+  const chat = useChat(workspace.active);
   const git = useGitStatus(workspace.active);
   const skillsState = useSkills(workspace.active);
   const agentsState = useAgents(workspace.active);

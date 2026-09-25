@@ -14,6 +14,8 @@ import { registerGitHandlers } from "./ipc/git-handlers";
 import { registerSkillsHandlers } from "./ipc/skills-handlers";
 import { registerAgentsHandlers } from "./ipc/agents-handlers";
 import { registerBundlesHandlers } from "./ipc/bundles-handlers";
+import { registerSessionsHandlers } from "./ipc/sessions-handlers";
+import { JsonSessionRepository, SessionStore } from "./sessions";
 import { skillCompiler } from "./harness/skills/skill-compiler";
 import { AgentCatalog } from "./agents";
 import { configureAgentProvider } from "./context";
@@ -88,6 +90,8 @@ app.whenReady().then(() => {
   registerSkillsHandlers(() => mainWindow, settingsController);
   registerAgentsHandlers(() => mainWindow, settingsController, agentCatalog);
   registerBundlesHandlers(workspace, profileStore, agentCatalog);
+  const sessionStore = new SessionStore(new JsonSessionRepository(join(app.getPath("userData"), "pragma-harness", "sessions")));
+  registerSessionsHandlers(() => sessionStore);
   updater.init();
 
   app.on("activate", () => {

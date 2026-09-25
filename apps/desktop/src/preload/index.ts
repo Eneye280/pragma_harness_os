@@ -10,6 +10,7 @@ import type { GitStatus } from "../shared/git";
 import type { SkillSummary } from "../shared/skills";
 import type { AgentSummary } from "../shared/agents";
 import type { BundleSummary, BundleValidation, StackDetection } from "../shared/bundles";
+import type { SessionRecord, SessionSummary } from "../shared/session";
 import type { WorkspaceChangedPayload, WorkspacePickResult, WorkspaceState } from "../shared/workspace";
 
 export interface WindowControlsBridge {
@@ -92,6 +93,15 @@ export interface BundlesBridge {
   scaffold: (stack: string) => Promise<{ ok: boolean; error?: string; written?: boolean; path?: string }>;
 }
 
+export interface SessionsBridge {
+  list: (workspacePath: string) => Promise<{ sessions: SessionSummary[] }>;
+  latest: (workspacePath: string) => Promise<{ session: SessionRecord | null }>;
+  get: (id: string) => Promise<{ session: SessionRecord | null }>;
+  save: (input: { id: string; workspacePath: string; title?: string; messageCount?: number; state: unknown }) => Promise<{ error: string | null; session: SessionSummary }>;
+  rename: (id: string, title: string) => Promise<{ error: string | null; session: SessionSummary | null }>;
+  delete: (id: string) => Promise<{ error: string | null }>;
+}
+
 export interface SendMessageOptions {
   sessionId?: string;
   bypassHarness?: boolean;
@@ -116,6 +126,7 @@ export interface HarnessBridge {
   skills: SkillsBridge;
   agents: AgentsBridge;
   bundles: BundlesBridge;
+  sessions: SessionsBridge;
   windowControls: WindowControlsBridge;
 }
 
@@ -227,6 +238,15 @@ const bundles: BundlesBridge = {
   scaffold: (stack: string) => ipcRenderer.invoke("bundles:scaffold", stack)
 };
 
+const sessions: SessionsBridge = {
+  list: (workspacePath: string) => ipcRenderer.invoke("sessions:list", workspacePath),
+  latest: (workspacePath: string) => ipcRenderer.invoke("sessions:latest", workspacePath),
+  get: (id: string) => ipcRenderer.invoke("sessions:get", id),
+  save: (input) => ipcRenderer.invoke("sessions:save", input),
+  rename: (id: string, title: string) => ipcRenderer.invoke("sessions:rename", { id, title }),
+  delete: (id: string) => ipcRenderer.invoke("sessions:delete", id)
+};
+
 const harness: HarnessBridge = {
   ping: () => ipcRenderer.invoke("harness:ping"),
   sendMessage: (message: string, options?: SendMessageOptions) =>
@@ -255,6 +275,7 @@ const harness: HarnessBridge = {
   skills,
   agents,
   bundles,
+  sessions,
   windowControls
 };
 

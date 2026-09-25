@@ -51,6 +51,7 @@ export const INITIAL_CHAT_STATE: ChatState = {
 export type ChatAction =
   | { type: "send"; id: string; text: string }
   | { type: "stream"; event: ChatStreamEvent }
+  | { type: "restore"; state: unknown }
   | { type: "reset" };
 
 function upsertStep(steps: HarnessStepState[], next: HarnessStepState): HarnessStepState[] {
@@ -156,6 +157,16 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       };
     case "stream":
       return applyStreamEvent(state, action.event);
+    case "restore": {
+      const partial = (action.state ?? {}) as Partial<ChatState>;
+      return {
+        ...INITIAL_CHAT_STATE,
+        ...partial,
+        messages: Array.isArray(partial.messages) ? partial.messages.map((message) => ({ ...message, streaming: false })) : [],
+        steps: Array.isArray(partial.steps) ? partial.steps : [],
+        toolCalls: Array.isArray(partial.toolCalls) ? partial.toolCalls : [],
+      };
+    }
     case "reset":
       return INITIAL_CHAT_STATE;
   }
