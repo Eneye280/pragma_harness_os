@@ -1,18 +1,96 @@
 @import "tailwindcss";
 
-:root {
-  --background: 240 10% 3.9%;
-  --foreground: 0 0% 98%;
-  --primary: 262 83% 58%;
-  --primary-foreground: 0 0% 98%;
-  --muted: 240 3.7% 15.9%;
-  --muted-foreground: 240 5% 64.9%;
-  --accent: 142 76% 36%;
-  --accent-foreground: 0 0% 98%;
-  --border: 240 3.7% 15.9%;
-  --radius: 0.5rem;
+@theme {
+  --font-sans: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --color-harness: #8b5cf6;
+  --color-harness-strong: #7c3aed;
+  --color-harness-soft: #a78bfa;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-surface: #09090b;
+  --color-surface-raised: #18181b;
+  --color-surface-sunken: #09090b;
+  --color-hairline: #27272a;
+  --color-hairline-strong: #3f3f46;
+
+  --radius-panel: 0.75rem;
+  --radius-control: 0.5rem;
 }
 
-* { border-color: hsl(var(--border)); }
-html { font-family: Inter, system-ui, sans-serif; }
-.draggable { -webkit-app-region: drag; }
+:root {
+  color-scheme: dark;
+  --phs-titlebar-height: 38px;
+  --phs-explorer-width: 260px;
+  --phs-context-width: 320px;
+  --phs-motion-fast: 150ms;
+  --phs-motion-base: 200ms;
+  --phs-easing: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #09090b;
+  color: #f4f4f5;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 9999px;
+  border: 2px solid #09090b;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.draggable {
+  -webkit-app-region: drag;
+}
+
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+.panel-anim {
+  transition:
+    width var(--phs-motion-base) var(--phs-easing),
+    opacity var(--phs-motion-fast) var(--phs-easing);
+}
+
+.palette-anim {
+  animation: palette-in var(--phs-motion-base) var(--phs-easing);
+}
+
+@keyframes palette-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
