@@ -1,3 +1,5 @@
+import type { ProjectProfileInfo } from "./profile";
+
 export type ProviderName = "mock" | "deepseek" | "anthropic" | "openai" | "ollama";
 
 export const KNOWN_PROVIDERS: ProviderName[] = ["mock", "deepseek", "anthropic", "openai", "ollama"];
@@ -80,4 +82,12 @@ export function maskSecret(secret: string): string {
 
 export function isMasked(value: string): boolean {
   return value.includes(SECRET_MASK);
+}
+
+export interface ResolvedSettings {
+  provider: string;
+  model: string;
+  usingMock: boolean;
+  configPath: string;
+  profile: ProjectProfileInfo;
 }

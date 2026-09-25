@@ -1,12 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type { HarnessSettings } from "@shared/settings";
-
-export interface ResolvedSettings {
-  provider: string;
-  model: string;
-  usingMock: boolean;
-  configPath: string;
-}
+import type { HarnessSettings, ResolvedSettings } from "@shared/settings";
 
 export interface UseSettingsResult {
   settings: HarnessSettings | null;
@@ -16,6 +9,8 @@ export interface UseSettingsResult {
   testResult: { ok: boolean; reason: string } | null;
   save: (next: HarnessSettings) => Promise<boolean>;
   testProvider: () => Promise<void>;
+  writeProfile: (name?: string) => Promise<void>;
+  clearProfile: () => Promise<void>;
   refresh: () => void;
 }
 
@@ -77,5 +72,27 @@ export function useSettings(): UseSettingsResult {
     }
   }, []);
 
-  return { settings, resolved, saving, error, testResult, save, testProvider, refresh };
+  const writeProfile = useCallback(async (name?: string) => {
+    const bridge = window.harness?.settings;
+    if (!bridge) return;
+    try {
+      await bridge.writeProfile(name);
+      setResolved(await bridge.resolved());
+    } catch {
+      setError("no se pudo guardar el perfil del proyecto");
+    }
+  }, []);
+
+  const clearProfile = useCallback(async () => {
+    const bridge = window.harness?.settings;
+    if (!bridge) return;
+    try {
+      await bridge.clearProfile();
+      setResolved(await bridge.resolved());
+    } catch {
+      setError("no se pudo eliminar el perfil del proyecto");
+    }
+  }, []);
+
+  return { settings, resolved, saving, error, testResult, save, testProvider, writeProfile, clearProfile, refresh };
 }

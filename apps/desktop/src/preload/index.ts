@@ -1,7 +1,8 @@
 import { contextBridge, ipcRenderer } from "electron";
 import type { ChatStreamEvent } from "../shared/chat-events";
 import type { ExplorerFile, ExplorerTreeResult } from "../shared/explorer";
-import type { HarnessSettings } from "../shared/settings";
+import type { HarnessSettings, ResolvedSettings } from "../shared/settings";
+import type { ProjectProfileInfo } from "../shared/profile";
 import type { CostSnapshot } from "../shared/cost";
 import type { DreamNotification } from "../shared/dream";
 import type { UpdateStatus } from "../shared/updater";
@@ -29,8 +30,10 @@ export interface TerminalBridge {
 export interface SettingsBridge {
   get: () => Promise<HarnessSettings>;
   update: (settings: HarnessSettings) => Promise<HarnessSettings | { error: string }>;
-  resolved: () => Promise<{ provider: string; model: string; usingMock: boolean; configPath: string }>;
+  resolved: () => Promise<ResolvedSettings>;
   testProvider: () => Promise<{ ok: boolean; reason: string }>;
+  writeProfile: (name?: string) => Promise<{ ok: boolean; profile: ProjectProfileInfo }>;
+  clearProfile: () => Promise<{ ok: boolean; profile: ProjectProfileInfo }>;
   onChanged: (cb: (settings: HarnessSettings) => void) => () => void;
 }
 
@@ -119,6 +122,8 @@ const settings: SettingsBridge = {
   update: (next: HarnessSettings) => ipcRenderer.invoke("settings:update", next),
   resolved: () => ipcRenderer.invoke("settings:resolved"),
   testProvider: () => ipcRenderer.invoke("settings:testProvider"),
+  writeProfile: (name?: string) => ipcRenderer.invoke("settings:writeProfile", { name }),
+  clearProfile: () => ipcRenderer.invoke("settings:clearProfile"),
   onChanged: (cb) => {
     const handler = (_e: unknown, next: HarnessSettings) => cb(next);
     ipcRenderer.on("settings:changed", handler as never);

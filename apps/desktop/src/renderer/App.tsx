@@ -34,6 +34,11 @@ export function App(): React.ReactElement {
   const settingsState = useSettings();
   const updater = useUpdater();
   const workspace = useWorkspace();
+  const refreshSettings = settingsState.refresh;
+
+  useEffect(() => {
+    refreshSettings();
+  }, [workspace.active, refreshSettings]);
 
   useEffect(() => {
     const bridge = window.harness;

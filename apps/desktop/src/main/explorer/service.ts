@@ -13,6 +13,7 @@ const IGNORED_GLOBS = [
   "**/build/**",
   "**/coverage/**",
   "**/.harness/**",
+  "**/.pragma-harness/**",
   "**/.next/**",
 ];
 

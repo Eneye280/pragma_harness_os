@@ -41,7 +41,7 @@ const POST_GATE_LABELS: Array<{ key: keyof HarnessSettings["gates"]["post"]; lab
 ];
 
 export function SettingsModal({ open, onClose, settingsState, cost, updater }: SettingsModalProps): React.ReactElement | null {
-  const { settings, resolved, saving, error, testResult, save, testProvider } = settingsState;
+  const { settings, resolved, saving, error, testResult, save, testProvider, writeProfile, clearProfile } = settingsState;
   const [draft, setDraft] = useState<HarnessSettings | null>(settings);
   const [revealKey, setRevealKey] = useState(false);
   const containerRef = useFocusTrap(open, onClose);
@@ -339,6 +339,46 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater }: S
               ) : null}
             </div>
             <p className="text-[10px] text-zinc-600">feed: GitHub Releases · autoDownload on</p>
+          </Section>
+
+          <Section title="Perfil del proyecto">
+            <div className="flex items-center gap-2">
+              <span
+                className={cn(
+                  "rounded-full px-2 py-[1px] text-[10px]",
+                  resolved?.profile.active ? "bg-harness/15 text-harness-soft" : "bg-zinc-800 text-zinc-400",
+                )}
+              >
+                {resolved?.profile.active ? `perfil: ${resolved.profile.name ?? "sin nombre"}` : "sin perfil"}
+              </span>
+              {resolved?.profile.path ? (
+                <span className="truncate font-mono text-[10px] text-zinc-500" title={resolved.profile.path}>
+                  {resolved.profile.path}
+                </span>
+              ) : null}
+            </div>
+            <p className="text-[10px] text-zinc-500">
+              Un perfil en <span className="font-mono">.pragma-harness/profile.json</span> sobreescribe la config global
+              (provider, gates, plugins, sandbox) sólo para este proyecto.
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void writeProfile()}
+                className="rounded-control border border-harness/40 bg-harness/10 px-3 py-1.5 text-[11px] text-harness-soft transition-colors hover:bg-harness/20"
+              >
+                Guardar settings actuales como perfil
+              </button>
+              {resolved?.profile.active ? (
+                <button
+                  type="button"
+                  onClick={() => void clearProfile()}
+                  className="rounded-control border border-hairline px-3 py-1.5 text-[11px] text-zinc-400 transition-colors hover:bg-zinc-800"
+                >
+                  Eliminar perfil
+                </button>
+              ) : null}
+            </div>
           </Section>
 
           {error ? <p className="text-[11px] text-red-400">{error}</p> : null}
