@@ -13,6 +13,7 @@ import { useSettings } from "./settings/use-settings";
 import { useUpdater } from "./settings/use-updater";
 import { useWorkspace } from "./workspace/use-workspace";
 import { useGitStatus } from "./git/use-git-status";
+import { useSkills } from "./skills/use-skills";
 import { INITIAL_PANEL_STATE, actionForShortcut, panelReducer } from "./shell/panel-state";
 import { isEditableTarget, resolveShellShortcut } from "./shell/shortcuts";
 import { ONBOARDING_STORAGE_KEY, shouldShowOnboarding } from "./shell/onboarding";
@@ -36,6 +37,7 @@ export function App(): React.ReactElement {
   const updater = useUpdater();
   const workspace = useWorkspace();
   const git = useGitStatus(workspace.active);
+  const skillsState = useSkills(workspace.active);
   const refreshSettings = settingsState.refresh;
 
   useEffect(() => {
@@ -167,6 +169,7 @@ export function App(): React.ReactElement {
         settingsState={settingsState}
         cost={cost}
         updater={updater}
+        skillsState={skillsState}
       />
 
       {showOnboarding ? <OnboardingCard onDismiss={dismissOnboarding} /> : null}

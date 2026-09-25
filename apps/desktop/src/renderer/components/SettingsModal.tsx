@@ -10,6 +10,7 @@ import { cn } from "../lib/cn";
 import { IconClose } from "./icons";
 import type { UseSettingsResult } from "../settings/use-settings";
 import type { UseUpdaterResult } from "../settings/use-updater";
+import type { UseSkillsResult } from "../skills/use-skills";
 import { useFocusTrap } from "../shell/use-focus-trap";
 
 interface SettingsModalProps {
@@ -18,6 +19,7 @@ interface SettingsModalProps {
   settingsState: UseSettingsResult;
   cost: CostSnapshot | null;
   updater: UseUpdaterResult;
+  skillsState: UseSkillsResult;
 }
 
 const UPDATE_STAGE_LABEL: Record<string, string> = {
@@ -40,10 +42,11 @@ const POST_GATE_LABELS: Array<{ key: keyof HarnessSettings["gates"]["post"]; lab
   { key: "visual", label: "visual" },
 ];
 
-export function SettingsModal({ open, onClose, settingsState, cost, updater }: SettingsModalProps): React.ReactElement | null {
+export function SettingsModal({ open, onClose, settingsState, cost, updater, skillsState }: SettingsModalProps): React.ReactElement | null {
   const { settings, resolved, saving, error, testResult, save, testProvider, writeProfile, clearProfile } = settingsState;
   const [draft, setDraft] = useState<HarnessSettings | null>(settings);
   const [revealKey, setRevealKey] = useState(false);
+  const [skillQuery, setSkillQuery] = useState("");
   const containerRef = useFocusTrap(open, onClose);
 
   useEffect(() => {
@@ -271,6 +274,57 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater }: S
                 />
               ))}
             </div>
+          </Section>
+
+          <Section title={`Skills (${skillsState.skills.filter((skill) => skill.enabled).length}/${skillsState.skills.length})`}>
+            <input
+              value={skillQuery}
+              onChange={(event) => setSkillQuery(event.target.value)}
+              placeholder="buscar por nombre, trigger o descripción"
+              aria-label="Buscar skills"
+              className="w-full rounded-control border border-hairline bg-surface px-2 py-1.5 text-[12px] text-zinc-200 outline-none focus:border-harness/60 placeholder:text-zinc-500"
+            />
+            {skillsState.loading ? (
+              <p className="text-[11px] text-zinc-500">cargando catálogo…</p>
+            ) : skillsState.skills.length === 0 ? (
+              <p className="text-[11px] text-zinc-500">sin skills en este workspace</p>
+            ) : (
+              <ul className="max-h-[220px] space-y-1 overflow-y-auto">
+                {skillsState.skills
+                  .filter((skill) => {
+                    const query = skillQuery.trim().toLowerCase();
+                    if (!query) return true;
+                    return (
+                      skill.name.toLowerCase().includes(query) ||
+                      skill.description.toLowerCase().includes(query) ||
+                      skill.triggers.some((trigger) => trigger.toLowerCase().includes(query))
+                    );
+                  })
+                  .map((skill) => (
+                    <li
+                      key={skill.name}
+                      className="flex items-center gap-2 rounded-control border border-hairline bg-surface px-2 py-1.5"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[12px] text-zinc-200" title={skill.path}>
+                          {skill.name}
+                        </p>
+                        <p className="truncate text-[10px] text-zinc-500">
+                          {skill.description || skill.triggers.join(", ") || "sin descripción"}
+                        </p>
+                      </div>
+                      <span className="rounded bg-zinc-800 px-1.5 py-[1px] font-mono text-[10px] text-zinc-400" title="prioridad">
+                        {skill.priority}
+                      </span>
+                      <Toggle
+                        label={skill.enabled ? "activa" : "off"}
+                        checked={skill.enabled}
+                        onChange={(value) => void skillsState.toggle(skill.name, value)}
+                      />
+                    </li>
+                  ))}
+              </ul>
+            )}
           </Section>
 
           <Section title="Sandbox">

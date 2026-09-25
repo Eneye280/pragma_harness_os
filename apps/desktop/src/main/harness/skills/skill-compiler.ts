@@ -1,6 +1,8 @@
-import { existsSync, readFileSync, watch } from "fs";
+import { existsSync, readFileSync } from "fs";
 import { join } from "path";
 import { createHash } from "crypto";
+import type { SkillSummary } from "../../../shared/skills";
+import { SkillCatalog, type SkillEntry } from "./catalog";
 
 export interface CompiledSkills {
   block: string;
@@ -19,6 +21,7 @@ const NEEDS_TO_SKILL: Record<string, string> = {
 };
 
 const PRIORITY_ORDER = ["security-review", "tdd-workflow", "api-design"];
+const DEFAULT_MAX_SKILLS = 6;
 
 function tokenCount(text: string): number {
   return Math.ceil(text.length / 4);
@@ -34,10 +37,10 @@ function truncate(text: string, maxTokens: number): string {
 function deduplicate(blocks: string[]): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
-  for (const b of blocks) {
-    const lines = b.split("\n").filter((l) => l.trim().length > 0);
-    const deduped = lines.filter((l) => {
-      const key = l.trim().toLowerCase();
+  for (const block of blocks) {
+    const lines = block.split("\n").filter((line) => line.trim().length > 0);
+    const deduped = lines.filter((line) => {
+      const key = line.trim().toLowerCase();
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
@@ -47,28 +50,67 @@ function deduplicate(blocks: string[]): string[] {
   return out;
 }
 
+function rank(name: string, catalogPriority: number): number {
+  const fixed = PRIORITY_ORDER.indexOf(name);
+  return fixed === -1 ? 100 + catalogPriority : fixed;
+}
+
 export class SkillCompiler {
   private cache = new Map<string, CompiledSkills>();
-  private root: string;
+  private readonly catalog: SkillCatalog;
+  private rootsProvider: (() => string[]) | null = null;
+  private enabledProvider: () => Record<string, boolean> = () => ({});
 
-  constructor(root?: string) {
-    this.root = root ?? join(process.cwd());
-    this.watchRoots();
+  constructor(private readonly defaultRoot: string = join(process.cwd())) {
+    this.catalog = new SkillCatalog(() => (this.rootsProvider ? this.rootsProvider() : [this.defaultRoot]));
   }
 
-  resolve(needs: string[]): string[] {
-    const skills: string[] = [];
+  useRoots(provider: () => string[]): void {
+    this.rootsProvider = provider;
+    this.clearCache();
+  }
+
+  useEnabled(provider: () => Record<string, boolean>): void {
+    this.enabledProvider = provider;
+    this.clearCache();
+  }
+
+  isEnabled(name: string): boolean {
+    return this.enabledProvider()[name] !== false;
+  }
+
+  list(): SkillSummary[] {
+    return this.catalog.scan().map((entry) => ({
+      name: entry.name,
+      description: entry.description,
+      triggers: entry.triggers,
+      priority: entry.priority,
+      path: entry.path,
+      enabled: this.isEnabled(entry.name),
+    }));
+  }
+
+  resolve(needs: string[], maxSkills: number = DEFAULT_MAX_SKILLS): string[] {
+    const catalogEntries = this.catalog.scan();
+    const byName = new Map(catalogEntries.map((entry) => [entry.name, entry]));
+    const candidates = new Set<string>();
+
     for (const need of needs) {
-      const skill = NEEDS_TO_SKILL[need] ?? need;
-      if (!skills.includes(skill)) skills.push(skill);
+      const normalized = need.trim().toLowerCase();
+      if (!normalized) continue;
+      candidates.add(NEEDS_TO_SKILL[normalized] ?? normalized);
+      const byTrigger = catalogEntries.find((entry) => entry.triggers.some((trigger) => trigger.toLowerCase() === normalized));
+      if (byTrigger) candidates.add(byTrigger.name);
     }
-    return skills.sort((a, b) => {
-      const pa = PRIORITY_ORDER.indexOf(a);
-      const pb = PRIORITY_ORDER.indexOf(b);
-      const ia = pa === -1 ? 99 : pa;
-      const ib = pb === -1 ? 99 : pb;
-      return ia - ib;
-    });
+
+    return [...candidates]
+      .filter((name) => this.isEnabled(name))
+      .sort((left, right) => {
+        const rankLeft = rank(left, byName.get(left)?.priority ?? 99);
+        const rankRight = rank(right, byName.get(right)?.priority ?? 99);
+        return rankLeft - rankRight || left.localeCompare(right);
+      })
+      .slice(0, Math.max(1, maxSkills));
   }
 
   async compile(skillNames: string[], maxTokens = 2000): Promise<CompiledSkills> {
@@ -80,20 +122,7 @@ export class SkillCompiler {
     const sources: string[] = [];
 
     for (const name of skillNames) {
-      const candidates = [
-        join(this.root, "skills", name, "SKILL.md"),
-        join(this.root, "apps", "desktop", "skills", name, "SKILL.md"),
-        join(process.cwd(), "skills", name, "SKILL.md"),
-        join(process.cwd(), "..", "..", "skills", name, "SKILL.md"),
-        join(process.cwd(), "..", "skills", name, "SKILL.md"),
-      ];
-      let content: string | null = null;
-      for (const p of candidates) {
-        if (existsSync(p)) {
-          content = readFileSync(p, "utf-8");
-          break;
-        }
-      }
+      const content = this.readSkill(name);
       if (content) {
         blocks.push(content);
         sources.push(name);
@@ -118,14 +147,25 @@ export class SkillCompiler {
     this.cache.clear();
   }
 
-  private watchRoots(): void {
-    try {
-      const watchPath = join(this.root, "skills");
-      if (existsSync(watchPath)) {
-        watch(watchPath, { recursive: true }, () => this.clearCache());
-      }
-    } catch {}
+  private readSkill(name: string): string | null {
+    const entry: SkillEntry | null = this.catalog.get(name);
+    if (entry && existsSync(entry.path)) return readFileSync(entry.path, "utf8");
+    for (const candidate of this.legacyCandidates(name)) {
+      if (existsSync(candidate)) return readFileSync(candidate, "utf8");
+    }
+    return null;
+  }
+
+  private legacyCandidates(name: string): string[] {
+    return [
+      join(this.defaultRoot, "skills", name, "SKILL.md"),
+      join(this.defaultRoot, "apps", "desktop", "skills", name, "SKILL.md"),
+      join(process.cwd(), "skills", name, "SKILL.md"),
+      join(process.cwd(), "..", "..", "skills", name, "SKILL.md"),
+      join(process.cwd(), "..", "skills", name, "SKILL.md"),
+    ];
   }
 }
 
 export const skillCompiler = new SkillCompiler();
+export { NEEDS_TO_SKILL, DEFAULT_MAX_SKILLS };
