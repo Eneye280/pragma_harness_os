@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { classify } from "../harness/classifier";
+import { approximateTokens } from "../cost";
 import { buildPlan, shouldProposePlan } from "../plan";
 import type { PlanGate } from "../plan";
 import type { ToolRunner } from "../tools";
@@ -45,6 +46,18 @@ export interface ChatServiceDeps {
   }) => Promise<{ snapshot: import("../../shared/context-snapshot").HarnessContextSnapshot; finalPrompt: string }>;
   tokenLimit?: number;
   model?: () => string;
+  onUsage?: (usage: { domain: string; inputTokens: number; outputTokens: number }) => void;
+  budgetWindow?: () => { tokensUsed: number; tokensLimit: number; costUsedUsd: number; costLimitUsd: number };
+  preGateRunner?: (context: {
+    message: string;
+    normalized: string;
+    sessionId: string;
+    workspaceHash: string;
+    workspacePath: string;
+    workspaceExists: boolean;
+    intent: { domain: string; type: string; effort: string; needs: string[] };
+    budget?: { tokensUsed: number; tokensLimit: number; costUsedUsd: number; costLimitUsd: number };
+  }) => { verdict: "pass" | "block"; blockedBy?: string; userResponse?: string; reason?: string };
 }
 
 export function buildAgentPrompt(request: ChatSendRequest, needs: string[], approvedPlan?: string): string {
@@ -87,6 +100,34 @@ export class ChatService {
           label: `skills: ${intent.needs.join(", ") || "ninguna"}`,
         });
         emit({ kind: "harness-step", sessionId, phase: "context", status: "done", label: "contexto ensamblado" });
+        emit({ kind: "harness-step", sessionId, phase: "pre-gates", status: "running", label: "gates pre…" });
+      }
+
+      if (!request.bypassHarness && this.deps.preGateRunner) {
+        const budget = this.deps.budgetWindow?.();
+        const gateResult = this.deps.preGateRunner({
+          message: request.message,
+          normalized: request.message,
+          sessionId,
+          workspaceHash: request.workspacePath,
+          workspacePath: request.workspacePath,
+          workspaceExists: true,
+          intent,
+          budget,
+        });
+        if (gateResult.verdict === "block") {
+          emit({
+            kind: "harness-step",
+            sessionId,
+            phase: "pre-gates",
+            status: "blocked",
+            label: `bloqueado: ${gateResult.blockedBy ?? "gate"}`,
+          });
+          emit({ kind: "assistant-delta", sessionId, text: gateResult.userResponse ?? "Bloqueado por el harness antes de llamar al modelo." });
+          emit({ kind: "assistant-done", sessionId });
+          emit({ kind: "harness-step", sessionId, phase: "agent", status: "done", label: "sin llamada al modelo" });
+          return;
+        }
         emit({ kind: "harness-step", sessionId, phase: "pre-gates", status: "done", label: "gates pre ok" });
       }
 
@@ -138,6 +179,11 @@ export class ChatService {
         emit({ kind: "assistant-delta", sessionId, text: chunk.textDelta });
       }
       emit({ kind: "assistant-done", sessionId });
+      this.deps.onUsage?.({
+        domain: intent.domain,
+        inputTokens: approximateTokens(prompt),
+        outputTokens: approximateTokens(fullText),
+      });
 
       const pendingToolCall = parseToolRequest(fullText);
       if (pendingToolCall) {

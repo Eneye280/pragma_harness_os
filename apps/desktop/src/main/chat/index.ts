@@ -5,6 +5,8 @@ import { SettingsGateway, resolveGatewayConfig, type ResolvedGatewayConfig } fro
 import type { SettingsController } from "../settings";
 import type { PlanGate } from "../plan";
 import { compileHarnessContext } from "../context";
+import { PreAgentGates } from "../gates";
+import type { CostTracker } from "../cost";
 import { ChatService, type ChatGateway } from "./chat-service";
 
 const TOOL_INTENT_PATTERN = /(archivo|file|crea|create|write|escribe|guarda|save)/i;
@@ -45,10 +47,21 @@ export function createGatewayForConfig(config: ResolvedGatewayConfig): ChatGatew
   });
 }
 
-export function createChatService(settingsController: SettingsController, planGate?: PlanGate): ChatService {
+export function createChatService(
+  settingsController: SettingsController,
+  costTracker: CostTracker,
+  planGate?: PlanGate,
+  onCostRecorded?: (snapshot: import("../../shared/cost").CostSnapshot) => void
+): ChatService {
   const gateway = new SettingsGateway(() => settingsController.store.get(), createGatewayForConfig);
   const toolWorkspacePath = resolveHarnessWorkspace();
   const toolRunner = new ToolRunner({ permission: "allow" });
+
+  const currentBudget = () => {
+    const settings = settingsController.store.get();
+    return { tokensPerDay: settings.budget.tokensPerDay, usdPerDay: settings.budget.usdPerDay };
+  };
+
   return new ChatService({
     gateway,
     toolRunner,
@@ -57,6 +70,33 @@ export function createChatService(settingsController: SettingsController, planGa
     contextCompiler: compileHarnessContext,
     tokenLimit: settingsController.store.get().budget.tokensPerDay,
     model: () => resolveGatewayConfig(settingsController.store.get()).model,
+    onUsage: (usage) => {
+      const config = resolveGatewayConfig(settingsController.store.get());
+      const snapshot = costTracker.recordUsage({
+        domain: usage.domain,
+        provider: config.provider,
+        model: config.model,
+        inputTokens: usage.inputTokens,
+        outputTokens: usage.outputTokens,
+      });
+      onCostRecorded?.(snapshot);
+    },
+    budgetWindow: () => {
+      const settings = settingsController.store.get();
+      const snapshot = costTracker.snapshot(currentBudget());
+      return {
+        tokensUsed: snapshot.today.tokens,
+        tokensLimit: settings.budget.tokensPerDay,
+        costUsedUsd: snapshot.today.usd,
+        costLimitUsd: settings.budget.usdPerDay,
+      };
+    },
+    preGateRunner: (context) => {
+      const settings = settingsController.store.get();
+      const gates = new PreAgentGates(settings.gates.pre);
+      const result = gates.run(context as Parameters<PreAgentGates["run"]>[0]);
+      return { verdict: result.verdict, blockedBy: result.blockedBy, userResponse: result.userResponse, reason: result.reason };
+    },
   });
 }
 

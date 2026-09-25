@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from "electron";
 import type { ChatStreamEvent } from "../shared/chat-events";
 import type { ExplorerFile, ExplorerTreeResult } from "../shared/explorer";
 import type { HarnessSettings } from "../shared/settings";
+import type { CostSnapshot } from "../shared/cost";
 
 export interface WindowControlsBridge {
   minimize: () => Promise<void>;
@@ -36,6 +37,11 @@ export interface PlanBridge {
   revise: (sessionId: string, markdown: string) => Promise<{ ok: boolean }>;
 }
 
+export interface CostBridge {
+  get: () => Promise<CostSnapshot>;
+  onUpdated: (cb: (snapshot: CostSnapshot) => void) => () => void;
+}
+
 export interface SendMessageOptions {
   sessionId?: string;
   bypassHarness?: boolean;
@@ -52,6 +58,7 @@ export interface HarnessBridge {
   terminal: TerminalBridge;
   settings: SettingsBridge;
   plan: PlanBridge;
+  cost: CostBridge;
   windowControls: WindowControlsBridge;
 }
 
@@ -100,6 +107,15 @@ const plan: PlanBridge = {
   revise: (sessionId: string, markdown: string) => ipcRenderer.invoke("plan:revise", { sessionId, markdown })
 };
 
+const cost: CostBridge = {
+  get: () => ipcRenderer.invoke("cost:get"),
+  onUpdated: (cb) => {
+    const handler = (_e: unknown, snapshot: CostSnapshot) => cb(snapshot);
+    ipcRenderer.on("cost:updated", handler as never);
+    return () => ipcRenderer.removeListener("cost:updated", handler as never);
+  }
+};
+
 const harness: HarnessBridge = {
   ping: () => ipcRenderer.invoke("harness:ping"),
   sendMessage: (message: string, options?: SendMessageOptions) =>
@@ -120,6 +136,7 @@ const harness: HarnessBridge = {
   terminal,
   settings,
   plan,
+  cost,
   windowControls
 };
 

@@ -6,6 +6,7 @@ import { ShellLayout } from "./components/ShellLayout";
 import { TitleBar } from "./components/TitleBar";
 import { useExplorer } from "./explorer/use-explorer";
 import { useChat } from "./chat/use-chat";
+import { useCost } from "./cost/use-cost";
 import { useSettings } from "./settings/use-settings";
 import { INITIAL_PANEL_STATE, actionForShortcut, panelReducer } from "./shell/panel-state";
 import { isEditableTarget, resolveShellShortcut } from "./shell/shortcuts";
@@ -16,6 +17,7 @@ export function App(): React.ReactElement {
   const [previewFile, setPreviewFile] = useState<ExplorerFile | null>(null);
   const explorer = useExplorer();
   const chat = useChat();
+  const cost = useCost();
   const settingsState = useSettings();
 
   useEffect(() => {
@@ -90,6 +92,7 @@ export function App(): React.ReactElement {
     <div className="flex h-screen flex-col overflow-hidden bg-surface text-zinc-100">
       <TitleBar
         status={status}
+        cost={cost}
         onOpenPalette={openPalette}
         onToggleExplorer={toggleExplorer}
         onToggleContext={toggleContext}
@@ -120,7 +123,7 @@ export function App(): React.ReactElement {
         files={explorer.files}
         onOpenFile={openFile}
       />
-      <SettingsModal open={panels.settingsOpen} onClose={closeSettings} settingsState={settingsState} />
+      <SettingsModal open={panels.settingsOpen} onClose={closeSettings} settingsState={settingsState} cost={cost} />
     </div>
   );
 }
