@@ -72,6 +72,12 @@ export function App(): React.ReactElement {
   const toggleContext = useCallback(() => dispatch({ type: "toggle-context" }), []);
   const openFile = useCallback((path: string) => dispatch({ type: "open-preview", path }), []);
   const closePreview = useCallback(() => dispatch({ type: "close-preview" }), []);
+  const toggleTerminal = useCallback(() => dispatch({ type: "toggle-terminal" }), []);
+  const closeTerminal = useCallback(() => dispatch({ type: "toggle-terminal" }), []);
+  const resizeTerminal = useCallback(
+    (height: number) => dispatch({ type: "set-terminal-height", height }),
+    [],
+  );
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-surface text-zinc-100">
@@ -80,6 +86,7 @@ export function App(): React.ReactElement {
         onOpenPalette={openPalette}
         onToggleExplorer={toggleExplorer}
         onToggleContext={toggleContext}
+        onToggleTerminal={toggleTerminal}
       />
       <ShellLayout
         explorerOpen={panels.explorerOpen}
@@ -90,6 +97,10 @@ export function App(): React.ReactElement {
         previewFile={previewFile}
         previewOpen={Boolean(panels.previewPath)}
         onClosePreview={closePreview}
+        terminalOpen={panels.terminalOpen}
+        terminalHeight={panels.terminalHeight}
+        onTerminalResize={resizeTerminal}
+        onCloseTerminal={closeTerminal}
       />
       <CommandPalette
         open={panels.paletteOpen}

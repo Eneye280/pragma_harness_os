@@ -1,16 +1,24 @@
 import { describe, it, expect } from "vitest";
-import { INITIAL_PANEL_STATE, PANEL_WIDTHS, actionForShortcut, panelReducer } from "../panel-state";
+import { INITIAL_PANEL_STATE, PANEL_WIDTHS, TERMINAL_LIMITS, actionForShortcut, clampTerminalHeight, panelReducer } from "../panel-state";
 
 describe("Panel layout state", () => {
-  it("starts with both side panels open, palette closed and no preview", () => {
-    expect(INITIAL_PANEL_STATE).toEqual({ explorerOpen: true, contextOpen: true, paletteOpen: false, previewPath: null });
+  it("starts with side panels open, palette closed, no preview and terminal closed", () => {
+    expect(INITIAL_PANEL_STATE).toEqual({
+      explorerOpen: true,
+      contextOpen: true,
+      paletteOpen: false,
+      previewPath: null,
+      terminalOpen: false,
+      terminalHeight: 220,
+    });
   });
 
   it("toggles explorer and context independently", () => {
     const explorerClosed = panelReducer(INITIAL_PANEL_STATE, { type: "toggle-explorer" });
-    expect(explorerClosed).toEqual({ explorerOpen: false, contextOpen: true, paletteOpen: false, previewPath: null });
+    expect(explorerClosed.explorerOpen).toBe(false);
+    expect(explorerClosed.contextOpen).toBe(true);
     const contextClosed = panelReducer(explorerClosed, { type: "toggle-context" });
-    expect(contextClosed).toEqual({ explorerOpen: false, contextOpen: false, paletteOpen: false, previewPath: null });
+    expect(contextClosed.contextOpen).toBe(false);
   });
 
   it("opens and closes the palette", () => {
@@ -29,6 +37,16 @@ describe("Panel layout state", () => {
     expect(closed.previewPath).toBeNull();
   });
 
+  it("toggles the terminal and clamps its height", () => {
+    const opened = panelReducer(INITIAL_PANEL_STATE, { type: "toggle-terminal" });
+    expect(opened.terminalOpen).toBe(true);
+    const grown = panelReducer(opened, { type: "set-terminal-height", height: 9999 });
+    expect(grown.terminalHeight).toBe(TERMINAL_LIMITS.max);
+    const shrunk = panelReducer(grown, { type: "set-terminal-height", height: 10 });
+    expect(shrunk.terminalHeight).toBe(TERMINAL_LIMITS.min);
+    expect(clampTerminalHeight(300)).toBe(300);
+  });
+
   it("does not mutate the previous state", () => {
     const next = panelReducer(INITIAL_PANEL_STATE, { type: "toggle-explorer" });
     expect(INITIAL_PANEL_STATE.explorerOpen).toBe(true);
@@ -40,6 +58,7 @@ describe("Panel layout state", () => {
     expect(actionForShortcut("toggle-context")).toEqual({ type: "toggle-context" });
     expect(actionForShortcut("command-palette")).toEqual({ type: "toggle-palette" });
     expect(actionForShortcut("search-files")).toEqual({ type: "toggle-palette" });
+    expect(actionForShortcut("toggle-terminal")).toEqual({ type: "toggle-terminal" });
     expect(PANEL_WIDTHS).toEqual({ explorer: 260, context: 320 });
   });
 });

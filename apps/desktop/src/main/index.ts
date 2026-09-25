@@ -6,6 +6,7 @@ import { startHarnessServer } from "./server/hono";
 import { registerIpcHandlers } from "./ipc/handlers";
 import { registerWindowControls } from "./ipc/window-controls";
 import { registerExplorerHandlers } from "./ipc/explorer-handlers";
+import { registerTerminalHandlers } from "./ipc/terminal-handlers";
 import { resolveHarnessWorkspace } from "./workspace-path";
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
@@ -45,6 +46,7 @@ app.whenReady().then(() => {
   registerIpcHandlers(() => mainWindow);
   registerWindowControls(() => mainWindow);
   registerExplorerHandlers(() => mainWindow, resolveHarnessWorkspace());
+  registerTerminalHandlers(() => mainWindow, resolveHarnessWorkspace());
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
