@@ -19,10 +19,11 @@ export interface UseChatResult {
   reset: () => void;
 }
 
-export function useChat(): UseChatResult {
+export function useChat(workspacePath = ""): UseChatResult {
   const [state, dispatch] = useReducer(chatReducer, INITIAL_CHAT_STATE);
   const sessionRef = useRef<string>(createId());
   const [isRunning, setIsRunning] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     const bridge = window.harness;
@@ -33,6 +34,54 @@ export function useChat(): UseChatResult {
       if (event.kind === "harness-step" && event.phase === "agent" && event.status === "done") setIsRunning(false);
     });
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    setHydrated(false);
+    if (!workspacePath) {
+      sessionRef.current = createId();
+      setHydrated(true);
+      return;
+    }
+    const bridge = window.harness?.sessions;
+    if (!bridge) {
+      setHydrated(true);
+      return;
+    }
+    bridge
+      .latest(workspacePath)
+      .then((result) => {
+        if (cancelled) return;
+        if (result.session) {
+          sessionRef.current = result.session.summary.id;
+          dispatch({ type: "restore", state: result.session.state });
+        } else {
+          sessionRef.current = createId();
+        }
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (!cancelled) setHydrated(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [workspacePath]);
+
+  useEffect(() => {
+    if (!hydrated || !workspacePath) return;
+    const bridge = window.harness?.sessions;
+    if (!bridge) return;
+    const handle = setTimeout(() => {
+      void bridge.save({
+        id: sessionRef.current,
+        workspacePath,
+        messageCount: state.messages.length,
+        state,
+      });
+    }, 600);
+    return () => clearTimeout(handle);
+  }, [state, hydrated, workspacePath]);
 
   const send = useCallback((text: string, options?: { bypassHarness?: boolean }) => {
     const trimmed = text.trim();

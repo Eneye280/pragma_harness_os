@@ -6,7 +6,7 @@ export interface IngressResult {
   eventId: string;
 }
 
-function hashWorkspace(path: string): string {
+export function hashWorkspace(path: string): string {
   return createHash("sha256").update(path).digest("hex").slice(0, 12);
 }
 
