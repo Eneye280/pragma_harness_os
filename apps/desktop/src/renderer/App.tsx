@@ -9,6 +9,7 @@ import { useChat } from "./chat/use-chat";
 import { useCost } from "./cost/use-cost";
 import { useDream } from "./dream/use-dream";
 import { useSettings } from "./settings/use-settings";
+import { useUpdater } from "./settings/use-updater";
 import { INITIAL_PANEL_STATE, actionForShortcut, panelReducer } from "./shell/panel-state";
 import { isEditableTarget, resolveShellShortcut } from "./shell/shortcuts";
 
@@ -21,6 +22,7 @@ export function App(): React.ReactElement {
   const cost = useCost();
   const dreamLearned = useDream();
   const settingsState = useSettings();
+  const updater = useUpdater();
 
   useEffect(() => {
     const bridge = window.harness;
@@ -125,7 +127,13 @@ export function App(): React.ReactElement {
         files={explorer.files}
         onOpenFile={openFile}
       />
-      <SettingsModal open={panels.settingsOpen} onClose={closeSettings} settingsState={settingsState} cost={cost} />
+      <SettingsModal
+        open={panels.settingsOpen}
+        onClose={closeSettings}
+        settingsState={settingsState}
+        cost={cost}
+        updater={updater}
+      />
 
       {dreamLearned.length > 0 ? (
         <div className="pointer-events-none fixed right-4 top-12 z-40 flex w-[320px] flex-col gap-2">

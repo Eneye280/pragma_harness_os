@@ -4,6 +4,7 @@ import type { ExplorerFile, ExplorerTreeResult } from "../shared/explorer";
 import type { HarnessSettings } from "../shared/settings";
 import type { CostSnapshot } from "../shared/cost";
 import type { DreamNotification } from "../shared/dream";
+import type { UpdateStatus } from "../shared/updater";
 
 export interface WindowControlsBridge {
   minimize: () => Promise<void>;
@@ -47,6 +48,14 @@ export interface DreamBridge {
   onLearned: (cb: (notification: DreamNotification) => void) => () => void;
 }
 
+export interface UpdaterBridge {
+  getStatus: () => Promise<UpdateStatus>;
+  check: () => Promise<UpdateStatus>;
+  download: () => Promise<UpdateStatus>;
+  install: () => Promise<{ ok: boolean }>;
+  onStatus: (cb: (status: UpdateStatus) => void) => () => void;
+}
+
 export interface SendMessageOptions {
   sessionId?: string;
   bypassHarness?: boolean;
@@ -65,6 +74,7 @@ export interface HarnessBridge {
   plan: PlanBridge;
   cost: CostBridge;
   dream: DreamBridge;
+  updater: UpdaterBridge;
   windowControls: WindowControlsBridge;
 }
 
@@ -130,6 +140,18 @@ const dream: DreamBridge = {
   }
 };
 
+const updater: UpdaterBridge = {
+  getStatus: () => ipcRenderer.invoke("updater:getStatus"),
+  check: () => ipcRenderer.invoke("updater:check"),
+  download: () => ipcRenderer.invoke("updater:download"),
+  install: () => ipcRenderer.invoke("updater:install"),
+  onStatus: (cb) => {
+    const handler = (_e: unknown, status: UpdateStatus) => cb(status);
+    ipcRenderer.on("updater:status", handler as never);
+    return () => ipcRenderer.removeListener("updater:status", handler as never);
+  }
+};
+
 const harness: HarnessBridge = {
   ping: () => ipcRenderer.invoke("harness:ping"),
   sendMessage: (message: string, options?: SendMessageOptions) =>
@@ -152,6 +174,7 @@ const harness: HarnessBridge = {
   plan,
   cost,
   dream,
+  updater,
   windowControls
 };
 

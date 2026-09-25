@@ -8,9 +8,11 @@ import { registerWindowControls } from "./ipc/window-controls";
 import { registerExplorerHandlers } from "./ipc/explorer-handlers";
 import { registerTerminalHandlers } from "./ipc/terminal-handlers";
 import { registerSettingsHandlers } from "./ipc/settings-handlers";
+import { registerUpdaterHandlers } from "./ipc/updater-handlers";
 import { resolveHarnessWorkspace } from "./workspace-path";
 import { SettingsController, SettingsStore } from "./settings";
 import { CostTracker } from "./cost";
+import { createUpdaterHost } from "./updater";
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
 
@@ -46,6 +48,7 @@ function createWindow(): void {
 app.whenReady().then(() => {
   const settingsController = new SettingsController(new SettingsStore());
   const costTracker = new CostTracker();
+  const updater = createUpdaterHost();
   createWindow();
   startHarnessServer(4096);
   registerIpcHandlers(() => mainWindow, settingsController, costTracker);
@@ -53,6 +56,8 @@ app.whenReady().then(() => {
   registerExplorerHandlers(() => mainWindow, resolveHarnessWorkspace());
   registerTerminalHandlers(() => mainWindow, resolveHarnessWorkspace());
   registerSettingsHandlers(() => mainWindow, settingsController);
+  registerUpdaterHandlers(() => mainWindow, updater);
+  updater.init();
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
