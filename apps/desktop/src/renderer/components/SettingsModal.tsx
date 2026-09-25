@@ -11,6 +11,7 @@ import { IconClose } from "./icons";
 import type { UseSettingsResult } from "../settings/use-settings";
 import type { UseUpdaterResult } from "../settings/use-updater";
 import type { UseSkillsResult } from "../skills/use-skills";
+import type { UseAgentsResult } from "../agents/use-agents";
 import { useFocusTrap } from "../shell/use-focus-trap";
 
 interface SettingsModalProps {
@@ -20,6 +21,7 @@ interface SettingsModalProps {
   cost: CostSnapshot | null;
   updater: UseUpdaterResult;
   skillsState: UseSkillsResult;
+  agentsState: UseAgentsResult;
 }
 
 const UPDATE_STAGE_LABEL: Record<string, string> = {
@@ -42,7 +44,7 @@ const POST_GATE_LABELS: Array<{ key: keyof HarnessSettings["gates"]["post"]; lab
   { key: "visual", label: "visual" },
 ];
 
-export function SettingsModal({ open, onClose, settingsState, cost, updater, skillsState }: SettingsModalProps): React.ReactElement | null {
+export function SettingsModal({ open, onClose, settingsState, cost, updater, skillsState, agentsState }: SettingsModalProps): React.ReactElement | null {
   const { settings, resolved, saving, error, testResult, save, testProvider, writeProfile, clearProfile } = settingsState;
   const [draft, setDraft] = useState<HarnessSettings | null>(settings);
   const [revealKey, setRevealKey] = useState(false);
@@ -274,6 +276,55 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
                 />
               ))}
             </div>
+          </Section>
+
+          <Section title={`Agentes (${agentsState.agents.length})`}>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void agentsState.select("")}
+                className={cn(
+                  "rounded-control border px-2.5 py-1 text-[11px] transition-colors",
+                  agentsState.active === null
+                    ? "border-harness/40 bg-harness/10 text-harness-soft"
+                    : "border-hairline bg-surface text-zinc-400 hover:text-zinc-200",
+                )}
+              >
+                Automático por dominio
+              </button>
+              <span className="text-[10px] text-zinc-500">
+                {agentsState.active ? `activo: ${agentsState.active.name}` : "el harness elige según el dominio"}
+              </span>
+            </div>
+            {agentsState.loading ? (
+              <p className="text-[11px] text-zinc-500">cargando agentes…</p>
+            ) : (
+              <ul className="max-h-[200px] space-y-1 overflow-y-auto">
+                {agentsState.agents.map((agent) => (
+                  <li key={agent.id} className="flex items-center gap-2 rounded-control border border-hairline bg-surface px-2 py-1.5">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[12px] text-zinc-200">{agent.name}</p>
+                      <p className="truncate text-[10px] text-zinc-500">
+                        {agent.role} · {agent.domains.join(", ")}
+                        {agent.skills.length > 0 ? ` · skills: ${agent.skills.join(", ")}` : ""}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void agentsState.select(agent.active ? "" : agent.id)}
+                      className={cn(
+                        "shrink-0 rounded-control border px-2 py-1 text-[11px] transition-colors",
+                        agent.active
+                          ? "border-harness/40 bg-harness/10 text-harness-soft"
+                          : "border-hairline text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200",
+                      )}
+                    >
+                      {agent.active ? "usando" : "usar"}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </Section>
 
           <Section title={`Skills (${skillsState.skills.filter((skill) => skill.enabled).length}/${skillsState.skills.length})`}>

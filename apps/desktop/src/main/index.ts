@@ -12,7 +12,10 @@ import { registerUpdaterHandlers } from "./ipc/updater-handlers";
 import { registerWorkspaceHandlers } from "./ipc/workspace-handlers";
 import { registerGitHandlers } from "./ipc/git-handlers";
 import { registerSkillsHandlers } from "./ipc/skills-handlers";
+import { registerAgentsHandlers } from "./ipc/agents-handlers";
 import { skillCompiler } from "./harness/skills/skill-compiler";
+import { AgentCatalog } from "./agents";
+import { configureAgentProvider } from "./context";
 import { SettingsController, SettingsStore } from "./settings";
 import { CostTracker } from "./cost";
 import { createUpdaterHost } from "./updater";
@@ -65,6 +68,11 @@ app.whenReady().then(() => {
     process.cwd(),
   ]);
   skillCompiler.useEnabled(() => settingsStore.get().skills);
+  const agentCatalog = new AgentCatalog();
+  configureAgentProvider((domain) => {
+    const { agent } = agentCatalog.selectFor(domain, settingsStore.get().agent || null);
+    return agent ? { id: agent.id, name: agent.name, prompt: agent.prompt, skills: agent.skills } : null;
+  });
   const updater = createUpdaterHost();
   createWindow();
   startHarnessServer(4096);
@@ -77,6 +85,7 @@ app.whenReady().then(() => {
   registerWorkspaceHandlers(() => mainWindow, workspace);
   registerGitHandlers(workspace);
   registerSkillsHandlers(() => mainWindow, settingsController);
+  registerAgentsHandlers(() => mainWindow, settingsController, agentCatalog);
   updater.init();
 
   app.on("activate", () => {

@@ -6,16 +6,24 @@ import { vault } from "../memory/vault";
 import { buildHarnessContext, type HarnessContextDeps, type HarnessContextResult } from "./harness-context";
 
 let indexPromise: Promise<number> | null = null;
+let agentProvider: ((domain: string) => { id: string; name: string; prompt: string; skills: string[] } | null) | null = null;
 
 function ensureRagIndexed(): Promise<number> {
   if (!indexPromise) indexPromise = ragIndex.index().catch(() => 0);
   return indexPromise;
 }
 
+export function configureAgentProvider(
+  provider: (domain: string) => { id: string; name: string; prompt: string; skills: string[] } | null
+): void {
+  agentProvider = provider;
+}
+
 export function createHarnessContextDeps(): HarnessContextDeps {
   return {
     ruleEngine,
     skillCompiler,
+    agentProvider: (domain) => agentProvider?.(domain) ?? null,
     rag: {
       ensureIndexed: ensureRagIndexed,
       recall: (query, topK) => ragIndex.recall(query, topK),

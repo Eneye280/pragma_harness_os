@@ -40,6 +40,13 @@ export function ContextPanel({ snapshot, onOpenFile }: ContextPanelProps): React
           </div>
         ) : (
           <div className="space-y-1.5">
+            {snapshot.agent ? (
+              <div className="rounded-control border border-harness/30 bg-harness/5 px-2.5 py-2">
+                <p className="text-[10px] uppercase tracking-widest text-zinc-500">Agent</p>
+                <p className="mt-0.5 text-[11px] text-harness-soft">{snapshot.agent.name}</p>
+                <p className="font-mono text-[10px] text-zinc-600">{snapshot.agent.id}</p>
+              </div>
+            ) : null}
             <Section
               label="Skills"
               summary={snapshot.skills.names.length > 0 ? snapshot.skills.names.join(", ") : "ninguna"}

@@ -17,6 +17,7 @@ export interface HarnessContextSnapshot {
   rag: { hits: RagSnippet[]; tokens: number; indexSize: number };
   files: { paths: string[]; tokens: number };
   instincts: { items: InstinctSummary[]; tokens: number };
+  agent?: { id: string; name: string } | null;
   tokens: { used: number; limit: number };
   model: string;
   createdAt: number;

@@ -54,6 +54,7 @@ export interface HarnessSettings {
   gates: { pre: PreGateFlags; post: PostGateFlags };
   plugins: Record<string, boolean>;
   skills: Record<string, boolean>;
+  agent: string;
   sandbox: SandboxFlags;
   workspace: WorkspaceSettings;
 }
@@ -72,6 +73,7 @@ export const DEFAULT_SETTINGS: HarnessSettings = {
   },
   plugins: { "commit-guard": false, "secret-scan": true, "no-console-log": true },
   skills: {},
+  agent: "",
   sandbox: { enabled: false, image: "node:22" },
   workspace: { active: "", recents: [] },
 };

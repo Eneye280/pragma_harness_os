@@ -32,6 +32,7 @@ export interface HarnessContextDeps {
     resolve: (needs: string[]) => string[];
     compile: (names: string[], maxTokens?: number) => Promise<{ block: string; sources: string[]; tokenCount: number }>;
   };
+  agentProvider?: (domain: string) => { id: string; name: string; prompt: string; skills: string[] } | null;
   rag: {
     ensureIndexed: () => Promise<number>;
     recall: (query: string, topK?: number) => Array<{ path: string; score: number; snippet: string }>;
@@ -81,7 +82,9 @@ export async function buildHarnessContext(input: HarnessContextInput, deps: Harn
   }
 
   const instinctItems: InstinctSummary[] = safeInstincts(deps, input);
-  const skillNames = deps.skillCompiler.resolve(input.intent.needs);
+  const agent = deps.agentProvider?.(input.intent.domain) ?? null;
+  const needs = agent ? [...new Set([...input.intent.needs, ...agent.skills])] : input.intent.needs;
+  const skillNames = deps.skillCompiler.resolve(needs);
 
   let finalPrompt = "";
   let skillSources: string[] = [];
@@ -102,6 +105,7 @@ export async function buildHarnessContext(input: HarnessContextInput, deps: Harn
       tokenLimit
     );
     finalPrompt = assembled.finalPrompt;
+    if (agent) finalPrompt = `[agent] ${agent.name} — ${agent.prompt}\n\n${finalPrompt}`;
     skillSources = assembled.breakdown.skills.sources;
     skillTokens = assembled.breakdown.skills.tokens;
     filePaths = assembled.breakdown.files.paths;
@@ -120,6 +124,7 @@ export async function buildHarnessContext(input: HarnessContextInput, deps: Harn
     rag: { hits: ragHits, tokens: ragHits.reduce((sum, hit) => sum + tokenCount(hit.snippet), 0), indexSize },
     files: { paths: filePaths, tokens: fileTokens },
     instincts: { items: instinctItems, tokens: instinctItems.reduce((sum, item) => sum + tokenCount(item.content), 0) },
+    agent: agent ? { id: agent.id, name: agent.name } : null,
     tokens: { used: tokenCount(finalPrompt), limit: tokenLimit },
     model: input.model ?? "executor",
     createdAt: Date.now(),
