@@ -7,6 +7,9 @@ export interface PluginContext {
   workspacePath: string;
   intent?: { domain: string; type: string; effort: string; needs: string[]; confidence: number };
   timestamp: number;
+  diff?: string;
+  filesChanged?: string[];
+  gitClean?: boolean;
 }
 export type PluginResult =
   | { action: "pass" }

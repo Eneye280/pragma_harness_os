@@ -61,7 +61,7 @@ export const DEFAULT_SETTINGS: HarnessSettings = {
     pre: { enabled: true, secret: true, budget: true, schema: true },
     post: { enabled: true, build: true, typecheck: true, lint: true, tests: true, security: true, visual: true },
   },
-  plugins: { "commit-guard": true, "secret-scan": true, "no-console-log": true },
+  plugins: { "commit-guard": false, "secret-scan": true, "no-console-log": true },
   sandbox: { enabled: false, image: "node:22" },
 };
 

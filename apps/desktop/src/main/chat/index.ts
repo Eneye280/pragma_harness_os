@@ -6,10 +6,12 @@ import type { SettingsController } from "../settings";
 import type { PlanGate } from "../plan";
 import { compileHarnessContext } from "../context";
 import { PreAgentGates } from "../gates";
+import { createPluginRunner } from "../plugins";
 import type { CostTracker } from "../cost";
 import { ChatService, type ChatGateway } from "./chat-service";
 
 const TOOL_INTENT_PATTERN = /(archivo|file|crea|create|write|escribe|guarda|save)/i;
+const CONSOLE_INTENT_PATTERN = /(console\.log|console|debug|consola)/i;
 
 async function* mockResponder(prompt: string): AsyncGenerator<string> {
   const wantsFile = TOOL_INTENT_PATTERN.test(prompt);
@@ -26,9 +28,13 @@ async function* mockResponder(prompt: string): AsyncGenerator<string> {
   }
   if (wantsFile) {
     await new Promise((resolve) => setTimeout(resolve, 150));
+    const wantsConsoleLog = CONSOLE_INTENT_PATTERN.test(prompt);
+    const fileContent = wantsConsoleLog
+      ? "# Nota del agente\n\nconsole.log('debug desde el agente');\n"
+      : "# Nota del agente\n\nEscrito dentro del worktree de chat.\n";
     const toolBlock = {
       tool: "fileEdit",
-      args: { path: "harness-note.md", content: "# Nota del agente\n\nEscrito dentro del worktree de chat.\n" },
+      args: { path: "harness-note.md", content: fileContent },
       sessionId: "mock",
       workspaceHash: "mock",
       workspacePath: ".",
@@ -97,6 +103,7 @@ export function createChatService(
       const result = gates.run(context as Parameters<PreAgentGates["run"]>[0]);
       return { verdict: result.verdict, blockedBy: result.blockedBy, userResponse: result.userResponse, reason: result.reason };
     },
+    pluginRunner: createPluginRunner((name) => settingsController.store.get().plugins[name] === true),
   });
 }
 
