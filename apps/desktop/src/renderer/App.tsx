@@ -7,6 +7,7 @@ import { TitleBar } from "./components/TitleBar";
 import { useExplorer } from "./explorer/use-explorer";
 import { useChat } from "./chat/use-chat";
 import { useCost } from "./cost/use-cost";
+import { useDream } from "./dream/use-dream";
 import { useSettings } from "./settings/use-settings";
 import { INITIAL_PANEL_STATE, actionForShortcut, panelReducer } from "./shell/panel-state";
 import { isEditableTarget, resolveShellShortcut } from "./shell/shortcuts";
@@ -18,6 +19,7 @@ export function App(): React.ReactElement {
   const explorer = useExplorer();
   const chat = useChat();
   const cost = useCost();
+  const dreamLearned = useDream();
   const settingsState = useSettings();
 
   useEffect(() => {
@@ -124,6 +126,23 @@ export function App(): React.ReactElement {
         onOpenFile={openFile}
       />
       <SettingsModal open={panels.settingsOpen} onClose={closeSettings} settingsState={settingsState} cost={cost} />
+
+      {dreamLearned.length > 0 ? (
+        <div className="pointer-events-none fixed right-4 top-12 z-40 flex w-[320px] flex-col gap-2">
+          {dreamLearned.map((notification) => (
+            <div
+              key={`${notification.trigger}-${notification.ts}`}
+              className="palette-anim rounded-panel border border-harness/40 bg-surface-raised px-3 py-2 shadow-xl shadow-black/50"
+            >
+              <p className="text-[11px] font-semibold text-harness-soft">New instinct learned</p>
+              <p className="mt-0.5 text-[11px] text-zinc-300">{notification.content}</p>
+              <p className="mt-0.5 font-mono text-[10px] text-zinc-600">
+                {notification.trigger} · confidence {notification.confidence.toFixed(2)}
+              </p>
+            </div>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

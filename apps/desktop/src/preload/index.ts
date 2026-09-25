@@ -3,6 +3,7 @@ import type { ChatStreamEvent } from "../shared/chat-events";
 import type { ExplorerFile, ExplorerTreeResult } from "../shared/explorer";
 import type { HarnessSettings } from "../shared/settings";
 import type { CostSnapshot } from "../shared/cost";
+import type { DreamNotification } from "../shared/dream";
 
 export interface WindowControlsBridge {
   minimize: () => Promise<void>;
@@ -42,6 +43,10 @@ export interface CostBridge {
   onUpdated: (cb: (snapshot: CostSnapshot) => void) => () => void;
 }
 
+export interface DreamBridge {
+  onLearned: (cb: (notification: DreamNotification) => void) => () => void;
+}
+
 export interface SendMessageOptions {
   sessionId?: string;
   bypassHarness?: boolean;
@@ -59,6 +64,7 @@ export interface HarnessBridge {
   settings: SettingsBridge;
   plan: PlanBridge;
   cost: CostBridge;
+  dream: DreamBridge;
   windowControls: WindowControlsBridge;
 }
 
@@ -116,6 +122,14 @@ const cost: CostBridge = {
   }
 };
 
+const dream: DreamBridge = {
+  onLearned: (cb) => {
+    const handler = (_e: unknown, notification: DreamNotification) => cb(notification);
+    ipcRenderer.on("dream:learned", handler as never);
+    return () => ipcRenderer.removeListener("dream:learned", handler as never);
+  }
+};
+
 const harness: HarnessBridge = {
   ping: () => ipcRenderer.invoke("harness:ping"),
   sendMessage: (message: string, options?: SendMessageOptions) =>
@@ -137,6 +151,7 @@ const harness: HarnessBridge = {
   settings,
   plan,
   cost,
+  dream,
   windowControls
 };
 

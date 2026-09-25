@@ -16,6 +16,11 @@ export interface Instinct {
 }
 
 function getVaultRoot(): string {
+  const configuredRoot = process.env["HARNESS_MEMORY_ROOT"];
+  if (configuredRoot) {
+    if (!existsSync(configuredRoot)) mkdirSync(configuredRoot, { recursive: true });
+    return configuredRoot;
+  }
   try {
     const base = join(homedir(), ".pragma-harness", "memory");
     if (!existsSync(base)) mkdirSync(base, { recursive: true });
