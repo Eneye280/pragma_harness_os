@@ -1,4 +1,7 @@
 import { describe, it, expect } from "vitest";
+import { mkdtempSync, rmSync, writeFileSync } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
 import { RuleEngine } from "../rule-engine";
 
 describe("RuleEngine — G1-G10 always injected", () => {
@@ -43,5 +46,32 @@ describe("RuleEngine — G1-G10 always injected", () => {
     expect(engine.getDomainRule("backend")).toContain("Fastify");
     expect(engine.getDomainRule("engine")).toContain("Vulkan");
     expect(engine.getDomainRule("xxx")).toContain("general");
+  });
+
+  it("exposes the raw core and style rule maps", () => {
+    const engine = new RuleEngine();
+    const coreKeys = Object.keys(engine.getCoreRules());
+    expect(coreKeys.some((key) => key.startsWith("G1-"))).toBe(true);
+    expect(coreKeys.some((key) => key.startsWith("G10-"))).toBe(true);
+    expect(Object.keys(engine.getStyleRules())).toContain("no-comments-in-body");
+  });
+
+  it("injects AGENTS.md when present and skips it when disabled", () => {
+    const originalCwd = process.cwd();
+    const dir = mkdtempSync(join(tmpdir(), "rule-engine-"));
+    writeFileSync(join(dir, "AGENTS.md"), "# Project agents\nFollow the house rules.", "utf8");
+    try {
+      process.chdir(dir);
+      const engine = new RuleEngine();
+      const withAgents = engine.compile({ domain: "backend" });
+      expect(withAgents).toContain("# AGENTS.md");
+      expect(withAgents).toContain("Follow the house rules");
+
+      const withoutAgents = engine.compile({ domain: "backend" }, { includeAgentsMd: false });
+      expect(withoutAgents).not.toContain("# AGENTS.md");
+    } finally {
+      process.chdir(originalCwd);
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
