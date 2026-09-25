@@ -14,6 +14,7 @@ import { SettingsController, SettingsStore } from "./settings";
 import { CostTracker } from "./cost";
 import { createUpdaterHost } from "./updater";
 import { WorkspaceFolderController } from "./workspace-folder";
+import { ProjectProfileStore } from "./profile";
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
 
@@ -47,9 +48,13 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
-  const settingsController = new SettingsController(new SettingsStore());
+  const settingsStore = new SettingsStore();
+  const settingsController = new SettingsController(settingsStore);
   const costTracker = new CostTracker();
-  const workspace = new WorkspaceFolderController({ store: settingsController.store });
+  const workspace = new WorkspaceFolderController({ store: settingsStore });
+  const profileStore = new ProjectProfileStore();
+  settingsStore.useProfile(() => profileStore.read(workspace.current()));
+  settingsController.useProfileInfo(() => profileStore.info(workspace.current()));
   const updater = createUpdaterHost();
   createWindow();
   startHarnessServer(4096);
@@ -57,7 +62,7 @@ app.whenReady().then(() => {
   registerWindowControls(() => mainWindow);
   registerExplorerHandlers(() => mainWindow, workspace);
   registerTerminalHandlers(() => mainWindow, workspace);
-  registerSettingsHandlers(() => mainWindow, settingsController);
+  registerSettingsHandlers(() => mainWindow, settingsController, profileStore, workspace);
   registerUpdaterHandlers(() => mainWindow, updater);
   registerWorkspaceHandlers(() => mainWindow, workspace);
   updater.init();

@@ -9,6 +9,8 @@ import {
   maskSecret,
   type HarnessSettings,
 } from "../../shared/settings";
+import type { ProjectProfile } from "../../shared/profile";
+import { resolveEffectiveSettings } from "../profile/effective";
 
 const ProviderSchema = z.object({
   provider: z.enum(["mock", "deepseek", "anthropic", "openai", "ollama"]),
@@ -71,9 +73,14 @@ export function sanitizeIncoming(current: HarnessSettings, incoming: HarnessSett
 
 export class SettingsStore {
   private settings: HarnessSettings;
+  private profileProvider: (() => ProjectProfile | null) | null = null;
 
   constructor(private readonly filePath: string = resolveSettingsPath()) {
     this.settings = this.load();
+  }
+
+  useProfile(provider: () => ProjectProfile | null): void {
+    this.profileProvider = provider;
   }
 
   private load(): HarnessSettings {
@@ -89,6 +96,12 @@ export class SettingsStore {
   }
 
   get(): HarnessSettings {
+    const base = structuredClone(this.settings);
+    const profile = this.profileProvider?.() ?? null;
+    return profile ? resolveEffectiveSettings(base, profile) : base;
+  }
+
+  getGlobal(): HarnessSettings {
     return structuredClone(this.settings);
   }
 

@@ -1,5 +1,6 @@
 import type { ChatGateway } from "../chat/chat-service";
-import type { HarnessSettings, ProviderName } from "../../shared/settings";
+import type { HarnessSettings, ProviderName, ResolvedSettings } from "../../shared/settings";
+import type { ProjectProfileInfo } from "../../shared/profile";
 import { SettingsStore } from "./settings-store";
 
 export { SettingsStore, SettingsSchema, resolveSettingsPath, settingsForLogging } from "./settings-store";
@@ -52,10 +53,16 @@ export interface ProviderProbeResult {
 export type ProviderProbe = (config: ResolvedGatewayConfig) => Promise<ProviderProbeResult>;
 
 export class SettingsController {
+  private profileInfoProvider: (() => ProjectProfileInfo) | null = null;
+
   constructor(
     readonly store: SettingsStore,
     private readonly probe?: ProviderProbe
   ) {}
+
+  useProfileInfo(provider: () => ProjectProfileInfo): void {
+    this.profileInfoProvider = provider;
+  }
 
   get() {
     return this.store.getPublic();
@@ -66,13 +73,14 @@ export class SettingsController {
     return this.store.getPublic();
   }
 
-  resolved() {
+  resolved(): ResolvedSettings {
     const settings = this.store.get();
     return {
       provider: settings.provider.provider,
       model: settings.provider.models.executor,
       usingMock: settings.provider.provider === "mock",
       configPath: this.store.file,
+      profile: this.profileInfoProvider?.() ?? { active: false, path: "", name: null },
     };
   }
 

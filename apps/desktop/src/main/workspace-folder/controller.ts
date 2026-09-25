@@ -34,13 +34,13 @@ export class WorkspaceFolderController {
   }
 
   state(): WorkspaceState {
-    const workspace = this.deps.store.get().workspace;
+    const workspace = this.deps.store.getGlobal().workspace;
     const active = workspace.active && isDirectory(workspace.active) ? workspace.active : this.fallback;
     return { active, recents: workspace.recents.filter(isDirectory) };
   }
 
   current(): string {
-    const configured = this.deps.store.get().workspace.active;
+    const configured = this.deps.store.getGlobal().workspace.active;
     if (configured && isDirectory(configured)) return configured;
     return this.fallback;
   }
@@ -52,7 +52,7 @@ export class WorkspaceFolderController {
   activate(rawPath: string): WorkspaceState {
     const candidate = resolve(rawPath);
     if (!isDirectory(candidate)) throw new Error(`no es un directorio válido: ${candidate}`);
-    const previous = this.deps.store.get().workspace;
+    const previous = this.deps.store.getGlobal().workspace;
     const recents = [candidate, ...previous.recents.filter((entry) => entry !== candidate)].slice(0, this.maxRecents);
     const next: WorkspaceState = { active: candidate, recents };
     this.deps.store.updateWorkspace(next);
