@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+:root {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --primary: 262 83% 58%;
+  --primary-foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --accent: 142 76% 36%;
+  --accent-foreground: 0 0% 98%;
+  --border: 240 3.7% 15.9%;
+  --radius: 0.5rem;
+}
+
+* { border-color: hsl(var(--border)); }
+html { font-family: Inter, system-ui, sans-serif; }
+.draggable { -webkit-app-region: drag; }

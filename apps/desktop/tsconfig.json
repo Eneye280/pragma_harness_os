@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "paths": {
+      "@/*": ["src/renderer/*"],
+      "@main/*": ["src/main/*"],
+      "harness-core": ["../../packages/harness-core/src"],
+      "harness-sdk": ["../../packages/harness-sdk/src"],
+      "ui-tokens": ["../../packages/ui-tokens/src"]
+    },
+    "composite": true
+  },
+  "include": ["src", "electron.vite.config.ts"]
+}
