@@ -1,6 +1,8 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow } from "electron";
 import { join } from "path";
 import { is } from "@electron-toolkit/utils";
+import { startHarnessServer } from "./server/hono";
+import { registerIpcHandlers } from "./ipc/handlers";
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -33,11 +35,8 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   createWindow();
-
-  ipcMain.handle("harness:ping", async () => ({ status: "harness:ready", version: "0.1.0" }));
-  ipcMain.handle("harness:sendMessage", async (_e, message: string) => {
-    return { received: message, note: "ingress will handle in TASK 04" };
-  });
+  startHarnessServer(4096);
+  registerIpcHandlers(() => mainWindow);
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
