@@ -13,5 +13,5 @@
     },
     "composite": true
   },
-  "include": ["src", "electron.vite.config.ts"]
+  "include": ["src", "electron.vite.config.ts", "../../packages/ui-tokens/src"]
 }

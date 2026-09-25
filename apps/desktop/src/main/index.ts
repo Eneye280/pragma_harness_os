@@ -3,6 +3,7 @@ import { join } from "path";
 import { is } from "@electron-toolkit/utils";
 import { startHarnessServer } from "./server/hono";
 import { registerIpcHandlers } from "./ipc/handlers";
+import { registerWindowControls } from "./ipc/window-controls";
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -37,6 +38,7 @@ app.whenReady().then(() => {
   createWindow();
   startHarnessServer(4096);
   registerIpcHandlers(() => mainWindow);
+  registerWindowControls(() => mainWindow);
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
