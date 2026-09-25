@@ -5,6 +5,6 @@ export default defineConfig({
     pool: "forks",
     poolOptions: { forks: { singleFork: true } },
     isolate: false,
-    include: ["src/main/db/__tests__/**/*.test.ts", "src/main/harness/__tests__/**/*.test.ts", "src/main/memory/__tests__/**/*.test.ts", "src/main/llm/__tests__/**/*.test.ts", "src/main/tools/__tests__/**/*.test.ts", "src/main/workspace/__tests__/**/*.test.ts", "src/main/sandbox/__tests__/**/*.test.ts"]
+    include: ["src/main/db/__tests__/**/*.test.ts", "src/main/harness/__tests__/**/*.test.ts", "src/main/memory/__tests__/**/*.test.ts", "src/main/llm/__tests__/**/*.test.ts", "src/main/tools/__tests__/**/*.test.ts", "src/main/workspace/__tests__/**/*.test.ts", "src/main/sandbox/__tests__/**/*.test.ts", "src/main/gates/__tests__/**/*.test.ts"]
   }
 });
