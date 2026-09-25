@@ -7,6 +7,7 @@ export interface PanelState {
   previewPath: string | null;
   terminalOpen: boolean;
   terminalHeight: number;
+  settingsOpen: boolean;
 }
 
 export type PanelAction =
@@ -17,7 +18,9 @@ export type PanelAction =
   | { type: "open-preview"; path: string }
   | { type: "close-preview" }
   | { type: "toggle-terminal" }
-  | { type: "set-terminal-height"; height: number };
+  | { type: "set-terminal-height"; height: number }
+  | { type: "open-settings" }
+  | { type: "close-settings" };
 
 export const INITIAL_PANEL_STATE: PanelState = {
   explorerOpen: true,
@@ -26,6 +29,7 @@ export const INITIAL_PANEL_STATE: PanelState = {
   previewPath: null,
   terminalOpen: false,
   terminalHeight: 220,
+  settingsOpen: false,
 };
 
 export const PANEL_WIDTHS = { explorer: 260, context: 320 } as const;
@@ -53,6 +57,10 @@ export function panelReducer(state: PanelState, action: PanelAction): PanelState
       return { ...state, terminalOpen: !state.terminalOpen };
     case "set-terminal-height":
       return { ...state, terminalHeight: clampTerminalHeight(action.height) };
+    case "open-settings":
+      return { ...state, settingsOpen: true, paletteOpen: false };
+    case "close-settings":
+      return { ...state, settingsOpen: false };
   }
 }
 
@@ -64,6 +72,8 @@ export function actionForShortcut(shortcut: ShellShortcut): PanelAction {
       return { type: "toggle-context" };
     case "toggle-terminal":
       return { type: "toggle-terminal" };
+    case "open-settings":
+      return { type: "open-settings" };
     case "command-palette":
     case "search-files":
       return { type: "toggle-palette" };

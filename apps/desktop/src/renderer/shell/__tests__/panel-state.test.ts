@@ -10,6 +10,7 @@ describe("Panel layout state", () => {
       previewPath: null,
       terminalOpen: false,
       terminalHeight: 220,
+      settingsOpen: false,
     });
   });
 
@@ -47,6 +48,15 @@ describe("Panel layout state", () => {
     expect(clampTerminalHeight(300)).toBe(300);
   });
 
+  it("opens settings (closing the palette) and closes it", () => {
+    const withPalette = panelReducer(INITIAL_PANEL_STATE, { type: "toggle-palette" });
+    const opened = panelReducer(withPalette, { type: "open-settings" });
+    expect(opened.settingsOpen).toBe(true);
+    expect(opened.paletteOpen).toBe(false);
+    const closed = panelReducer(opened, { type: "close-settings" });
+    expect(closed.settingsOpen).toBe(false);
+  });
+
   it("does not mutate the previous state", () => {
     const next = panelReducer(INITIAL_PANEL_STATE, { type: "toggle-explorer" });
     expect(INITIAL_PANEL_STATE.explorerOpen).toBe(true);
@@ -59,6 +69,7 @@ describe("Panel layout state", () => {
     expect(actionForShortcut("command-palette")).toEqual({ type: "toggle-palette" });
     expect(actionForShortcut("search-files")).toEqual({ type: "toggle-palette" });
     expect(actionForShortcut("toggle-terminal")).toEqual({ type: "toggle-terminal" });
+    expect(actionForShortcut("open-settings")).toEqual({ type: "open-settings" });
     expect(PANEL_WIDTHS).toEqual({ explorer: 260, context: 320 });
   });
 });

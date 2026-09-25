@@ -5,6 +5,7 @@ import { runPipelineStub } from "../harness/pipeline/stub";
 import { MemoryEventLog } from "../db/memory-event-log";
 import { createChatService } from "../chat";
 import { resolveHarnessWorkspace } from "../workspace-path";
+import type { SettingsController } from "../settings";
 
 const sendMessageSchema = z.object({
   message: z.string().min(1).max(20000),
@@ -15,8 +16,11 @@ const pingResponse = { status: "harness:ready" as const, version: "0.1.0" };
 
 const memoryLog = new MemoryEventLog();
 
-export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null): void {
-  const chatService = createChatService();
+export function registerIpcHandlers(
+  getMainWindow: () => BrowserWindow | null,
+  settingsController: SettingsController
+): void {
+  const chatService = createChatService(settingsController);
   ipcMain.handle("harness:ping", async () => pingResponse);
 
   ipcMain.handle("harness:sendMessage", async (_e, rawMessage: unknown) => {
