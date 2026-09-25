@@ -21,6 +21,7 @@
   "dependencies": {
     "better-sqlite3": "^13.0.3",
     "drizzle-orm": "^0.45.3",
+    "fast-glob": "^3.3.3",
     "harness-core": "workspace:*",
     "harness-sdk": "workspace:*",
     "hono": "^4.13.9",
