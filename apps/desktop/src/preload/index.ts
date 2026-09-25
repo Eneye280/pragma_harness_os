@@ -9,6 +9,7 @@ import type { UpdateStatus } from "../shared/updater";
 import type { GitStatus } from "../shared/git";
 import type { SkillSummary } from "../shared/skills";
 import type { AgentSummary } from "../shared/agents";
+import type { BundleSummary, BundleValidation } from "../shared/bundles";
 import type { WorkspaceChangedPayload, WorkspacePickResult, WorkspaceState } from "../shared/workspace";
 
 export interface WindowControlsBridge {
@@ -84,6 +85,11 @@ export interface AgentsBridge {
   select: (id: string) => Promise<{ error: string | null; agents: AgentSummary[] }>;
 }
 
+export interface BundlesBridge {
+  list: () => Promise<BundleSummary[]>;
+  apply: (stack: string) => Promise<{ ok: boolean; error?: string; profile?: ProjectProfileInfo; validation?: BundleValidation }>;
+}
+
 export interface SendMessageOptions {
   sessionId?: string;
   bypassHarness?: boolean;
@@ -107,6 +113,7 @@ export interface HarnessBridge {
   git: GitBridge;
   skills: SkillsBridge;
   agents: AgentsBridge;
+  bundles: BundlesBridge;
   windowControls: WindowControlsBridge;
 }
 
@@ -211,6 +218,11 @@ const agents: AgentsBridge = {
   select: (id: string) => ipcRenderer.invoke("agents:select", id)
 };
 
+const bundles: BundlesBridge = {
+  list: () => ipcRenderer.invoke("bundles:list"),
+  apply: (stack: string) => ipcRenderer.invoke("bundles:apply", stack)
+};
+
 const harness: HarnessBridge = {
   ping: () => ipcRenderer.invoke("harness:ping"),
   sendMessage: (message: string, options?: SendMessageOptions) =>
@@ -238,6 +250,7 @@ const harness: HarnessBridge = {
   git,
   skills,
   agents,
+  bundles,
   windowControls
 };
 
