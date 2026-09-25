@@ -1,4 +1,5 @@
 import type { ChatStreamEvent, HarnessPhase, HarnessStepStatus } from "@shared/chat-events";
+import type { HarnessContextSnapshot } from "@shared/context-snapshot";
 import type { PlanProposal } from "@shared/plan";
 
 export interface ChatMessage {
@@ -32,6 +33,7 @@ export interface ChatState {
   agentPhase: "idle" | "running" | "done";
   plan: PlanProposal | null;
   planStatus: "idle" | "proposed" | "approved" | "discarded";
+  context: HarnessContextSnapshot | null;
   error: string | null;
 }
 
@@ -42,6 +44,7 @@ export const INITIAL_CHAT_STATE: ChatState = {
   agentPhase: "idle",
   plan: null,
   planStatus: "idle",
+  context: null,
   error: null,
 };
 
@@ -128,6 +131,8 @@ function applyStreamEvent(state: ChatState, event: ChatStreamEvent): ChatState {
       return { ...state, plan: event.plan, planStatus: "proposed" };
     case "plan-resolved":
       return { ...state, plan: null, planStatus: event.action === "approve" ? "approved" : "discarded" };
+    case "context-assembled":
+      return { ...state, context: event.snapshot };
   }
 }
 
@@ -146,6 +151,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         agentPhase: "running",
         plan: null,
         planStatus: "idle",
+        context: null,
         error: null,
       };
     case "stream":

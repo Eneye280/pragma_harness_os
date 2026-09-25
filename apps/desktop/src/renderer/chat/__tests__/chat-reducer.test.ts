@@ -87,4 +87,21 @@ describe("Chat reducer", () => {
     expect(state.planStatus).toBe("approved");
     expect(state.plan).toBeNull();
   });
+
+  it("stores the live context snapshot emitted by the harness", () => {
+    const snapshot = {
+      sessionId: SESSION,
+      skills: { names: ["tdd-workflow"], sources: ["tdd-workflow"], tokens: 12 },
+      rules: { domain: "backend", label: "G1–G10 + backend", tokens: 300 },
+      rag: { hits: [{ path: "docs/a.md", score: 0.8, snippet: "auth" }], tokens: 20, indexSize: 4 },
+      files: { paths: ["src/a.ts"], tokens: 40 },
+      instincts: { items: [], tokens: 0 },
+      tokens: { used: 4200, limit: 8000 },
+      model: "mock",
+      createdAt: 1,
+    };
+    const state = chatReducer(INITIAL_CHAT_STATE, { type: "stream", event: { kind: "context-assembled", sessionId: SESSION, snapshot } });
+    expect(state.context?.tokens.used).toBe(4200);
+    expect(state.context?.rag.hits[0].path).toBe("docs/a.md");
+  });
 });

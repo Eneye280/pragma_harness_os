@@ -35,6 +35,16 @@ export interface ChatServiceDeps {
   toolRunner: ToolRunner;
   toolWorkspacePath: string;
   planGate?: PlanGate;
+  contextCompiler?: (input: {
+    message: string;
+    intent: { domain: string; type: string; effort: string; needs: string[]; confidence: number };
+    sessionId: string;
+    workspacePath: string;
+    tokenLimit: number;
+    model: string;
+  }) => Promise<{ snapshot: import("../../shared/context-snapshot").HarnessContextSnapshot; finalPrompt: string }>;
+  tokenLimit?: number;
+  model?: () => string;
 }
 
 export function buildAgentPrompt(request: ChatSendRequest, needs: string[], approvedPlan?: string): string {
@@ -81,6 +91,24 @@ export class ChatService {
       }
 
       let approvedPlanMarkdown: string | undefined;
+      let assembledPrompt = "";
+
+      if (!request.bypassHarness && this.deps.contextCompiler) {
+        try {
+          const compiled = await this.deps.contextCompiler({
+            message: request.message,
+            intent,
+            sessionId,
+            workspacePath: request.workspacePath,
+            tokenLimit: this.deps.tokenLimit ?? 8000,
+            model: this.deps.model?.() ?? "executor",
+          });
+          assembledPrompt = compiled.finalPrompt;
+          emit({ kind: "context-assembled", sessionId, snapshot: compiled.snapshot });
+        } catch {
+          assembledPrompt = "";
+        }
+      }
 
       if (!request.bypassHarness && this.deps.planGate && shouldProposePlan(intent, request.message)) {
         const plan = buildPlan(request.message, intent, sessionId);
@@ -99,7 +127,9 @@ export class ChatService {
 
       emit({ kind: "harness-step", sessionId, phase: "agent", status: "running", label: "agente escribiendo…" });
 
-      const prompt = buildAgentPrompt(request, intent.needs, approvedPlanMarkdown);
+      const prompt = approvedPlanMarkdown
+        ? buildAgentPrompt(request, intent.needs, approvedPlanMarkdown)
+        : assembledPrompt || buildAgentPrompt(request, intent.needs);
       let fullText = "";
       for await (const chunk of this.deps.gateway.stream(prompt)) {
         if (chunk.isDone) break;

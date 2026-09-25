@@ -112,6 +112,38 @@ describe("ChatService", () => {
     expect(events.some((event) => event.kind === "plan-resolved")).toBe(false);
   });
 
+  it("emits the compiled context snapshot and feeds the assembled prompt to the agent", async () => {
+    const events: ChatStreamEvent[] = [];
+    let seenPrompt = "";
+    const service = new ChatService({
+      gateway: {
+        stream: (prompt: string) => {
+          seenPrompt = prompt;
+          return streamChunks(["ok"]);
+        },
+      },
+      toolRunner: makeRunner({}),
+      toolWorkspacePath: "/tmp/ws",
+      contextCompiler: async () => ({
+        snapshot: {
+          sessionId: "s",
+          skills: { names: ["tdd-workflow"], sources: ["tdd-workflow"], tokens: 1 },
+          rules: { domain: "general", label: "G1–G10 + general", tokens: 1 },
+          rag: { hits: [], tokens: 0, indexSize: 0 },
+          files: { paths: [], tokens: 0 },
+          instincts: { items: [], tokens: 0 },
+          tokens: { used: 12, limit: 8000 },
+          model: "mock",
+          createdAt: 0,
+        },
+        finalPrompt: "COMPILED PROMPT",
+      }),
+    });
+    await service.run({ message: "hola", sessionId: "s", workspacePath: "/w" }, (event) => events.push(event));
+    expect(events.some((event) => event.kind === "context-assembled")).toBe(true);
+    expect(seenPrompt).toBe("COMPILED PROMPT");
+  });
+
   it("stops without calling the agent when the plan is discarded", async () => {
     const events: ChatStreamEvent[] = [];
     let gatewayUsed = false;
