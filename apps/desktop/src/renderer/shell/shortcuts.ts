@@ -1,4 +1,10 @@
-export type ShellShortcut = "toggle-explorer" | "toggle-context" | "command-palette" | "search-files" | "toggle-terminal";
+export type ShellShortcut =
+  | "toggle-explorer"
+  | "toggle-context"
+  | "command-palette"
+  | "search-files"
+  | "toggle-terminal"
+  | "open-settings";
 
 export interface KeyChord {
   key: string;
@@ -18,6 +24,7 @@ export function resolveShellShortcut(chord: KeyChord): ShellShortcut | null {
   if (key === "k") return "command-palette";
   if (key === "p") return "search-files";
   if (key === "`") return "toggle-terminal";
+  if (key === ",") return "open-settings";
   return null;
 }
 

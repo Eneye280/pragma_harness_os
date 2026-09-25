@@ -7,7 +7,9 @@ import { registerIpcHandlers } from "./ipc/handlers";
 import { registerWindowControls } from "./ipc/window-controls";
 import { registerExplorerHandlers } from "./ipc/explorer-handlers";
 import { registerTerminalHandlers } from "./ipc/terminal-handlers";
+import { registerSettingsHandlers } from "./ipc/settings-handlers";
 import { resolveHarnessWorkspace } from "./workspace-path";
+import { SettingsController, SettingsStore } from "./settings";
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
 
@@ -41,12 +43,14 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  const settingsController = new SettingsController(new SettingsStore());
   createWindow();
   startHarnessServer(4096);
-  registerIpcHandlers(() => mainWindow);
+  registerIpcHandlers(() => mainWindow, settingsController);
   registerWindowControls(() => mainWindow);
   registerExplorerHandlers(() => mainWindow, resolveHarnessWorkspace());
   registerTerminalHandlers(() => mainWindow, resolveHarnessWorkspace());
+  registerSettingsHandlers(() => mainWindow, settingsController);
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

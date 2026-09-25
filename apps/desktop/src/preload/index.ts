@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from "electron";
 import type { ChatStreamEvent } from "../shared/chat-events";
 import type { ExplorerFile, ExplorerTreeResult } from "../shared/explorer";
+import type { HarnessSettings } from "../shared/settings";
 
 export interface WindowControlsBridge {
   minimize: () => Promise<void>;
@@ -21,6 +22,14 @@ export interface TerminalBridge {
   onData: (cb: (payload: { data: string }) => void) => () => void;
 }
 
+export interface SettingsBridge {
+  get: () => Promise<HarnessSettings>;
+  update: (settings: HarnessSettings) => Promise<HarnessSettings | { error: string }>;
+  resolved: () => Promise<{ provider: string; model: string; usingMock: boolean; configPath: string }>;
+  testProvider: () => Promise<{ ok: boolean; reason: string }>;
+  onChanged: (cb: (settings: HarnessSettings) => void) => () => void;
+}
+
 export interface SendMessageOptions {
   sessionId?: string;
   bypassHarness?: boolean;
@@ -35,6 +44,7 @@ export interface HarnessBridge {
   onChatEvent: (cb: (event: ChatStreamEvent) => void) => () => void;
   explorer: ExplorerBridge;
   terminal: TerminalBridge;
+  settings: SettingsBridge;
   windowControls: WindowControlsBridge;
 }
 
@@ -65,6 +75,18 @@ const terminal: TerminalBridge = {
   }
 };
 
+const settings: SettingsBridge = {
+  get: () => ipcRenderer.invoke("settings:get"),
+  update: (next: HarnessSettings) => ipcRenderer.invoke("settings:update", next),
+  resolved: () => ipcRenderer.invoke("settings:resolved"),
+  testProvider: () => ipcRenderer.invoke("settings:testProvider"),
+  onChanged: (cb) => {
+    const handler = (_e: unknown, next: HarnessSettings) => cb(next);
+    ipcRenderer.on("settings:changed", handler as never);
+    return () => ipcRenderer.removeListener("settings:changed", handler as never);
+  }
+};
+
 const harness: HarnessBridge = {
   ping: () => ipcRenderer.invoke("harness:ping"),
   sendMessage: (message: string, options?: SendMessageOptions) =>
@@ -83,6 +105,7 @@ const harness: HarnessBridge = {
   },
   explorer,
   terminal,
+  settings,
   windowControls
 };
 

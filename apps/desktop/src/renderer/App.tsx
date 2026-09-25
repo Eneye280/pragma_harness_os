@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useReducer, useState } from "react";
 import type { ExplorerFile } from "@shared/explorer";
 import { CommandPalette } from "./components/CommandPalette";
+import { SettingsModal } from "./components/SettingsModal";
 import { ShellLayout } from "./components/ShellLayout";
 import { TitleBar } from "./components/TitleBar";
 import { useExplorer } from "./explorer/use-explorer";
+import { useSettings } from "./settings/use-settings";
 import { INITIAL_PANEL_STATE, actionForShortcut, panelReducer } from "./shell/panel-state";
 import { isEditableTarget, resolveShellShortcut } from "./shell/shortcuts";
 
@@ -12,6 +14,7 @@ export function App(): React.ReactElement {
   const [status, setStatus] = useState("connecting…");
   const [previewFile, setPreviewFile] = useState<ExplorerFile | null>(null);
   const explorer = useExplorer();
+  const settingsState = useSettings();
 
   useEffect(() => {
     const bridge = window.harness;
@@ -78,6 +81,8 @@ export function App(): React.ReactElement {
     (height: number) => dispatch({ type: "set-terminal-height", height }),
     [],
   );
+  const openSettings = useCallback(() => dispatch({ type: "open-settings" }), []);
+  const closeSettings = useCallback(() => dispatch({ type: "close-settings" }), []);
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-surface text-zinc-100">
@@ -87,6 +92,7 @@ export function App(): React.ReactElement {
         onToggleExplorer={toggleExplorer}
         onToggleContext={toggleContext}
         onToggleTerminal={toggleTerminal}
+        onOpenSettings={openSettings}
       />
       <ShellLayout
         explorerOpen={panels.explorerOpen}
@@ -107,9 +113,11 @@ export function App(): React.ReactElement {
         onClose={closePalette}
         onToggleExplorer={toggleExplorer}
         onToggleContext={toggleContext}
+        onOpenSettings={openSettings}
         files={explorer.files}
         onOpenFile={openFile}
       />
+      <SettingsModal open={panels.settingsOpen} onClose={closeSettings} settingsState={settingsState} />
     </div>
   );
 }

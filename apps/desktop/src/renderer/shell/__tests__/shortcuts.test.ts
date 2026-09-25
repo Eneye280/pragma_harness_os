@@ -27,6 +27,11 @@ describe("Shell shortcuts", () => {
     expect(resolveShellShortcut({ key: "`", metaKey: true })).toBe("toggle-terminal");
   });
 
+  it("maps primary+comma to settings", () => {
+    expect(resolveShellShortcut({ key: ",", ctrlKey: true })).toBe("open-settings");
+    expect(resolveShellShortcut({ key: ",", metaKey: true })).toBe("open-settings");
+  });
+
   it("ignores chords without primary modifier or with alt", () => {
     expect(resolveShellShortcut({ key: "b" })).toBeNull();
     expect(resolveShellShortcut({ key: "b", shiftKey: true })).toBeNull();

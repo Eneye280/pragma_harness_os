@@ -16,6 +16,7 @@ interface CommandPaletteProps {
   onClose: () => void;
   onToggleExplorer: () => void;
   onToggleContext: () => void;
+  onOpenSettings: () => void;
   files: string[];
   onOpenFile: (path: string) => void;
 }
@@ -27,6 +28,7 @@ export function CommandPalette({
   onClose,
   onToggleExplorer,
   onToggleContext,
+  onOpenSettings,
   files,
   onOpenFile,
 }: CommandPaletteProps): React.ReactElement | null {
@@ -39,7 +41,7 @@ export function CommandPalette({
       { id: "toggle-explorer", label: "Toggle Explorer", hint: "Ctrl/Cmd+B", group: "commands", icon: <IconPanelLeft width={14} height={14} />, run: onToggleExplorer },
       { id: "toggle-context", label: "Toggle Context", hint: "Ctrl/Cmd+Shift+C", group: "commands", icon: <IconPanelRight width={14} height={14} />, run: onToggleContext },
       { id: "open-workspace", label: "Open workspace", hint: "TASK 14/20", group: "commands", icon: <IconFolder width={14} height={14} />, run: () => undefined },
-      { id: "settings", label: "Open settings", hint: "TASK 22", group: "commands", icon: <IconCommand width={14} height={14} />, run: () => undefined },
+      { id: "settings", label: "Open settings", hint: "Ctrl/Cmd+,", group: "commands", icon: <IconCommand width={14} height={14} />, run: onOpenSettings },
     ];
     const fileItems: PaletteItem[] = files.map((filePath) => ({
       id: `file:${filePath}`,
@@ -56,7 +58,7 @@ export function CommandPalette({
       ? fileItems.filter((item) => item.label.toLowerCase().includes(normalizedQuery)).slice(0, MAX_FILE_RESULTS)
       : fileItems.slice(0, MAX_FILE_RESULTS);
     return [...matchingCommands, ...matchingFiles];
-  }, [query, files, onToggleExplorer, onToggleContext, onOpenFile]);
+  }, [query, files, onToggleExplorer, onToggleContext, onOpenFile, onOpenSettings]);
 
   useEffect(() => {
     if (open) {

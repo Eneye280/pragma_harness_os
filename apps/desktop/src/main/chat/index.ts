@@ -1,6 +1,8 @@
 import { AgentGateway } from "../llm/gateway";
 import { ToolRunner } from "../tools";
 import { resolveHarnessWorkspace } from "../workspace-path";
+import { SettingsGateway, resolveGatewayConfig, type ResolvedGatewayConfig } from "../settings";
+import type { SettingsController } from "../settings";
 import { ChatService, type ChatGateway } from "./chat-service";
 
 const TOOL_INTENT_PATTERN = /(archivo|file|crea|create|write|escribe|guarda|save)/i;
@@ -31,14 +33,21 @@ async function* mockResponder(prompt: string): AsyncGenerator<string> {
   }
 }
 
-export function createChatService(): ChatService {
-  const apiKey = process.env["DEEPSEEK_API_KEY"];
-  const gateway: ChatGateway = apiKey
-    ? new AgentGateway({ provider: "deepseek", apiKey })
-    : new AgentGateway({ provider: "mock" }, mockResponder);
-
-  const scratchPath = resolveHarnessWorkspace();
-  const toolRunner = new ToolRunner({ permission: "allow" });
-
-  return new ChatService({ gateway, toolRunner, toolWorkspacePath: scratchPath });
+export function createGatewayForConfig(config: ResolvedGatewayConfig): ChatGateway {
+  if (config.provider === "mock") return new AgentGateway({ provider: "mock" }, mockResponder);
+  return new AgentGateway({
+    provider: config.provider,
+    apiKey: config.apiKey,
+    baseURL: config.baseURL,
+    model: config.model,
+  });
 }
+
+export function createChatService(settingsController: SettingsController): ChatService {
+  const gateway = new SettingsGateway(() => settingsController.store.get(), createGatewayForConfig);
+  const toolWorkspacePath = resolveHarnessWorkspace();
+  const toolRunner = new ToolRunner({ permission: "allow" });
+  return new ChatService({ gateway, toolRunner, toolWorkspacePath });
+}
+
+export { resolveGatewayConfig };
