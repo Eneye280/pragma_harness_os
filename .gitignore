@@ -63,7 +63,12 @@ temp/
 .utmp/
 
 # Pragma Harness docs (NOT COMMITABLE — 100% local planning, like pragma-unity Documentation/Pragma 2.3/)
-/docs/
+/docs/*
+!/docs/HANDBOOK.md
+!/docs/ARCHITECTURE.md
+!/docs/PLUGIN-SDK.md
+!/docs/assets/
+!/docs/assets/**
 
 # Local harness config (NOT COMMITABLE) — root only, not source
 /.harness/
