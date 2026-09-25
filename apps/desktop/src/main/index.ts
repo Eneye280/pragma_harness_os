@@ -10,6 +10,7 @@ import { registerTerminalHandlers } from "./ipc/terminal-handlers";
 import { registerSettingsHandlers } from "./ipc/settings-handlers";
 import { registerUpdaterHandlers } from "./ipc/updater-handlers";
 import { registerWorkspaceHandlers } from "./ipc/workspace-handlers";
+import { registerGitHandlers } from "./ipc/git-handlers";
 import { SettingsController, SettingsStore } from "./settings";
 import { CostTracker } from "./cost";
 import { createUpdaterHost } from "./updater";
@@ -65,6 +66,7 @@ app.whenReady().then(() => {
   registerSettingsHandlers(() => mainWindow, settingsController, profileStore, workspace);
   registerUpdaterHandlers(() => mainWindow, updater);
   registerWorkspaceHandlers(() => mainWindow, workspace);
+  registerGitHandlers(workspace);
   updater.init();
 
   app.on("activate", () => {

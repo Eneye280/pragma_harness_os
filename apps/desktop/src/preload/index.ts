@@ -6,6 +6,7 @@ import type { ProjectProfileInfo } from "../shared/profile";
 import type { CostSnapshot } from "../shared/cost";
 import type { DreamNotification } from "../shared/dream";
 import type { UpdateStatus } from "../shared/updater";
+import type { GitStatus } from "../shared/git";
 import type { WorkspaceChangedPayload, WorkspacePickResult, WorkspaceState } from "../shared/workspace";
 
 export interface WindowControlsBridge {
@@ -67,6 +68,10 @@ export interface WorkspaceBridge {
   onChanged: (cb: (payload: WorkspaceChangedPayload) => void) => () => void;
 }
 
+export interface GitBridge {
+  status: () => Promise<GitStatus>;
+}
+
 export interface SendMessageOptions {
   sessionId?: string;
   bypassHarness?: boolean;
@@ -87,6 +92,7 @@ export interface HarnessBridge {
   dream: DreamBridge;
   updater: UpdaterBridge;
   workspace: WorkspaceBridge;
+  git: GitBridge;
   windowControls: WindowControlsBridge;
 }
 
@@ -177,6 +183,10 @@ const workspace: WorkspaceBridge = {
   }
 };
 
+const git: GitBridge = {
+  status: () => ipcRenderer.invoke("git:status")
+};
+
 const harness: HarnessBridge = {
   ping: () => ipcRenderer.invoke("harness:ping"),
   sendMessage: (message: string, options?: SendMessageOptions) =>
@@ -201,6 +211,7 @@ const harness: HarnessBridge = {
   dream,
   updater,
   workspace,
+  git,
   windowControls
 };
 
