@@ -57,10 +57,11 @@ export function createChatService(
   settingsController: SettingsController,
   costTracker: CostTracker,
   planGate?: PlanGate,
-  onCostRecorded?: (snapshot: import("../../shared/cost").CostSnapshot) => void
+  onCostRecorded?: (snapshot: import("../../shared/cost").CostSnapshot) => void,
+  getWorkspace?: () => string
 ): ChatService {
   const gateway = new SettingsGateway(() => settingsController.store.get(), createGatewayForConfig);
-  const toolWorkspacePath = resolveHarnessWorkspace();
+  const toolWorkspacePath = getWorkspace ?? resolveHarnessWorkspace;
   const toolRunner = new ToolRunner({ permission: "allow" });
 
   const currentBudget = () => {

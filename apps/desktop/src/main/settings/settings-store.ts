@@ -42,6 +42,7 @@ export const SettingsSchema = z.object({
   gates: z.object({ pre: PreGateSchema, post: PostGateSchema }),
   plugins: z.record(z.boolean()),
   sandbox: z.object({ enabled: z.boolean(), image: z.string() }),
+  workspace: z.object({ active: z.string().default(""), recents: z.array(z.string()).default([]) }).default({ active: "", recents: [] }),
 });
 
 export function resolveSettingsPath(): string {
@@ -64,6 +65,7 @@ export function sanitizeIncoming(current: HarnessSettings, incoming: HarnessSett
     gates: incoming.gates,
     plugins: incoming.plugins,
     sandbox: incoming.sandbox,
+    workspace: incoming.workspace ?? current.workspace,
   };
 }
 
@@ -103,6 +105,12 @@ export class SettingsStore {
       throw new Error(`settings inválidos: ${result.error.issues.map((issue) => issue.path.join(".")).join(", ")}`);
     }
     this.settings = result.data as HarnessSettings;
+    this.persist();
+    return this.get();
+  }
+
+  updateWorkspace(workspace: HarnessSettings["workspace"]): HarnessSettings {
+    this.settings = { ...this.settings, workspace: { active: workspace.active, recents: [...workspace.recents] } };
     this.persist();
     return this.get();
   }

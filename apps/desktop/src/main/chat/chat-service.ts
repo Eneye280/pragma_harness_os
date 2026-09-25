@@ -34,7 +34,7 @@ export interface ChatGateway {
 export interface ChatServiceDeps {
   gateway: ChatGateway;
   toolRunner: ToolRunner;
-  toolWorkspacePath: string;
+  toolWorkspacePath: string | (() => string);
   planGate?: PlanGate;
   contextCompiler?: (input: {
     message: string;
@@ -221,12 +221,14 @@ export class ChatService {
           summary: `fileEdit → ${filePath}`,
           status: "running",
         });
+        const toolWorkspacePath =
+          typeof this.deps.toolWorkspacePath === "function" ? this.deps.toolWorkspacePath() : this.deps.toolWorkspacePath;
         const observation = await this.deps.toolRunner.execute({
           tool: pendingToolCall.tool,
           args: pendingToolCall.args,
           sessionId,
-          workspaceHash: this.deps.toolWorkspacePath,
-          workspacePath: this.deps.toolWorkspacePath,
+          workspaceHash: toolWorkspacePath,
+          workspacePath: toolWorkspacePath,
         });
         lastDiff = observation.diffPreview;
         emit({

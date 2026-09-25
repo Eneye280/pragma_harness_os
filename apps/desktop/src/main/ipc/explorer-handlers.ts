@@ -1,12 +1,26 @@
 import { ipcMain, BrowserWindow } from "electron";
 import { ExplorerController, ReadFileSchema } from "../explorer";
 import { WorkspaceWatcher } from "../explorer/watcher";
+import type { WorkspaceFolderController } from "../workspace-folder";
 
 export function registerExplorerHandlers(
   getMainWindow: () => BrowserWindow | null,
-  workspacePath: string
+  workspace: WorkspaceFolderController
 ): void {
-  const controller = new ExplorerController(workspacePath);
+  let controller = new ExplorerController(workspace.current());
+
+  const startWatcher = (workspacePath: string): WorkspaceWatcher => {
+    const watcher = new WorkspaceWatcher(workspacePath, {
+      onChange: (paths) => {
+        const win = getMainWindow();
+        if (win && !win.isDestroyed()) win.webContents.send("explorer:changed", { paths, ts: Date.now() });
+      },
+    });
+    watcher.start();
+    return watcher;
+  };
+
+  let watcher = startWatcher(controller.workspacePath);
 
   ipcMain.handle("explorer:getTree", async () => controller.getTree());
 
@@ -20,11 +34,11 @@ export function registerExplorerHandlers(
     }
   });
 
-  const watcher = new WorkspaceWatcher(workspacePath, {
-    onChange: (paths) => {
-      const win = getMainWindow();
-      if (win) win.webContents.send("explorer:changed", { paths, ts: Date.now() });
-    },
+  workspace.onChange((workspacePath) => {
+    void watcher.stop();
+    controller = new ExplorerController(workspacePath);
+    watcher = startWatcher(workspacePath);
+    const win = getMainWindow();
+    if (win && !win.isDestroyed()) win.webContents.send("explorer:changed", { paths: [], ts: Date.now() });
   });
-  watcher.start();
 }

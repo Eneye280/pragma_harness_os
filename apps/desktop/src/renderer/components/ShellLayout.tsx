@@ -24,6 +24,10 @@ interface ShellLayoutProps {
   terminalHeight: number;
   onTerminalResize: (height: number) => void;
   onCloseTerminal: () => void;
+  onOpenFolder: () => void;
+  recents: string[];
+  onPickRecent: (path: string) => void;
+  openingFolder: boolean;
 }
 
 export function ShellLayout({
@@ -40,6 +44,10 @@ export function ShellLayout({
   terminalHeight,
   onTerminalResize,
   onCloseTerminal,
+  onOpenFolder,
+  recents,
+  onPickRecent,
+  openingFolder,
 }: ShellLayoutProps): React.ReactElement {
   const pendingPlan = chat.state.planStatus === "proposed" ? chat.state.plan : null;
 
@@ -54,7 +62,15 @@ export function ShellLayout({
           style={{ width: explorerOpen ? PANEL_WIDTHS.explorer : 0 }}
         >
           <div className="h-full" style={{ width: PANEL_WIDTHS.explorer }}>
-            <ExplorerPanel explorer={explorer} selectedPath={selectedPath} onSelectFile={onSelectFile} />
+            <ExplorerPanel
+              explorer={explorer}
+              selectedPath={selectedPath}
+              onSelectFile={onSelectFile}
+              onOpenFolder={onOpenFolder}
+              recents={recents}
+              onPickRecent={onPickRecent}
+              openingFolder={openingFolder}
+            />
           </div>
         </aside>
 

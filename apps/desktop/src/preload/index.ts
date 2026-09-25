@@ -5,6 +5,7 @@ import type { HarnessSettings } from "../shared/settings";
 import type { CostSnapshot } from "../shared/cost";
 import type { DreamNotification } from "../shared/dream";
 import type { UpdateStatus } from "../shared/updater";
+import type { WorkspaceChangedPayload, WorkspacePickResult, WorkspaceState } from "../shared/workspace";
 
 export interface WindowControlsBridge {
   minimize: () => Promise<void>;
@@ -56,6 +57,13 @@ export interface UpdaterBridge {
   onStatus: (cb: (status: UpdateStatus) => void) => () => void;
 }
 
+export interface WorkspaceBridge {
+  get: () => Promise<WorkspaceState>;
+  pick: () => Promise<WorkspacePickResult>;
+  activate: (path: string) => Promise<{ ok: boolean; state: WorkspaceState; error?: string }>;
+  onChanged: (cb: (payload: WorkspaceChangedPayload) => void) => () => void;
+}
+
 export interface SendMessageOptions {
   sessionId?: string;
   bypassHarness?: boolean;
@@ -75,6 +83,7 @@ export interface HarnessBridge {
   cost: CostBridge;
   dream: DreamBridge;
   updater: UpdaterBridge;
+  workspace: WorkspaceBridge;
   windowControls: WindowControlsBridge;
 }
 
@@ -152,6 +161,17 @@ const updater: UpdaterBridge = {
   }
 };
 
+const workspace: WorkspaceBridge = {
+  get: () => ipcRenderer.invoke("workspace:get"),
+  pick: () => ipcRenderer.invoke("workspace:pick"),
+  activate: (path: string) => ipcRenderer.invoke("workspace:activate", path),
+  onChanged: (cb) => {
+    const handler = (_e: unknown, payload: WorkspaceChangedPayload) => cb(payload);
+    ipcRenderer.on("workspace:changed", handler as never);
+    return () => ipcRenderer.removeListener("workspace:changed", handler as never);
+  }
+};
+
 const harness: HarnessBridge = {
   ping: () => ipcRenderer.invoke("harness:ping"),
   sendMessage: (message: string, options?: SendMessageOptions) =>
@@ -175,6 +195,7 @@ const harness: HarnessBridge = {
   cost,
   dream,
   updater,
+  workspace,
   windowControls
 };
 

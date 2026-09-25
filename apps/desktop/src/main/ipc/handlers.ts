@@ -4,7 +4,6 @@ import { ingress } from "../harness/ingress";
 import { runPipelineStub } from "../harness/pipeline/stub";
 import { MemoryEventLog } from "../db/memory-event-log";
 import { createChatService } from "../chat";
-import { resolveHarnessWorkspace } from "../workspace-path";
 import { PlanController } from "../plan";
 import { DreamingScheduler } from "../dreaming";
 import { vault } from "../memory/vault";
@@ -12,6 +11,7 @@ import { AgentGateway } from "../llm/gateway";
 import { CORRECTION_PATTERN, extractCorrectionTrigger } from "../../shared/dream";
 import type { SettingsController } from "../settings";
 import type { CostTracker } from "../cost";
+import type { WorkspaceFolderController } from "../workspace-folder";
 
 function buildAnalyzer(settingsController: SettingsController) {
   return async (candidate: { kind: string; trigger: string; content: string; count: number }): Promise<string> => {
@@ -46,13 +46,20 @@ const memoryLog = new MemoryEventLog();
 export function registerIpcHandlers(
   getMainWindow: () => BrowserWindow | null,
   settingsController: SettingsController,
-  costTracker: CostTracker
+  costTracker: CostTracker,
+  workspace: WorkspaceFolderController
 ): void {
   const planController = new PlanController();
-  const chatService = createChatService(settingsController, costTracker, planController, (snapshot) => {
-    const win = getMainWindow();
-    if (win) win.webContents.send("cost:updated", snapshot);
-  });
+  const chatService = createChatService(
+    settingsController,
+    costTracker,
+    planController,
+    (snapshot) => {
+      const win = getMainWindow();
+      if (win) win.webContents.send("cost:updated", snapshot);
+    },
+    () => workspace.current()
+  );
 
   ipcMain.handle("cost:get", async () => {
     const settings = settingsController.store.get();
@@ -61,12 +68,12 @@ export function registerIpcHandlers(
 
   const dreamingScheduler = new DreamingScheduler({
     getEvents: () => memoryLog.allEvents(),
-    workspacePath: () => resolveHarnessWorkspace(),
+    workspacePath: () => workspace.current(),
     deps: { addInstinct: (workspacePath, data) => vault.addInstinct(workspacePath, data), analyze: buildAnalyzer(settingsController) },
     onLearned: (results) => {
       const win = getMainWindow();
       if (!win) return;
-      const workspaceHash = resolveHarnessWorkspace();
+      const workspaceHash = workspace.current();
       for (const result of results) {
         win.webContents.send("dream:learned", { ...result, workspaceHash, ts: Date.now() });
       }
@@ -101,7 +108,7 @@ export function registerIpcHandlers(
 
     const { context, eventId } = ingress.intercept(parsed.data.message, {
       sessionId: parsed.data.sessionId,
-      workspacePath: resolveHarnessWorkspace(),
+      workspacePath: workspace.current(),
     });
     const harnessEvent = ingress.createHarnessEvent(context, eventId);
 
