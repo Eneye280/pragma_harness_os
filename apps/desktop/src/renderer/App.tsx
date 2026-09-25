@@ -2,6 +2,7 @@ import { useCallback, useEffect, useReducer, useState } from "react";
 import type { ExplorerFile } from "@shared/explorer";
 import { CommandPalette } from "./components/CommandPalette";
 import { OnboardingCard } from "./components/OnboardingCard";
+import { StackWizard } from "./components/StackWizard";
 import { SettingsModal } from "./components/SettingsModal";
 import { ShellLayout } from "./components/ShellLayout";
 import { TitleBar } from "./components/TitleBar";
@@ -30,6 +31,7 @@ export function App(): React.ReactElement {
       return false;
     }
   });
+  const [stackWizardOpen, setStackWizardOpen] = useState(false);
   const explorer = useExplorer();
   const chat = useChat();
   const cost = useCost();
@@ -45,6 +47,35 @@ export function App(): React.ReactElement {
   useEffect(() => {
     refreshSettings();
   }, [workspace.active, refreshSettings]);
+
+  useEffect(() => {
+    if (!workspace.active) {
+      setStackWizardOpen(false);
+      return;
+    }
+    const bridge = window.harness?.bundles;
+    if (!bridge) return;
+    let dismissed = false;
+    try {
+      dismissed = localStorage.getItem(`phs:stack-wizard:${workspace.active}`) === "done";
+    } catch {
+      dismissed = false;
+    }
+    if (dismissed) {
+      setStackWizardOpen(false);
+      return;
+    }
+    let cancelled = false;
+    bridge
+      .detect()
+      .then((detection) => {
+        if (!cancelled) setStackWizardOpen(detection.blank);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [workspace.active]);
 
   useEffect(() => {
     const bridge = window.harness;
@@ -122,6 +153,27 @@ export function App(): React.ReactElement {
     setShowOnboarding(false);
   }, []);
 
+  const dismissStackWizard = useCallback(() => {
+    try {
+      localStorage.setItem(`phs:stack-wizard:${workspace.active}`, "done");
+    } catch {
+      // persistence is best-effort
+    }
+    setStackWizardOpen(false);
+  }, [workspace.active]);
+
+  const handleStackApplied = useCallback(() => {
+    try {
+      localStorage.setItem(`phs:stack-wizard:${workspace.active}`, "done");
+    } catch {
+      // persistence is best-effort
+    }
+    setStackWizardOpen(false);
+    settingsState.refresh();
+    skillsState.refresh();
+    agentsState.refresh();
+  }, [workspace.active, settingsState, skillsState, agentsState]);
+
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-surface text-zinc-100">
       <a href="#main" className="skip-link">
@@ -176,6 +228,7 @@ export function App(): React.ReactElement {
       />
 
       {showOnboarding ? <OnboardingCard onDismiss={dismissOnboarding} /> : null}
+      {stackWizardOpen ? <StackWizard onSkip={dismissStackWizard} onApplied={handleStackApplied} /> : null}
 
       {dreamLearned.length > 0 ? (
         <div className="pointer-events-none fixed right-4 top-12 z-40 flex w-[320px] flex-col gap-2">

@@ -9,7 +9,7 @@ import type { UpdateStatus } from "../shared/updater";
 import type { GitStatus } from "../shared/git";
 import type { SkillSummary } from "../shared/skills";
 import type { AgentSummary } from "../shared/agents";
-import type { BundleSummary, BundleValidation } from "../shared/bundles";
+import type { BundleSummary, BundleValidation, StackDetection } from "../shared/bundles";
 import type { WorkspaceChangedPayload, WorkspacePickResult, WorkspaceState } from "../shared/workspace";
 
 export interface WindowControlsBridge {
@@ -88,6 +88,8 @@ export interface AgentsBridge {
 export interface BundlesBridge {
   list: () => Promise<BundleSummary[]>;
   apply: (stack: string) => Promise<{ ok: boolean; error?: string; profile?: ProjectProfileInfo; validation?: BundleValidation }>;
+  detect: () => Promise<StackDetection>;
+  scaffold: (stack: string) => Promise<{ ok: boolean; error?: string; written?: boolean; path?: string }>;
 }
 
 export interface SendMessageOptions {
@@ -220,7 +222,9 @@ const agents: AgentsBridge = {
 
 const bundles: BundlesBridge = {
   list: () => ipcRenderer.invoke("bundles:list"),
-  apply: (stack: string) => ipcRenderer.invoke("bundles:apply", stack)
+  apply: (stack: string) => ipcRenderer.invoke("bundles:apply", stack),
+  detect: () => ipcRenderer.invoke("bundles:detect"),
+  scaffold: (stack: string) => ipcRenderer.invoke("bundles:scaffold", stack)
 };
 
 const harness: HarnessBridge = {
