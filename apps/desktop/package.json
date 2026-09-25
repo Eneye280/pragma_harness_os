@@ -22,10 +22,13 @@
     "drizzle-orm": "^0.45.3",
     "harness-core": "workspace:*",
     "harness-sdk": "workspace:*",
-    "ui-tokens": "workspace:*"
+    "hono": "^4.13.9",
+    "ui-tokens": "workspace:*",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@electron-toolkit/utils": "^4.0.0",
+    "@hono/node-server": "^2.1.1",
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^22.10.5",
     "@types/react": "^19.0.1",
