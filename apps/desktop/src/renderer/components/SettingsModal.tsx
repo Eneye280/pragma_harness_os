@@ -10,6 +10,7 @@ import { cn } from "../lib/cn";
 import { IconClose } from "./icons";
 import type { UseSettingsResult } from "../settings/use-settings";
 import type { UseUpdaterResult } from "../settings/use-updater";
+import { useFocusTrap } from "../shell/use-focus-trap";
 
 interface SettingsModalProps {
   open: boolean;
@@ -43,6 +44,7 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater }: S
   const { settings, resolved, saving, error, testResult, save, testProvider } = settingsState;
   const [draft, setDraft] = useState<HarnessSettings | null>(settings);
   const [revealKey, setRevealKey] = useState(false);
+  const containerRef = useFocusTrap(open, onClose);
 
   useEffect(() => {
     if (open && settings) setDraft(settings);
@@ -71,14 +73,15 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater }: S
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 px-4 py-10 backdrop-blur-sm" onMouseDown={onClose} role="presentation">
       <div
+        ref={containerRef}
         className="palette-anim flex max-h-full w-full max-w-[680px] flex-col overflow-hidden rounded-panel border border-hairline bg-surface-raised shadow-2xl shadow-black/60"
         onMouseDown={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        aria-label="Settings"
+        aria-labelledby="settings-title"
       >
         <div className="flex items-center gap-2 border-b border-hairline px-4 py-3">
-          <span className="text-[13px] font-semibold text-zinc-100">Settings</span>
+          <span id="settings-title" className="text-[13px] font-semibold text-zinc-100">Settings</span>
           <span className="rounded-full bg-zinc-800 px-2 py-[1px] text-[10px] text-zinc-400">{resolved?.provider ?? "—"}</span>
           {resolved ? <span className="font-mono text-[10px] text-zinc-600">{resolved.model}</span> : null}
           <button

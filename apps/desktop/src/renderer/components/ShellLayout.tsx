@@ -49,6 +49,7 @@ export function ShellLayout({
         <aside
           aria-label="Explorer"
           aria-hidden={!explorerOpen}
+          inert={!explorerOpen ? true : undefined}
           className={cn("panel-anim shrink-0 overflow-hidden", explorerOpen ? "border-r border-hairline" : "border-r-0")}
           style={{ width: explorerOpen ? PANEL_WIDTHS.explorer : 0 }}
         >
@@ -57,7 +58,7 @@ export function ShellLayout({
           </div>
         </aside>
 
-        <main className="min-w-0 flex-1">
+        <main id="main" tabIndex={-1} className="min-w-0 flex-1 outline-none">
           {pendingPlan ? (
             <PlanCanvas
               plan={pendingPlan}
@@ -75,6 +76,7 @@ export function ShellLayout({
         <aside
           aria-label="Context"
           aria-hidden={!contextOpen}
+          inert={!contextOpen ? true : undefined}
           className={cn("panel-anim shrink-0 overflow-hidden", contextOpen ? "border-l border-hairline" : "border-l-0")}
           style={{ width: contextOpen ? PANEL_WIDTHS.context : 0 }}
         >

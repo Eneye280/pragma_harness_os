@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "../lib/cn";
+import { useFocusTrap } from "../shell/use-focus-trap";
 import { IconCommand, IconFile, IconFolder, IconPanelLeft, IconPanelRight, IconSearch } from "./icons";
 
 interface PaletteItem {
@@ -35,6 +36,8 @@ export function CommandPalette({
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const optionRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+  const containerRef = useFocusTrap(open, onClose);
 
   const items = useMemo<PaletteItem[]>(() => {
     const commands: PaletteItem[] = [
@@ -71,6 +74,12 @@ export function CommandPalette({
   useEffect(() => {
     if (activeIndex > items.length - 1) setActiveIndex(0);
   }, [items, activeIndex]);
+
+  useEffect(() => {
+    if (!open) return;
+    const item = items[activeIndex];
+    if (item) optionRefs.current.get(item.id)?.scrollIntoView({ block: "nearest" });
+  }, [activeIndex, items, open]);
 
   if (!open) return null;
 
@@ -111,6 +120,7 @@ export function CommandPalette({
       role="presentation"
     >
       <div
+        ref={containerRef}
         className="palette-anim w-full max-w-[560px] overflow-hidden rounded-panel border border-hairline bg-surface-raised shadow-2xl shadow-black/60"
         onMouseDown={(event) => event.stopPropagation()}
         role="dialog"
@@ -118,19 +128,24 @@ export function CommandPalette({
         aria-label="Command palette"
       >
         <div className="flex items-center gap-2 border-b border-hairline px-3 py-2.5">
-          <IconSearch width={15} height={15} className="text-zinc-500" />
+          <IconSearch width={15} height={15} className="text-zinc-500" aria-hidden="true" />
           <input
             ref={inputRef}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Comando o archivo… (Ctrl/Cmd+P)"
+            role="combobox"
+            aria-expanded="true"
+            aria-controls="palette-listbox"
+            aria-activedescendant={items[activeIndex]?.id}
+            aria-label="Buscar comando o archivo"
             className="flex-1 bg-transparent text-[13px] text-zinc-100 outline-none placeholder:text-zinc-600"
           />
           <kbd className="rounded bg-zinc-800 px-1.5 py-0.5 font-mono text-[10px] text-zinc-400">Esc</kbd>
         </div>
 
-        <ul className="max-h-[320px] overflow-y-auto p-1.5">
+        <ul id="palette-listbox" role="listbox" aria-label="Resultados" className="max-h-[320px] overflow-y-auto p-1.5">
           {items.length === 0 ? (
             <li className="px-3 py-6 text-center text-[12px] text-zinc-500">Sin resultados</li>
           ) : (
@@ -146,6 +161,13 @@ export function CommandPalette({
                   ) : null}
                   <button
                     type="button"
+                    id={item.id}
+                    role="option"
+                    aria-selected={index === activeIndex}
+                    ref={(element) => {
+                      if (element) optionRefs.current.set(item.id, element);
+                      else optionRefs.current.delete(item.id);
+                    }}
                     onMouseEnter={() => setActiveIndex(index)}
                     onClick={() => runItem(item)}
                     className={cn(
@@ -153,9 +175,11 @@ export function CommandPalette({
                       index === activeIndex ? "bg-harness/15 text-zinc-100" : "text-zinc-400 hover:bg-zinc-800/70",
                     )}
                   >
-                    <span className={index === activeIndex ? "text-harness-soft" : "text-zinc-500"}>{item.icon}</span>
+                    <span className={index === activeIndex ? "text-harness-soft" : "text-zinc-500"} aria-hidden="true">
+                      {item.icon}
+                    </span>
                     <span className="flex-1 truncate">{item.label}</span>
-                    <span className="font-mono text-[10px] text-zinc-600">{item.hint}</span>
+                    <span className="font-mono text-[10px] text-zinc-500">{item.hint}</span>
                   </button>
                 </li>
               );
