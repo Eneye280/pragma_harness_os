@@ -1,4 +1,4 @@
-export type HarnessPhase = "classify" | "plugins" | "rules" | "skills" | "context" | "pre-gates" | "agent";
+export type HarnessPhase = "classify" | "plugins" | "rules" | "skills" | "context" | "pre-gates" | "plan" | "agent";
 
 export type HarnessStepStatus = "running" | "done" | "blocked";
 
@@ -47,13 +47,27 @@ export interface ChatErrorEvent {
   message: string;
 }
 
+export interface PlanProposedEvent {
+  kind: "plan-proposed";
+  sessionId: string;
+  plan: import("./plan").PlanProposal;
+}
+
+export interface PlanResolvedEvent {
+  kind: "plan-resolved";
+  sessionId: string;
+  action: "approve" | "discard";
+}
+
 export type ChatStreamEvent =
   | HarnessStepEvent
   | AssistantDeltaEvent
   | AssistantDoneEvent
   | ToolCallEvent
   | ToolObservationEvent
-  | ChatErrorEvent;
+  | ChatErrorEvent
+  | PlanProposedEvent
+  | PlanResolvedEvent;
 
 export interface ChatSendRequest {
   message: string;

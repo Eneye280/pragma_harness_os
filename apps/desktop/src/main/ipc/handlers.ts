@@ -5,6 +5,7 @@ import { runPipelineStub } from "../harness/pipeline/stub";
 import { MemoryEventLog } from "../db/memory-event-log";
 import { createChatService } from "../chat";
 import { resolveHarnessWorkspace } from "../workspace-path";
+import { PlanController } from "../plan";
 import type { SettingsController } from "../settings";
 
 const sendMessageSchema = z.object({
@@ -20,7 +21,24 @@ export function registerIpcHandlers(
   getMainWindow: () => BrowserWindow | null,
   settingsController: SettingsController
 ): void {
-  const chatService = createChatService(settingsController);
+  const planController = new PlanController();
+  const chatService = createChatService(settingsController, planController);
+
+  ipcMain.handle("plan:decide", async (_event, rawPayload: unknown) => {
+    const payload = z
+      .object({ sessionId: z.string().min(1), action: z.enum(["approve", "discard"]), markdown: z.string().optional() })
+      .safeParse(rawPayload);
+    if (!payload.success) return { ok: false, error: "invalid plan decision" };
+    const { sessionId, action, markdown } = payload.data;
+    if (action === "discard") return { ok: planController.decide(sessionId, { action: "discard" }) };
+    return { ok: planController.decide(sessionId, { action: "approve", markdown: markdown ?? "" }) };
+  });
+
+  ipcMain.handle("plan:revise", async (_event, rawPayload: unknown) => {
+    const payload = z.object({ sessionId: z.string().min(1), markdown: z.string() }).safeParse(rawPayload);
+    if (!payload.success) return { ok: false, error: "invalid plan revision" };
+    return { ok: planController.revise(payload.data.sessionId, payload.data.markdown) };
+  });
   ipcMain.handle("harness:ping", async () => pingResponse);
 
   ipcMain.handle("harness:sendMessage", async (_e, rawMessage: unknown) => {

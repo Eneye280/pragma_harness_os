@@ -3,6 +3,7 @@ import { ToolRunner } from "../tools";
 import { resolveHarnessWorkspace } from "../workspace-path";
 import { SettingsGateway, resolveGatewayConfig, type ResolvedGatewayConfig } from "../settings";
 import type { SettingsController } from "../settings";
+import type { PlanGate } from "../plan";
 import { ChatService, type ChatGateway } from "./chat-service";
 
 const TOOL_INTENT_PATTERN = /(archivo|file|crea|create|write|escribe|guarda|save)/i;
@@ -43,11 +44,11 @@ export function createGatewayForConfig(config: ResolvedGatewayConfig): ChatGatew
   });
 }
 
-export function createChatService(settingsController: SettingsController): ChatService {
+export function createChatService(settingsController: SettingsController, planGate?: PlanGate): ChatService {
   const gateway = new SettingsGateway(() => settingsController.store.get(), createGatewayForConfig);
   const toolWorkspacePath = resolveHarnessWorkspace();
   const toolRunner = new ToolRunner({ permission: "allow" });
-  return new ChatService({ gateway, toolRunner, toolWorkspacePath });
+  return new ChatService({ gateway, toolRunner, toolWorkspacePath, planGate });
 }
 
 export { resolveGatewayConfig };

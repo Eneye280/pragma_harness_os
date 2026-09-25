@@ -4,12 +4,12 @@ import { IconSend, IconSparkles } from "./icons";
 import { HarnessStrip } from "../chat/HarnessStrip";
 import { MarkdownView } from "../chat/MarkdownView";
 import { ToolCallCard } from "../chat/ToolCallCard";
-import { useChat } from "../chat/use-chat";
+import type { UseChatResult } from "../chat/use-chat";
 
 const SCROLL_THRESHOLD = 80;
 
-export function ChatPanel(): React.ReactElement {
-  const { state, isRunning, send } = useChat();
+export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement {
+  const { state, isRunning, send } = chat;
   const [draft, setDraft] = useState("");
   const [showScrollButton, setShowScrollButton] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);

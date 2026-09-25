@@ -13,6 +13,9 @@ export interface UseChatResult {
   sessionId: string;
   isRunning: boolean;
   send: (text: string, options?: { bypassHarness?: boolean }) => void;
+  approvePlan: (markdown: string) => void;
+  discardPlan: () => void;
+  revisePlan: (markdown: string) => void;
   reset: () => void;
 }
 
@@ -52,5 +55,23 @@ export function useChat(): UseChatResult {
     setIsRunning(false);
   }, []);
 
-  return { state, sessionId: sessionRef.current, isRunning, send, reset };
+  const approvePlan = useCallback(
+    (markdown: string) => {
+      void window.harness?.plan.approve(sessionRef.current, markdown);
+    },
+    [],
+  );
+
+  const discardPlan = useCallback(() => {
+    void window.harness?.plan.discard(sessionRef.current);
+  }, []);
+
+  const revisePlan = useCallback(
+    (markdown: string) => {
+      void window.harness?.plan.revise(sessionRef.current, markdown);
+    },
+    [],
+  );
+
+  return { state, sessionId: sessionRef.current, isRunning, send, approvePlan, discardPlan, revisePlan, reset };
 }

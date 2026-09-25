@@ -86,4 +86,51 @@ describe("ChatService", () => {
     expect(prompt).toContain("needs=tdd-workflow,security-review");
     expect(prompt).toContain("agrega auth");
   });
+
+  it("proposes a plan and waits for approval before executing", async () => {
+    const events: ChatStreamEvent[] = [];
+    let proposedFiles = 0;
+    const planGate = {
+      propose: async (plan: { files: string[]; sessionId: string }, emit: (event: ChatStreamEvent) => void) => {
+        proposedFiles = plan.files.length;
+        emit({ kind: "plan-proposed", sessionId: plan.sessionId, plan: plan as never });
+        return { action: "approve" as const, markdown: "# Plan editado por el usuario" };
+      },
+    };
+    const service = new ChatService({
+      gateway: { stream: () => streamChunks(["ejecutando"]) },
+      toolRunner: makeRunner({}),
+      toolWorkspacePath: "/tmp/ws",
+      planGate,
+    });
+    await service.run({ message: "agrega un módulo de reportes", sessionId: "sess-1", workspacePath: "/tmp/repo" }, (event) =>
+      events.push(event),
+    );
+    expect(proposedFiles).toBeGreaterThan(0);
+    expect(events.some((event) => event.kind === "plan-proposed")).toBe(true);
+    expect(events.find((event) => event.kind === "assistant-delta")).toMatchObject({ text: "ejecutando" });
+    expect(events.some((event) => event.kind === "plan-resolved")).toBe(false);
+  });
+
+  it("stops without calling the agent when the plan is discarded", async () => {
+    const events: ChatStreamEvent[] = [];
+    let gatewayUsed = false;
+    const service = new ChatService({
+      gateway: {
+        stream: () => {
+          gatewayUsed = true;
+          return streamChunks(["no debería ejecutarse"]);
+        },
+      },
+      toolRunner: makeRunner({}),
+      toolWorkspacePath: "/tmp/ws",
+      planGate: { propose: async () => ({ action: "discard" as const }) },
+    });
+    await service.run({ message: "agrega un módulo de reportes", sessionId: "sess-1", workspacePath: "/tmp/repo" }, (event) =>
+      events.push(event),
+    );
+    expect(gatewayUsed).toBe(false);
+    const finalDelta = events.filter((event) => event.kind === "assistant-delta").at(-1);
+    expect(finalDelta).toMatchObject({ text: expect.stringContaining("descartado") });
+  });
 });
