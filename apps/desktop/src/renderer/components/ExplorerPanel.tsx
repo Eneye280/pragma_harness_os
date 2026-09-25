@@ -34,9 +34,18 @@ export function ExplorerPanel({ explorer, selectedPath, onSelectFile }: Explorer
         {explorer.loading ? (
           <p className="px-1 py-2 text-[11px] text-zinc-600">cargando…</p>
         ) : explorer.error ? (
-          <p className="px-1 py-2 text-[11px] text-red-400">{explorer.error}</p>
+          <EmptyNotice title="No se pudo abrir el workspace" body={explorer.error} actionLabel="Reintentar" onAction={explorer.refresh} />
         ) : explorer.visibleNodes.length === 0 ? (
-          <p className="px-1 py-2 text-[11px] text-zinc-600">sin resultados</p>
+          explorer.search ? (
+            <EmptyNotice title="Sin resultados" body={`Nada coincide con “${explorer.search}”.`} />
+          ) : (
+            <EmptyNotice
+              title="No workspace open"
+              body="Configura HARNESS_WORKSPACE o abre una carpeta con archivos para navegar el proyecto."
+              actionLabel="Reintentar"
+              onAction={explorer.refresh}
+            />
+          )
         ) : (
           <FileTree
             nodes={explorer.visibleNodes}
@@ -49,6 +58,31 @@ export function ExplorerPanel({ explorer, selectedPath, onSelectFile }: Explorer
       </div>
 
       <div className="border-t border-hairline px-3 py-2 text-[10px] text-zinc-600">watcher en vivo · chokidar</div>
+    </div>
+  );
+}
+
+interface EmptyNoticeProps {
+  title: string;
+  body: string;
+  actionLabel?: string;
+  onAction?: () => void;
+}
+
+function EmptyNotice({ title, body, actionLabel, onAction }: EmptyNoticeProps): React.ReactElement {
+  return (
+    <div className="fade-in mx-1 rounded-panel border border-hairline bg-surface-raised p-3">
+      <p className="text-[12px] font-medium text-zinc-200">{title}</p>
+      <p className="mt-1 text-[11px] leading-relaxed text-zinc-400">{body}</p>
+      {actionLabel && onAction ? (
+        <button
+          type="button"
+          onClick={onAction}
+          className="mt-2 rounded-control border border-harness/40 bg-harness/10 px-2.5 py-1 text-[11px] text-harness-soft transition-colors hover:bg-harness/20"
+        >
+          {actionLabel}
+        </button>
+      ) : null}
     </div>
   );
 }

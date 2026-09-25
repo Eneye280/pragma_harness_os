@@ -43,7 +43,8 @@ export function TitleBar({
       </div>
 
       <span className="rounded-full border border-harness/40 bg-harness/10 px-2 py-[3px] text-[10px] font-medium text-harness-soft">
-        ● {status}
+        <span aria-hidden="true">● </span>
+        {status}
       </span>
 
       <nav className="no-drag ml-2 flex items-center gap-1">

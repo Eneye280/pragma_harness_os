@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useReducer, useState } from "react";
 import type { ExplorerFile } from "@shared/explorer";
 import { CommandPalette } from "./components/CommandPalette";
+import { OnboardingCard } from "./components/OnboardingCard";
 import { SettingsModal } from "./components/SettingsModal";
 import { ShellLayout } from "./components/ShellLayout";
 import { TitleBar } from "./components/TitleBar";
@@ -12,11 +13,19 @@ import { useSettings } from "./settings/use-settings";
 import { useUpdater } from "./settings/use-updater";
 import { INITIAL_PANEL_STATE, actionForShortcut, panelReducer } from "./shell/panel-state";
 import { isEditableTarget, resolveShellShortcut } from "./shell/shortcuts";
+import { ONBOARDING_STORAGE_KEY, shouldShowOnboarding } from "./shell/onboarding";
 
 export function App(): React.ReactElement {
   const [panels, dispatch] = useReducer(panelReducer, INITIAL_PANEL_STATE);
   const [status, setStatus] = useState("connecting…");
   const [previewFile, setPreviewFile] = useState<ExplorerFile | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    try {
+      return shouldShowOnboarding(localStorage.getItem(ONBOARDING_STORAGE_KEY));
+    } catch {
+      return false;
+    }
+  });
   const explorer = useExplorer();
   const chat = useChat();
   const cost = useCost();
@@ -91,9 +100,20 @@ export function App(): React.ReactElement {
   );
   const openSettings = useCallback(() => dispatch({ type: "open-settings" }), []);
   const closeSettings = useCallback(() => dispatch({ type: "close-settings" }), []);
+  const dismissOnboarding = useCallback(() => {
+    try {
+      localStorage.setItem(ONBOARDING_STORAGE_KEY, "done");
+    } catch {
+      // persistence is best-effort
+    }
+    setShowOnboarding(false);
+  }, []);
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-surface text-zinc-100">
+      <a href="#main" className="skip-link">
+        Saltar al chat
+      </a>
       <TitleBar
         status={status}
         cost={cost}
@@ -134,6 +154,8 @@ export function App(): React.ReactElement {
         cost={cost}
         updater={updater}
       />
+
+      {showOnboarding ? <OnboardingCard onDismiss={dismissOnboarding} /> : null}
 
       {dreamLearned.length > 0 ? (
         <div className="pointer-events-none fixed right-4 top-12 z-40 flex w-[320px] flex-col gap-2">
