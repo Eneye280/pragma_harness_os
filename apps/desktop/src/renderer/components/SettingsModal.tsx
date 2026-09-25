@@ -9,13 +9,26 @@ import type { CostSnapshot } from "@shared/cost";
 import { cn } from "../lib/cn";
 import { IconClose } from "./icons";
 import type { UseSettingsResult } from "../settings/use-settings";
+import type { UseUpdaterResult } from "../settings/use-updater";
 
 interface SettingsModalProps {
   open: boolean;
   onClose: () => void;
   settingsState: UseSettingsResult;
   cost: CostSnapshot | null;
+  updater: UseUpdaterResult;
 }
+
+const UPDATE_STAGE_LABEL: Record<string, string> = {
+  idle: "sin comprobar",
+  disabled: "no disponible en dev",
+  checking: "buscando…",
+  available: "actualización disponible",
+  "not-available": "al día",
+  downloading: "descargando…",
+  downloaded: "lista para instalar",
+  error: "error",
+};
 
 const POST_GATE_LABELS: Array<{ key: keyof HarnessSettings["gates"]["post"]; label: string }> = [
   { key: "build", label: "build" },
@@ -26,7 +39,7 @@ const POST_GATE_LABELS: Array<{ key: keyof HarnessSettings["gates"]["post"]; lab
   { key: "visual", label: "visual" },
 ];
 
-export function SettingsModal({ open, onClose, settingsState, cost }: SettingsModalProps): React.ReactElement | null {
+export function SettingsModal({ open, onClose, settingsState, cost, updater }: SettingsModalProps): React.ReactElement | null {
   const { settings, resolved, saving, error, testResult, save, testProvider } = settingsState;
   const [draft, setDraft] = useState<HarnessSettings | null>(settings);
   const [revealKey, setRevealKey] = useState(false);
@@ -270,6 +283,59 @@ export function SettingsModal({ open, onClose, settingsState, cost }: SettingsMo
                 className="w-40 rounded-control border border-hairline bg-surface px-2 py-1.5 font-mono text-[12px] text-zinc-200 outline-none focus:border-harness/60"
               />
             </Field>
+          </Section>
+
+          <Section title="Actualizaciones">
+            <div className="flex items-center gap-3">
+              <span
+                className={cn(
+                  "rounded-full px-2 py-[1px] text-[10px]",
+                  updater.status?.stage === "downloaded"
+                    ? "bg-emerald-500/15 text-emerald-300"
+                    : updater.status?.stage === "error"
+                      ? "bg-red-500/15 text-red-300"
+                      : "bg-zinc-800 text-zinc-400",
+                )}
+              >
+                {UPDATE_STAGE_LABEL[updater.status?.stage ?? "idle"] ?? "—"}
+              </span>
+              <span className="font-mono text-[10px] text-zinc-600">
+                v{updater.status?.currentVersion ?? "—"}
+                {updater.status?.version ? ` → v${updater.status.version}` : ""}
+                {typeof updater.status?.percent === "number" ? ` · ${updater.status.percent}%` : ""}
+              </span>
+            </div>
+            {updater.status?.message ? <p className="text-[11px] text-zinc-500">{updater.status.message}</p> : null}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={updater.busy || updater.status?.stage === "disabled"}
+                onClick={() => void updater.check()}
+                className="rounded-control border border-hairline px-3 py-1.5 text-[11px] text-zinc-300 transition-colors hover:bg-zinc-800 disabled:opacity-40"
+              >
+                Buscar actualizaciones
+              </button>
+              {updater.status?.stage === "available" ? (
+                <button
+                  type="button"
+                  disabled={updater.busy}
+                  onClick={() => void updater.download()}
+                  className="rounded-control border border-harness/40 bg-harness/10 px-3 py-1.5 text-[11px] text-harness-soft hover:bg-harness/20 disabled:opacity-40"
+                >
+                  Descargar
+                </button>
+              ) : null}
+              {updater.status?.stage === "downloaded" ? (
+                <button
+                  type="button"
+                  onClick={() => void updater.install()}
+                  className="rounded-control bg-harness px-3 py-1.5 text-[11px] font-medium text-white hover:bg-harness-strong"
+                >
+                  Reiniciar e instalar
+                </button>
+              ) : null}
+            </div>
+            <p className="text-[10px] text-zinc-600">feed: GitHub Releases · autoDownload on</p>
           </Section>
 
           {error ? <p className="text-[11px] text-red-400">{error}</p> : null}

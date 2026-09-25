@@ -1,0 +1,53 @@
+appId: com.pragma.harness
+productName: Pragma Harness OS
+copyright: Copyright © 2026 Pragma
+
+directories:
+  buildResources: build
+  output: dist
+
+files:
+  - out/**/*
+  - package.json
+
+asarUnpack:
+  - "**/*.node"
+
+npmRebuild: false
+
+publish:
+  provider: github
+  owner: Eneye280
+  repo: pragma_harness_os
+
+win:
+  icon: build/icon.ico
+  target:
+    - target: nsis
+      arch:
+        - x64
+  artifactName: ${productName}-Setup-${version}.${ext}
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Pragma Harness OS
+  deleteAppDataOnUninstall: false
+
+mac:
+  icon: build/icon.png
+  category: public.app-category.developer-tools
+  target:
+    - dmg
+    - zip
+  artifactName: ${productName}-${version}.${ext}
+
+linux:
+  icon: build/icon.png
+  category: Development
+  target:
+    - AppImage
+  artifactName: ${productName}-${version}.${ext}

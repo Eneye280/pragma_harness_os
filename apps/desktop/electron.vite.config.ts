@@ -7,7 +7,7 @@ export default defineConfig({
   main: {
     build: {
       rollupOptions: {
-        external: ["better-sqlite3", "hono", "chokidar", "simple-git", "dockerode", "@hono/node-server", "node-pty"]
+        external: ["better-sqlite3", "hono", "chokidar", "simple-git", "dockerode", "@hono/node-server", "node-pty", "electron-updater"]
       }
     }
   },

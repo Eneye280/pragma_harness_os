@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Pragma Harness Desktop — Electron harness control plane",
+  "author": "Pragma",
   "main": "out/main/index.js",
   "type": "module",
   "scripts": {
@@ -17,10 +18,12 @@
     "test:harness": "vitest run src/main/harness/__tests__",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "dist": "electron-builder"
+    "icons": "node scripts/generate-icons.mjs",
+    "dist": "electron-vite build && electron-builder"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^3.0.55",
+    "@hono/node-server": "^2.1.1",
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/xterm": "^6.0.0",
     "ai": "^7.0.114",
@@ -28,18 +31,15 @@
     "chokidar": "^5.0.0",
     "dockerode": "^5.0.1",
     "drizzle-orm": "^0.45.3",
+    "electron-updater": "^6.3.9",
     "fast-glob": "^3.3.3",
-    "harness-core": "workspace:*",
-    "harness-sdk": "workspace:*",
     "hono": "^4.13.9",
     "simple-git": "^4.0.1",
-    "ui-tokens": "workspace:*",
     "zod": "^3.25.76"
   },
   "devDependencies": {
     "@ai-sdk/provider": "^4.0.18",
     "@electron-toolkit/utils": "^4.0.0",
-    "@hono/node-server": "^2.1.1",
     "@tailwindcss/vite": "^4.3.3",
     "@types/better-sqlite3": "^9.6.0",
     "@types/dockerode": "^4.0.1",
@@ -53,12 +53,15 @@
     "electron": "^32.2.7",
     "electron-builder": "^25.1.8",
     "electron-vite": "^3.1.0",
+    "harness-core": "workspace:*",
+    "harness-sdk": "workspace:*",
     "postcss": "^8.4.49",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tailwindcss": "^4.0.0",
     "tsx": "^4.23.15",
     "typescript": "^5.7.3",
+    "ui-tokens": "workspace:*",
     "vite": "^6.0.5",
     "vitest": "^2.1.8"
   }
