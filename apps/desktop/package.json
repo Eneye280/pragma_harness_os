@@ -19,6 +19,8 @@
     "dist": "electron-builder"
   },
   "dependencies": {
+    "@ai-sdk/openai-compatible": "^3.0.55",
+    "ai": "^7.0.114",
     "better-sqlite3": "^13.0.3",
     "drizzle-orm": "^0.45.3",
     "fast-glob": "^3.3.3",
@@ -26,9 +28,10 @@
     "harness-sdk": "workspace:*",
     "hono": "^4.13.9",
     "ui-tokens": "workspace:*",
-    "zod": "^3.24.1"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@ai-sdk/provider": "^4.0.18",
     "@electron-toolkit/utils": "^4.0.0",
     "@hono/node-server": "^2.1.1",
     "@types/better-sqlite3": "^9.6.0",
