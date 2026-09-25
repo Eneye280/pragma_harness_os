@@ -12,6 +12,7 @@ import { useDream } from "./dream/use-dream";
 import { useSettings } from "./settings/use-settings";
 import { useUpdater } from "./settings/use-updater";
 import { useWorkspace } from "./workspace/use-workspace";
+import { useGitStatus } from "./git/use-git-status";
 import { INITIAL_PANEL_STATE, actionForShortcut, panelReducer } from "./shell/panel-state";
 import { isEditableTarget, resolveShellShortcut } from "./shell/shortcuts";
 import { ONBOARDING_STORAGE_KEY, shouldShowOnboarding } from "./shell/onboarding";
@@ -34,6 +35,7 @@ export function App(): React.ReactElement {
   const settingsState = useSettings();
   const updater = useUpdater();
   const workspace = useWorkspace();
+  const git = useGitStatus(workspace.active);
   const refreshSettings = settingsState.refresh;
 
   useEffect(() => {
@@ -124,6 +126,7 @@ export function App(): React.ReactElement {
       <TitleBar
         status={status}
         cost={cost}
+        git={git.status}
         onOpenPalette={openPalette}
         onToggleExplorer={toggleExplorer}
         onToggleContext={toggleContext}
