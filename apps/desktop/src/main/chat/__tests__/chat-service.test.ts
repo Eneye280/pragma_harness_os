@@ -201,4 +201,48 @@ describe("ChatService", () => {
     expect(usages[0].inputTokens).toBeGreaterThan(0);
     expect(usages[0].outputTokens).toBeGreaterThan(0);
   });
+
+  it("blocks before the model when a pre-agent plugin rejects", async () => {
+    const events: ChatStreamEvent[] = [];
+    let gatewayUsed = false;
+    const service = new ChatService({
+      gateway: {
+        stream: () => {
+          gatewayUsed = true;
+          return streamChunks(["no"]);
+        },
+      },
+      toolRunner: makeRunner({}),
+      toolWorkspacePath: "/tmp/ws",
+      pluginRunner: {
+        runPreAgent: async () => ({ blocked: { plugin: "commit-guard", reason: "hay cambios sin commitear" } }),
+        runPostAgent: async () => ({}),
+      },
+    });
+    await service.run({ message: "hola", sessionId: "s", workspacePath: "/w" }, (event) => events.push(event));
+    expect(gatewayUsed).toBe(false);
+    expect(events.some((event) => event.kind === "assistant-delta" && (event as { text: string }).text.includes("sin commitear"))).toBe(true);
+  });
+
+  it("runs post-agent plugins on the diff and sends a fix prompt when blocked", async () => {
+    const events: ChatStreamEvent[] = [];
+    let seenDiff: string | undefined;
+    const toolBlock = '```tool\n{"tool":"fileEdit","args":{"path":"a.ts","content":"console.log(1)"}}\n```';
+    const service = new ChatService({
+      gateway: { stream: () => streamChunks(["escribo\n", toolBlock]) },
+      toolRunner: makeRunner({ diffPreview: "+ console.log(1)" }),
+      toolWorkspacePath: "/tmp/ws",
+      pluginRunner: {
+        runPreAgent: async () => ({}),
+        runPostAgent: async (context) => {
+          seenDiff = context.diff;
+          return { blocked: { plugin: "no-console-log", reason: "el diff agrega console.log" } };
+        },
+      },
+    });
+    await service.run({ message: "hola", sessionId: "s", workspacePath: "/w" }, (event) => events.push(event));
+    expect(seenDiff).toContain("console.log");
+    expect(events.some((event) => event.kind === "assistant-delta" && (event as { text: string }).text.includes("Fix requerido"))).toBe(true);
+    expect(events.some((event) => event.kind === "harness-step" && (event as { status?: string; label?: string }).status === "blocked")).toBe(true);
+  });
 });

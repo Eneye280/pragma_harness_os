@@ -58,6 +58,7 @@ export interface ChatServiceDeps {
     intent: { domain: string; type: string; effort: string; needs: string[] };
     budget?: { tokensUsed: number; tokensLimit: number; costUsedUsd: number; costLimitUsd: number };
   }) => { verdict: "pass" | "block"; blockedBy?: string; userResponse?: string; reason?: string };
+  pluginRunner?: import("../plugins").PluginRunner;
 }
 
 export function buildAgentPrompt(request: ChatSendRequest, needs: string[], approvedPlan?: string): string {
@@ -131,6 +132,26 @@ export class ChatService {
         emit({ kind: "harness-step", sessionId, phase: "pre-gates", status: "done", label: "gates pre ok" });
       }
 
+      if (!request.bypassHarness && this.deps.pluginRunner) {
+        const pluginResult = await this.deps.pluginRunner.runPreAgent({
+          message: request.message,
+          normalized: request.message,
+          sessionId,
+          workspaceHash: request.workspacePath,
+          workspacePath: request.workspacePath,
+          intent,
+          timestamp: Date.now(),
+        });
+        if (pluginResult.blocked) {
+          emit({ kind: "harness-step", sessionId, phase: "plugins", status: "blocked", label: `plugin: ${pluginResult.blocked.plugin}` });
+          emit({ kind: "assistant-delta", sessionId, text: pluginResult.blocked.reason });
+          emit({ kind: "assistant-done", sessionId });
+          emit({ kind: "harness-step", sessionId, phase: "agent", status: "done", label: "sin llamada al modelo" });
+          return;
+        }
+        emit({ kind: "harness-step", sessionId, phase: "plugins", status: "done", label: "plugins pre ok" });
+      }
+
       let approvedPlanMarkdown: string | undefined;
       let assembledPrompt = "";
 
@@ -185,6 +206,8 @@ export class ChatService {
         outputTokens: approximateTokens(fullText),
       });
 
+      let lastDiff: string | undefined;
+
       const pendingToolCall = parseToolRequest(fullText);
       if (pendingToolCall) {
         const callId = `call-${Date.now().toString(36)}`;
@@ -205,6 +228,7 @@ export class ChatService {
           workspaceHash: this.deps.toolWorkspacePath,
           workspacePath: this.deps.toolWorkspacePath,
         });
+        lastDiff = observation.diffPreview;
         emit({
           kind: "tool-observation",
           sessionId,
@@ -213,6 +237,30 @@ export class ChatService {
           output: observation.output || observation.stderr || "",
           diff: observation.diffPreview,
         });
+      }
+
+      if (!request.bypassHarness && this.deps.pluginRunner) {
+        const postResult = await this.deps.pluginRunner.runPostAgent({
+          message: request.message,
+          normalized: request.message,
+          sessionId,
+          workspaceHash: request.workspacePath,
+          workspacePath: request.workspacePath,
+          intent,
+          timestamp: Date.now(),
+          diff: lastDiff,
+        });
+        if (postResult.blocked) {
+          emit({ kind: "harness-step", sessionId, phase: "agent", status: "blocked", label: `post-gate: ${postResult.blocked.plugin}` });
+          emit({
+            kind: "assistant-delta",
+            sessionId,
+            text: `\n\n**Fix requerido** (${postResult.blocked.plugin}): ${postResult.blocked.reason}`,
+          });
+          emit({ kind: "assistant-done", sessionId });
+          emit({ kind: "harness-step", sessionId, phase: "agent", status: "done", label: "bloqueado por post-gate" });
+          return;
+        }
       }
 
       emit({ kind: "harness-step", sessionId, phase: "agent", status: "done", label: "listo" });
