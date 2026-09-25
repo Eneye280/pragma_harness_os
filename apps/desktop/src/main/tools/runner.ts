@@ -42,7 +42,7 @@ export interface GatewayLike {
 
 const DEFAULT_MAX_ITERATIONS = 6;
 
-function defaultParseToolCall(llmText: string): ToolCallInput | null {
+export function parseToolCallFromText(llmText: string): ToolCallInput | null {
   const match = llmText.match(/```tool\s*([\s\S]*?)```/);
   if (!match) return null;
   try {
@@ -225,7 +225,7 @@ export class ToolRunner {
 
   async runAgentLoop(gateway: GatewayLike, initialPrompt: string, loopOptions: Omit<AgentLoopOptions, keyof RunnerOptions> = {}): Promise<AgentLoopResult> {
     const maxIterations = loopOptions.maxIterations ?? DEFAULT_MAX_ITERATIONS;
-    const parser = loopOptions.parseToolCall ?? defaultParseToolCall;
+    const parser = loopOptions.parseToolCall ?? parseToolCallFromText;
     const observations: ToolObservation[] = [];
     let currentPrompt = initialPrompt;
     let toolCalls = 0;

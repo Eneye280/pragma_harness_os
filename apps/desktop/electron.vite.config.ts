@@ -14,7 +14,8 @@ export default defineConfig({
   preload: {
     build: {
       rollupOptions: {
-        external: []
+        external: [],
+        output: { format: "cjs", entryFileNames: "[name].cjs" }
       }
     }
   },
@@ -22,7 +23,8 @@ export default defineConfig({
     resolve: {
       alias: {
         "@": resolve("src/renderer"),
-        "@main": resolve("src/main")
+        "@main": resolve("src/main"),
+        "@shared": resolve("src/shared")
       }
     },
     plugins: [react(), tailwindcss()]

@@ -1,4 +1,4 @@
-export { ToolRunner } from "./runner";
+export { ToolRunner, parseToolCallFromText } from "./runner";
 export type { RunnerOptions, AgentLoopOptions, AgentLoopResult, GatewayLike } from "./runner";
 export { FileEditHistory, readWorkspaceFile, resolveInsideWorkspace, buildLineDiff } from "./file-tools";
 export { runTerminal } from "./terminal";
