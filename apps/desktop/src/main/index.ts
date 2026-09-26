@@ -25,6 +25,7 @@ import { registerHotReloadHandlers } from "./ipc/hotreload-handlers";
 import { registerLicensesHandlers } from "./ipc/licenses-handlers";
 import { registerEvidenceHandlers } from "./ipc/evidence-handlers";
 import { registerQaHandlers } from "./ipc/qa-handlers";
+import { registerIntegrationsHandlers } from "./ipc/integrations-handlers";
 import { HotReloadRegistry } from "./hotreload";
 import { GitStatusService } from "./git";
 import { DependencyGraphService } from "./graph/graph-service";
@@ -115,6 +116,7 @@ app.whenReady().then(() => {
   registerLicensesHandlers(workspace);
   registerEvidenceHandlers(workspace);
   registerQaHandlers();
+  registerIntegrationsHandlers(settingsController);
   registerDiagnosticsHandlers({
     version: app.getVersion(),
     settingsController,

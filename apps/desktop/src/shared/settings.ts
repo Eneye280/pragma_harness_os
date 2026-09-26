@@ -93,6 +93,12 @@ export interface HarnessSettings {
   tools: ToolPermissionSettings;
   routing: RoutingSettings;
   updater: UpdaterFeedSettings;
+  integrations: IntegrationsSettings;
+}
+
+export interface IntegrationsSettings {
+  supabase: { url: string; anonKey: string; enabled: boolean };
+  mcpServers: Array<{ name: string; url: string; enabled: boolean }>;
 }
 
 export interface UpdaterFeedSettings {
@@ -121,6 +127,7 @@ export const DEFAULT_SETTINGS: HarnessSettings = {
   tools: { askBeforeTools: true, perTool: {} },
   routing: { rules: DEFAULT_ROUTING_RULES, fallbackModels: [], maxRetries: 2 },
   updater: { feedUrl: "", token: "", channel: "stable" },
+  integrations: { supabase: { url: "", anonKey: "", enabled: false }, mcpServers: [] },
 };
 
 export function maskSecret(secret: string): string {
