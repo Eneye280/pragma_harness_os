@@ -4,6 +4,7 @@ import { IconSend, IconSparkles } from "./icons";
 import { PipelineTimeline } from "../chat/PipelineTimeline";
 import { PipelineRail } from "../chat/PipelineRail";
 import { PlanChatCard } from "./PlanChatCard";
+import { QaVerify } from "../qa/QaVerify";
 import { MarkdownView } from "../chat/MarkdownView";
 import { ToolCallCard } from "../chat/ToolCallCard";
 import { MessageTasks } from "./MessageTasks";
@@ -420,14 +421,7 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
           )}
         </div>
         <div className="mx-auto mt-2 flex w-full max-w-[780px] items-center gap-2">
-          <button
-            type="button"
-            disabled={isRunning || !hasConversation}
-            onClick={() => send("Modo QA: verifica el trabajo reciente del proyecto. Usa el listado [workspace files] para ubicar los archivos y léelos con fileRead; si el proyecto tiene package.json ejecuta los tests/build con las tools (runTests/runBuild) y muestra la salida real; si es HTML, revisa el flujo y reporta errores concretos. Corrige solo lo necesario (no agregues scope).", { bypassHarness: false })}
-            className="rounded-control border border-harness/40 bg-harness/10 px-2.5 py-1 text-[12px] text-harness-soft transition-colors hover:bg-harness/20 disabled:opacity-40"
-          >
-            Verificar (QA)
-          </button>
+          <QaVerify disabled={isRunning} />
           <p className="text-[12px] text-zinc-600">
             {isRunning
               ? "Enter añade al run en curso (se re-evalúa y continúa) · ■ detiene"
