@@ -19,6 +19,7 @@ import { registerAttachmentsHandlers } from "./ipc/attachments-handlers";
 import { registerRagHandlers } from "./ipc/rag-handlers";
 import { registerPluginsHandlers } from "./ipc/plugins-handlers";
 import { registerGraphHandlers } from "./ipc/graph-handlers";
+import { registerVisualHandlers } from "./ipc/visual-handlers";
 import { DependencyGraphService } from "./graph/graph-service";
 import { JsonSessionRepository, SessionStore } from "./sessions";
 import { skillCompiler } from "./harness/skills/skill-compiler";
@@ -102,6 +103,7 @@ app.whenReady().then(() => {
   registerRagHandlers(() => mainWindow, profileStore, workspace);
   registerPluginsHandlers(() => mainWindow, workspace, settingsController);
   registerGraphHandlers(() => mainWindow, workspace, new DependencyGraphService());
+  registerVisualHandlers(workspace);
   configureRagExcludes(() => profileStore.read(workspace.current() ?? "")?.rag?.excludes ?? []);
   updater.init();
 
