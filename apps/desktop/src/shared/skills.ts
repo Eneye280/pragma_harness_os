@@ -2,6 +2,7 @@ export interface SkillSummary {
   name: string;
   description: string;
   triggers: string[];
+  needs: string[];
   priority: number;
   path: string;
   enabled: boolean;

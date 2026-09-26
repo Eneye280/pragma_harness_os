@@ -13,6 +13,7 @@ import type { UseUpdaterResult } from "../settings/use-updater";
 import type { UseSkillsResult } from "../skills/use-skills";
 import type { UseAgentsResult } from "../agents/use-agents";
 import { useFocusTrap } from "../shell/use-focus-trap";
+import { SkillEditor } from "./SkillEditor";
 
 interface SettingsModalProps {
   open: boolean;
@@ -49,6 +50,7 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
   const [draft, setDraft] = useState<HarnessSettings | null>(settings);
   const [revealKey, setRevealKey] = useState(false);
   const [skillQuery, setSkillQuery] = useState("");
+  const [skillEditor, setSkillEditor] = useState<{ name: string | null } | null>(null);
   const containerRef = useFocusTrap(open, onClose);
 
   useEffect(() => {
@@ -328,6 +330,13 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
           </Section>
 
           <Section title={`Skills (${skillsState.skills.filter((skill) => skill.enabled).length}/${skillsState.skills.length})`}>
+            <button
+              type="button"
+              onClick={() => setSkillEditor({ name: null })}
+              className="rounded-control border border-harness/40 px-3 py-1.5 text-[11px] text-harness-soft transition-colors hover:bg-harness/10"
+            >
+              Nueva skill
+            </button>
             <input
               value={skillQuery}
               onChange={(event) => setSkillQuery(event.target.value)}
@@ -367,6 +376,14 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
                       <span className="rounded bg-zinc-800 px-1.5 py-[1px] font-mono text-[10px] text-zinc-400" title="prioridad">
                         {skill.priority}
                       </span>
+                      <button
+                        type="button"
+                        aria-label={`Editar ${skill.name}`}
+                        onClick={() => setSkillEditor({ name: skill.name })}
+                        className="rounded-control border border-hairline px-2 py-1 text-[10px] text-zinc-400 transition-colors hover:bg-zinc-800"
+                      >
+                        Editar
+                      </button>
                       <Toggle
                         label={skill.enabled ? "activa" : "off"}
                         checked={skill.enabled}
@@ -508,6 +525,13 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
           </button>
         </div>
       </div>
+
+      <SkillEditor
+        open={skillEditor !== null}
+        initialName={skillEditor?.name ?? null}
+        onClose={() => setSkillEditor(null)}
+        onSaved={() => skillsState.refresh()}
+      />
     </div>
   );
 }

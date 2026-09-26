@@ -84,6 +84,7 @@ export class SkillCompiler {
       name: entry.name,
       description: entry.description,
       triggers: entry.triggers,
+      needs: entry.needs,
       priority: entry.priority,
       path: entry.path,
       enabled: this.isEnabled(entry.name),
@@ -101,6 +102,9 @@ export class SkillCompiler {
       candidates.add(NEEDS_TO_SKILL[normalized] ?? normalized);
       const byTrigger = catalogEntries.find((entry) => entry.triggers.some((trigger) => trigger.toLowerCase() === normalized));
       if (byTrigger) candidates.add(byTrigger.name);
+      for (const entry of catalogEntries) {
+        if (entry.needs.some((declared) => declared.toLowerCase() === normalized)) candidates.add(entry.name);
+      }
     }
 
     return [...candidates]

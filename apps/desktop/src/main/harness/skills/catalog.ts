@@ -5,6 +5,7 @@ export interface SkillEntry {
   name: string;
   description: string;
   triggers: string[];
+  needs: string[];
   priority: number;
   path: string;
 }
@@ -13,6 +14,7 @@ interface Frontmatter {
   name?: string;
   description?: string;
   triggers?: string[];
+  needs?: string[];
   priority?: number;
 }
 
@@ -31,6 +33,12 @@ export function parseFrontmatter(content: string): Frontmatter {
     else if (key === "priority") fields.priority = Number(value);
     else if (key === "triggers") {
       fields.triggers = value
+        .replace(/^\[|\]$/g, "")
+        .split(",")
+        .map((entry) => entry.trim())
+        .filter(Boolean);
+    } else if (key === "needs") {
+      fields.needs = value
         .replace(/^\[|\]$/g, "")
         .split(",")
         .map((entry) => entry.trim())
@@ -55,6 +63,7 @@ export function scanSkillsRoot(root: string): SkillEntry[] {
         name: meta.name || dirent.name,
         description: meta.description ?? "",
         triggers: meta.triggers ?? [],
+        needs: meta.needs ?? [],
         priority: Number.isFinite(meta.priority) ? (meta.priority as number) : 99,
         path: file,
       });

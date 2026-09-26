@@ -78,9 +78,25 @@ export interface GitBridge {
   status: () => Promise<GitStatus>;
 }
 
+export interface SkillAuthoringResult {
+  ok: boolean;
+  error?: string;
+  errors?: string[];
+  warnings?: string[];
+  path?: string;
+  content?: string;
+  scope?: "project" | "global";
+  skills: SkillSummary[];
+}
+
 export interface SkillsBridge {
   list: () => Promise<SkillSummary[]>;
   setEnabled: (name: string, enabled: boolean) => Promise<{ error: string | null; skills: SkillSummary[] }>;
+  get: (name: string) => Promise<{ ok: boolean; content?: string; path?: string; scope?: "project" | "global"; error?: string }>;
+  validate: (content: string) => Promise<{ ok: boolean; errors: string[]; warnings: string[] }>;
+  save: (payload: { name?: string; content: string; scope?: "project" | "global" }) => Promise<SkillAuthoringResult>;
+  duplicate: (payload: { name: string; newName: string; scope?: "project" | "global" }) => Promise<SkillAuthoringResult>;
+  delete: (name: string) => Promise<SkillAuthoringResult>;
 }
 
 export interface AgentsBridge {
@@ -242,7 +258,12 @@ const git: GitBridge = {
 
 const skills: SkillsBridge = {
   list: () => ipcRenderer.invoke("skills:list"),
-  setEnabled: (name: string, enabled: boolean) => ipcRenderer.invoke("skills:setEnabled", { name, enabled })
+  setEnabled: (name: string, enabled: boolean) => ipcRenderer.invoke("skills:setEnabled", { name, enabled }),
+  get: (name: string) => ipcRenderer.invoke("skills:get", { name }),
+  validate: (content: string) => ipcRenderer.invoke("skills:validate", content),
+  save: (payload) => ipcRenderer.invoke("skills:save", payload),
+  duplicate: (payload) => ipcRenderer.invoke("skills:duplicate", payload),
+  delete: (name: string) => ipcRenderer.invoke("skills:delete", { name }),
 };
 
 const agents: AgentsBridge = {
