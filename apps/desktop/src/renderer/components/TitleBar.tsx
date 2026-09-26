@@ -19,6 +19,8 @@ interface TitleBarProps {
   onOpenHelp: () => void;
   onOpenUsage: () => void;
   onOpenDiagnostics: () => void;
+  unreadNotifications: number;
+  onOpenNotifications: () => void;
 }
 
 export function TitleBar({
@@ -35,6 +37,8 @@ export function TitleBar({
   onOpenHelp,
   onOpenUsage,
   onOpenDiagnostics,
+  unreadNotifications,
+  onOpenNotifications,
 }: TitleBarProps): React.ReactElement {
   const [isMaximized, setIsMaximized] = useState(false);
 
@@ -131,6 +135,14 @@ export function TitleBar({
         </TitleBarButton>
         <TitleBarButton label="Diagnóstico" onClick={onOpenDiagnostics}>
           <span className="text-[11px]">Health</span>
+        </TitleBarButton>
+        <TitleBarButton label={`Notificaciones (${unreadNotifications})`} onClick={onOpenNotifications}>
+          <span className="relative text-[11px]">
+            Avisos
+            {unreadNotifications > 0 ? (
+              <span className="absolute -right-3 -top-1.5 rounded-pill bg-harness px-1 text-[9px] font-semibold text-white">{unreadNotifications > 9 ? "9+" : unreadNotifications}</span>
+            ) : null}
+          </span>
         </TitleBarButton>
         <div className="mx-1 h-4 w-px bg-hairline" />
         <WindowButton label="Minimize" onClick={() => controls?.minimize()}>
