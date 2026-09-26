@@ -33,7 +33,7 @@ export function useNotifications(): UseNotificationsResult {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [, setTick] = useState(0);
   const budgetWarned = useRef(false);
-  const runStart = useRef<Map<string, { prompt: string; startedAt: number; tools: number; failures: number }>>(new Map());
+  const currentRun = useRef<{ prompt: string; startedAt: number; tools: number; failures: number } | null>(null);
 
   const notify = useCallback((kind: NotificationKind, title: string, message?: string, source = "app") => {
     setNotifications((current) => pushNotification(current, createNotification({ kind, title, message, source })));
@@ -43,27 +43,29 @@ export function useNotifications(): UseNotificationsResult {
     const bridge = window.harness;
     if (!bridge) return;
     const offChat = bridge.onChatEvent((event: ChatStreamEvent) => {
-      const sessionId = "sessionId" in event ? event.sessionId : "default";
       if (event.kind === "error") {
         setNotifications((current) => pushNotification(current, notificationFromChatError(event.message)));
-      } else if (event.kind === "user-message" && !event.steer) {
-        runStart.current.set(sessionId, { prompt: event.text, startedAt: Date.now(), tools: 0, failures: 0 });
+      } else if (event.kind === "user-message") {
+        if (!currentRun.current) currentRun.current = { prompt: "", startedAt: Date.now(), tools: 0, failures: 0 };
+        if (!event.steer) currentRun.current.prompt = event.text;
       } else if (event.kind === "harness-step" && event.status === "blocked") {
         setNotifications((current) => pushNotification(current, notificationFromBlockedStep(event.phase, event.label, event.detail)));
       } else if (event.kind === "tool-call" && event.status === "done") {
-        const run = runStart.current.get(sessionId);
-        if (run) run.tools += 1;
+        if (!currentRun.current) currentRun.current = { prompt: "", startedAt: Date.now(), tools: 0, failures: 0 };
+        currentRun.current.tools += 1;
       } else if (event.kind === "tool-call" && event.status === "error") {
-        const run = runStart.current.get(sessionId);
-        if (run) run.failures += 1;
+        if (!currentRun.current) currentRun.current = { prompt: "", startedAt: Date.now(), tools: 0, failures: 0 };
+        currentRun.current.failures += 1;
         setNotifications((current) => pushNotification(current, notificationFromToolFailure(event.tool, event.summary)));
+      } else if (event.kind === "harness-step") {
+        if (!currentRun.current) currentRun.current = { prompt: "", startedAt: Date.now(), tools: 0, failures: 0 };
       } else if (event.kind === "assistant-done") {
-        const run = runStart.current.get(sessionId);
+        const run = currentRun.current;
         setNotifications((current) =>
           pushNotification(
             current,
             notificationFromRunSummary({
-              prompt: run?.prompt,
+              prompt: run?.prompt || undefined,
               status: run && run.failures > 0 ? "blocked" : "done",
               toolCalls: run?.tools ?? 0,
               failures: run?.failures ?? 0,
@@ -71,7 +73,7 @@ export function useNotifications(): UseNotificationsResult {
             }),
           ),
         );
-        runStart.current.delete(sessionId);
+        currentRun.current = null;
       } else if (event.kind === "tool-approval") {
         setNotifications((current) => pushNotification(current, notificationFromToolApproval(event.tool, event.summary)));
       }
