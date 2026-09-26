@@ -49,7 +49,7 @@ export function GraphPanel({ open, onClose }: GraphPanelProps): React.ReactEleme
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-6" role="dialog" aria-modal="true" aria-label="Grafo de dependencias">
-      <div className="flex h-[82vh] w-full max-w-5xl flex-col rounded-panel border border-hairline bg-surface shadow-2xl">
+      <div className="flex h-[82vh] w-full max-w-5xl flex-col sheet">
         <div className="flex items-center gap-3 border-b border-hairline px-3 py-2">
           <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-harness-soft">Dependency graph</span>
           <span className="text-[11px] text-zinc-500">{graph ? `${graph.nodes.length} nodos · ${graph.edges.length} aristas · ${graph.cycles.length} ciclos` : "—"}</span>

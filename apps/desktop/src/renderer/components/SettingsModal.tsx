@@ -100,7 +100,7 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 px-4 py-10 backdrop-blur-sm" onMouseDown={onClose} role="presentation">
       <div
         ref={containerRef}
-        className="palette-anim flex max-h-full w-full max-w-[680px] flex-col overflow-hidden rounded-panel border border-hairline bg-surface-raised shadow-2xl shadow-black/60"
+        className="palette-anim flex max-h-full w-full max-w-[680px] flex-col overflow-hidden sheet"
         onMouseDown={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"

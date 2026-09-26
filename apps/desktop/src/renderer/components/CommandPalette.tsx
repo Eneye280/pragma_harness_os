@@ -121,7 +121,7 @@ export function CommandPalette({
     >
       <div
         ref={containerRef}
-        className="palette-anim w-full max-w-[560px] overflow-hidden rounded-panel border border-hairline bg-surface-raised shadow-2xl shadow-black/60"
+        className="palette-anim w-full max-w-[560px] overflow-hidden sheet"
         onMouseDown={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
