@@ -99,6 +99,17 @@ export interface SkillsBridge {
   delete: (name: string) => Promise<SkillAuthoringResult>;
 }
 
+export interface PluginsBridge {
+  list: () => Promise<{ custom: import("../shared/plugin-authoring").CustomPluginDef[] }>;
+  save: (def: import("../shared/plugin-authoring").CustomPluginDef) => Promise<{ ok: boolean; errors: string[]; custom: import("../shared/plugin-authoring").CustomPluginDef[] }>;
+  delete: (name: string) => Promise<{ ok: boolean; errors: string[]; custom: import("../shared/plugin-authoring").CustomPluginDef[] }>;
+}
+
+export interface TasksBridge {
+  list: () => Promise<{ tasks: import("../shared/plugin-authoring").ProjectTask[] }>;
+  save: (tasks: import("../shared/plugin-authoring").ProjectTask[]) => Promise<{ ok: boolean; errors: string[]; tasks: import("../shared/plugin-authoring").ProjectTask[] }>;
+}
+
 export interface AgentsBridge {
   list: () => Promise<AgentSummary[]>;
   select: (id: string) => Promise<{ error: string | null; agents: AgentSummary[] }>;
@@ -157,6 +168,8 @@ export interface HarnessBridge {
   workspace: WorkspaceBridge;
   git: GitBridge;
   skills: SkillsBridge;
+  plugins: PluginsBridge;
+  tasks: TasksBridge;
   agents: AgentsBridge;
   bundles: BundlesBridge;
   sessions: SessionsBridge;
@@ -271,6 +284,16 @@ const agents: AgentsBridge = {
   select: (id: string) => ipcRenderer.invoke("agents:select", id)
 };
 
+const plugins: PluginsBridge = {
+  list: () => ipcRenderer.invoke("plugins:list"),
+  save: (def) => ipcRenderer.invoke("plugins:save", def),
+  delete: (name: string) => ipcRenderer.invoke("plugins:delete", name)
+};
+
+const tasks: TasksBridge = {
+  list: () => ipcRenderer.invoke("tasks:list"),
+  save: (list) => ipcRenderer.invoke("tasks:save", { tasks: list })
+};
 const bundles: BundlesBridge = {
   list: () => ipcRenderer.invoke("bundles:list"),
   apply: (stack: string) => ipcRenderer.invoke("bundles:apply", stack),
@@ -331,6 +354,8 @@ const harness: HarnessBridge = {
   workspace,
   git,
   skills,
+  plugins,
+  tasks,
   agents,
   bundles,
   sessions,

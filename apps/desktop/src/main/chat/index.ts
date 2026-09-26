@@ -59,7 +59,8 @@ export function createChatService(
   planGate?: PlanGate,
   onCostRecorded?: (snapshot: import("../../shared/cost").CostSnapshot) => void,
   getWorkspace?: () => string,
-  pollSteer?: (sessionId: string) => string | null
+  pollSteer?: (sessionId: string) => string | null,
+  customPlugins?: () => import("../harness/plugin-chain").HarnessPlugin[]
 ): ChatService {
   const gateway = new SettingsGateway(() => settingsController.store.get(), createGatewayForConfig);
   const toolWorkspacePath = getWorkspace ?? resolveHarnessWorkspace;
@@ -105,7 +106,7 @@ export function createChatService(
       const result = gates.run(context as Parameters<PreAgentGates["run"]>[0]);
       return { verdict: result.verdict, blockedBy: result.blockedBy, userResponse: result.userResponse, reason: result.reason };
     },
-    pluginRunner: createPluginRunner((name) => settingsController.store.get().plugins[name] === true),
+    pluginRunner: createPluginRunner((name) => settingsController.store.get().plugins[name] === true, customPlugins),
     pollSteer,
   });
 }

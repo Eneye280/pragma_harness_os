@@ -14,6 +14,8 @@ import type { UseSkillsResult } from "../skills/use-skills";
 import type { UseAgentsResult } from "../agents/use-agents";
 import { useFocusTrap } from "../shell/use-focus-trap";
 import { SkillEditor } from "./SkillEditor";
+import { PluginEditor } from "./PluginEditor";
+import type { CustomPluginDef, ProjectTask } from "@shared/plugin-authoring";
 
 interface SettingsModalProps {
   open: boolean;
@@ -51,7 +53,22 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
   const [revealKey, setRevealKey] = useState(false);
   const [skillQuery, setSkillQuery] = useState("");
   const [skillEditor, setSkillEditor] = useState<{ name: string | null } | null>(null);
+  const [customPlugins, setCustomPlugins] = useState<CustomPluginDef[]>([]);
+  const [pluginEditor, setPluginEditor] = useState<{ def: CustomPluginDef | null } | null>(null);
+  const [tasks, setTasks] = useState<ProjectTask[]>([]);
+  const [newTask, setNewTask] = useState("");
   const containerRef = useFocusTrap(open, onClose);
+
+  useEffect(() => {
+    if (!open) return;
+    void window.harness?.plugins.list().then((result) => setCustomPlugins(result?.custom ?? []));
+    void window.harness?.tasks.list().then((result) => setTasks(result?.tasks ?? []));
+  }, [open]);
+
+  async function persistTasks(next: ProjectTask[]): Promise<void> {
+    setTasks(next);
+    await window.harness?.tasks.save(next);
+  }
 
   useEffect(() => {
     if (open && settings) setDraft(settings);
@@ -278,6 +295,90 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
                 />
               ))}
             </div>
+            <button
+              type="button"
+              onClick={() => setPluginEditor({ def: null })}
+              className="rounded-control border border-harness/40 px-3 py-1.5 text-[11px] text-harness-soft transition-colors hover:bg-harness/10"
+            >
+              Nuevo plugin
+            </button>
+            {customPlugins.length > 0 ? (
+              <ul className="space-y-1">
+                {customPlugins.map((plugin) => (
+                  <li key={plugin.name} className="flex items-center gap-2 rounded-control border border-hairline bg-surface px-2 py-1.5">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[12px] text-zinc-200">{plugin.name}</p>
+                      <p className="truncate text-[10px] text-zinc-500">{plugin.stage} · {plugin.action} · /{plugin.match}/</p>
+                    </div>
+                    <button
+                      type="button"
+                      aria-label={`Editar ${plugin.name}`}
+                      onClick={() => setPluginEditor({ def: plugin })}
+                      className="rounded-control border border-hairline px-2 py-1 text-[10px] text-zinc-400 transition-colors hover:bg-zinc-800"
+                    >
+                      Editar
+                    </button>
+                    <Toggle
+                      label={draft.plugins[plugin.name] === true ? "activo" : "off"}
+                      checked={draft.plugins[plugin.name] === true}
+                      onChange={(value) => setDraft({ ...draft, plugins: { ...draft.plugins, [plugin.name]: value } })}
+                    />
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </Section>
+
+          <Section title={`Tareas del proyecto (${tasks.filter((task) => task.done).length}/${tasks.length})`}>
+            <div className="flex items-center gap-2">
+              <input
+                value={newTask}
+                aria-label="Nueva tarea"
+                onChange={(event) => setNewTask(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && newTask.trim()) {
+                    void persistTasks([...tasks, { id: `${Date.now().toString(36)}`, title: newTask.trim(), done: false }]);
+                    setNewTask("");
+                  }
+                }}
+                placeholder="nueva tarea…"
+                className="min-w-0 flex-1 rounded-control border border-hairline bg-surface px-2 py-1.5 text-[12px] text-zinc-200 outline-none focus:border-harness/60"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (!newTask.trim()) return;
+                  void persistTasks([...tasks, { id: `${Date.now().toString(36)}`, title: newTask.trim(), done: false }]);
+                  setNewTask("");
+                }}
+                className="rounded-control border border-hairline px-2 py-1.5 text-[11px] text-zinc-300 hover:bg-zinc-800"
+              >
+                Añadir
+              </button>
+            </div>
+            {tasks.length > 0 ? (
+              <ul className="space-y-1">
+                {tasks.map((task) => (
+                  <li key={task.id} className="flex items-center gap-2 rounded-control border border-hairline bg-surface px-2 py-1.5">
+                    <input
+                      type="checkbox"
+                      checked={task.done}
+                      aria-label={`Completar ${task.title}`}
+                      onChange={(event) => void persistTasks(tasks.map((entry) => (entry.id === task.id ? { ...entry, done: event.target.checked } : entry)))}
+                    />
+                    <span className={cn("flex-1 text-[12px]", task.done ? "text-zinc-500 line-through" : "text-zinc-200")}>{task.title}</span>
+                    <button
+                      type="button"
+                      aria-label={`Quitar ${task.title}`}
+                      onClick={() => void persistTasks(tasks.filter((entry) => entry.id !== task.id))}
+                      className="rounded-control border border-hairline px-2 py-1 text-[10px] text-zinc-500 hover:bg-zinc-800"
+                    >
+                      ✕
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </Section>
 
           <Section title={`Agentes (${agentsState.agents.length})`}>
@@ -531,6 +632,12 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
         initialName={skillEditor?.name ?? null}
         onClose={() => setSkillEditor(null)}
         onSaved={() => skillsState.refresh()}
+      />
+      <PluginEditor
+        open={pluginEditor !== null}
+        initial={pluginEditor?.def ?? null}
+        onClose={() => setPluginEditor(null)}
+        onSaved={() => void window.harness?.plugins.list().then((result) => setCustomPlugins(result?.custom ?? []))}
       />
     </div>
   );

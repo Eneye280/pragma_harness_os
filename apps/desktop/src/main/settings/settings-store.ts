@@ -138,6 +138,12 @@ export class SettingsStore {
     return this.get();
   }
 
+  updatePlugins(plugins: Record<string, boolean>): HarnessSettings {
+    this.settings = { ...this.settings, plugins: { ...plugins } };
+    this.persist();
+    return this.get();
+  }
+
   updateAgent(agent: string): HarnessSettings {
     this.settings = { ...this.settings, agent };
     this.persist();

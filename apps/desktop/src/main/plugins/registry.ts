@@ -45,6 +45,17 @@ export class SeedPluginRunner implements PluginRunner {
   }
 }
 
-export function createPluginRunner(isEnabled: (name: string) => boolean): PluginRunner {
-  return new SeedPluginRunner(SEED_PLUGINS, isEnabled);
+export function createPluginRunner(
+  isEnabled: (name: string) => boolean,
+  customPlugins: () => HarnessPlugin[] = () => []
+): PluginRunner {
+  const plugins = [...SEED_PLUGINS];
+  return {
+    async runPreAgent(context: PluginContext): Promise<PluginBlockResult> {
+      return new SeedPluginRunner([...plugins, ...customPlugins()], isEnabled).runPreAgent(context);
+    },
+    async runPostAgent(context: PluginContext): Promise<PluginBlockResult> {
+      return new SeedPluginRunner([...plugins, ...customPlugins()], isEnabled).runPostAgent(context);
+    },
+  };
 }

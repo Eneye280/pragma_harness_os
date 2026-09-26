@@ -17,6 +17,7 @@ import { registerBundlesHandlers } from "./ipc/bundles-handlers";
 import { registerSessionsHandlers } from "./ipc/sessions-handlers";
 import { registerAttachmentsHandlers } from "./ipc/attachments-handlers";
 import { registerRagHandlers } from "./ipc/rag-handlers";
+import { registerPluginsHandlers } from "./ipc/plugins-handlers";
 import { JsonSessionRepository, SessionStore } from "./sessions";
 import { skillCompiler } from "./harness/skills/skill-compiler";
 import { AgentCatalog } from "./agents";
@@ -97,6 +98,7 @@ app.whenReady().then(() => {
   registerSessionsHandlers(() => sessionStore);
   registerAttachmentsHandlers();
   registerRagHandlers(() => mainWindow, profileStore, workspace);
+  registerPluginsHandlers(() => mainWindow, workspace, settingsController);
   configureRagExcludes(() => profileStore.read(workspace.current() ?? "")?.rag?.excludes ?? []);
   updater.init();
 
