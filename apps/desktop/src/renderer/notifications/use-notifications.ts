@@ -34,6 +34,7 @@ export function useNotifications(): UseNotificationsResult {
   const [, setTick] = useState(0);
   const budgetWarned = useRef(false);
   const currentRun = useRef<{ prompt: string; startedAt: number; tools: Map<string, string>; failures: number } | null>(null);
+  const summaryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function ensureRun(): NonNullable<typeof currentRun.current> {
     if (!currentRun.current) currentRun.current = { prompt: "", startedAt: Date.now(), tools: new Map(), failures: 0 };
@@ -68,20 +69,24 @@ export function useNotifications(): UseNotificationsResult {
       } else if (event.kind === "harness-step") {
         ensureRun();
       } else if (event.kind === "assistant-done") {
-        const run = currentRun.current;
-        setNotifications((current) =>
-          pushNotification(
-            current,
-            notificationFromRunSummary({
-              prompt: run?.prompt || undefined,
-              status: run && run.failures > 0 ? "blocked" : "done",
-              toolCalls: run?.tools.size ?? 0,
-              failures: run?.failures ?? 0,
-              durationMs: run ? Date.now() - run.startedAt : 0,
-            }),
-          ),
-        );
-        currentRun.current = null;
+        // El turno termina antes de que corran sus tools: esperamos a que se asienten.
+        if (summaryTimer.current) clearTimeout(summaryTimer.current);
+        summaryTimer.current = setTimeout(() => {
+          const run = currentRun.current;
+          setNotifications((current) =>
+            pushNotification(
+              current,
+              notificationFromRunSummary({
+                prompt: run?.prompt || undefined,
+                status: run && run.failures > 0 ? "blocked" : "done",
+                toolCalls: run?.tools.size ?? 0,
+                failures: run?.failures ?? 0,
+                durationMs: run ? Date.now() - run.startedAt : 0,
+              }),
+            ),
+          );
+          currentRun.current = null;
+        }, 1500);
       } else if (event.kind === "tool-approval") {
         setNotifications((current) => pushNotification(current, notificationFromToolApproval(event.tool, event.summary)));
       }
