@@ -6,6 +6,7 @@ import { SessionsPanel } from "./components/SessionsPanel";
 import { GraphPanel } from "./components/GraphPanel";
 import { HelpCenter } from "./components/HelpCenter";
 import { TourOverlay } from "./components/TourOverlay";
+import { UsageDashboard } from "./components/UsageDashboard";
 import { INITIAL_TOUR_STATE, TOUR_STEPS, loadTourState, saveTourState, startTour, type TourState } from "./shell/tour";
 import { StackWizard } from "./components/StackWizard";
 import { SettingsModal } from "./components/SettingsModal";
@@ -40,6 +41,7 @@ export function App(): React.ReactElement {
   const [stackWizardOpen, setStackWizardOpen] = useState(false);
   const [graphOpen, setGraphOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [usageOpen, setUsageOpen] = useState(false);
   const [tour, setTour] = useState<TourState>(() => {
     try {
       const loaded = loadTourState(window.localStorage);
@@ -210,6 +212,7 @@ export function App(): React.ReactElement {
         onOpenSessions={openSessions}
         onOpenGraph={() => setGraphOpen(true)}
         onOpenHelp={() => setHelpOpen(true)}
+        onOpenUsage={() => setUsageOpen(true)}
       />
       <ShellLayout
         explorerOpen={panels.explorerOpen}
@@ -276,8 +279,7 @@ export function App(): React.ReactElement {
       <GraphPanel open={graphOpen} onClose={() => setGraphOpen(false)} storageKey={workspace.active} />
 
       <HelpCenter
-        open={helpOpen}
-        onClose={() => setHelpOpen(false)}
+        open={helpOpen}        onClose={() => setHelpOpen(false)}
         onOpenDoc={(doc) => {
           openFile(doc);
           setHelpOpen(false);
@@ -287,6 +289,8 @@ export function App(): React.ReactElement {
           setHelpOpen(false);
         }}
       />
+
+      <UsageDashboard open={usageOpen} onClose={() => setUsageOpen(false)} />
 
       {tour.active ? (
         <TourOverlay

@@ -8,6 +8,8 @@ import { PlanController } from "../plan";
 import { CustomPluginHost } from "../plugins/custom";
 import { ToolApprovalBroker } from "../tools/approval-broker";
 import { effectiveToolPermission } from "../../shared/settings";
+import { UsageStore } from "../usage/usage-store";
+import { aggregateUsage, compareModes, filterByRange, toCsv } from "../../shared/usage";
 import { DreamingScheduler } from "../dreaming";
 import { vault } from "../memory/vault";
 import { AgentGateway } from "../llm/gateway";
@@ -83,6 +85,7 @@ export function registerIpcHandlers(
   const planController = new PlanController();
   const customPluginHost = new CustomPluginHost(() => workspace.current());
   const toolApprovalBroker = new ToolApprovalBroker();
+  const usageStore = new UsageStore();
   const chatService = createChatService(
     settingsController,
     costTracker,
@@ -97,8 +100,22 @@ export function registerIpcHandlers(
     {
       resolvePermission: (tool) => effectiveToolPermission(tool, settingsController.store.get().tools),
       requestApproval: (request) => toolApprovalBroker.register(request.callId, request.tool),
-    }
+    },
+    (entry) => usageStore.record(entry)
   );
+
+  ipcMain.handle("usage:get", async (_event, rawPayload: unknown) => {
+    const payload = z.object({ fromTs: z.number().optional(), toTs: z.number().optional() }).safeParse(rawPayload ?? {});
+    const range = payload.success ? payload.data : {};
+    const entries = filterByRange(usageStore.all(), range.fromTs, range.toTs);
+    return { entries, buckets: aggregateUsage(entries, "day"), comparison: compareModes(entries) };
+  });
+
+  ipcMain.handle("usage:csv", async (_event, rawPayload: unknown) => {
+    const payload = z.object({ groupBy: z.enum(["day", "session", "project"]).optional() }).safeParse(rawPayload ?? {});
+    const groupBy = payload.success ? payload.data.groupBy ?? "day" : "day";
+    return { csv: toCsv(aggregateUsage(usageStore.all(), groupBy)) };
+  });
 
   ipcMain.handle("harness:approveTool", async (_event, rawPayload: unknown) => {
     const payload = z

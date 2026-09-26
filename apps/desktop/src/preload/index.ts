@@ -12,6 +12,7 @@ import type { AgentSummary } from "../shared/agents";
 import type { Attachment } from "../shared/attachments";
 import type { RagProgressEvent, RagRecallHit, RagStats } from "../shared/rag";
 import type { DependencyGraph, GraphDelta } from "../shared/graph";
+import type { UsageBucket, UsageComparison, UsageEntry } from "../shared/usage";
 import type { BundleSummary, BundleValidation, StackDetection } from "../shared/bundles";
 import type { SessionRecord, SessionSummary } from "../shared/session";
 import type { WorkspaceChangedPayload, WorkspacePickResult, WorkspaceState } from "../shared/workspace";
@@ -106,6 +107,11 @@ export interface GraphBridge {
   onUpdated: (cb: (delta: GraphDelta) => void) => () => void;
 }
 
+export interface UsageBridge {
+  get: (range?: { fromTs?: number; toTs?: number }) => Promise<{ entries: UsageEntry[]; buckets: UsageBucket[]; comparison: UsageComparison }>;
+  csv: (groupBy?: "day" | "session" | "project") => Promise<{ csv: string }>;
+}
+
 export interface VisualBridge {
   evaluate: (payload: { name: string; dataUrl: string; threshold?: number; updateBaseline?: boolean }) => Promise<{
     ok: boolean;
@@ -189,6 +195,7 @@ export interface HarnessBridge {
   tasks: TasksBridge;
   graph: GraphBridge;
   visual: VisualBridge;
+  usage: UsageBridge;
   agents: AgentsBridge;
   bundles: BundlesBridge;
   sessions: SessionsBridge;
@@ -328,6 +335,11 @@ const visual: VisualBridge = {
   evaluate: (payload) => ipcRenderer.invoke("visual:evaluate", payload),
   status: (name: string) => ipcRenderer.invoke("visual:status", name),
 };
+
+const usage: UsageBridge = {
+  get: (range) => ipcRenderer.invoke("usage:get", range ?? {}),
+  csv: (groupBy) => ipcRenderer.invoke("usage:csv", { groupBy }),
+};
 const bundles: BundlesBridge = {
   list: () => ipcRenderer.invoke("bundles:list"),
   apply: (stack: string) => ipcRenderer.invoke("bundles:apply", stack),
@@ -393,6 +405,7 @@ const harness: HarnessBridge = {
   tasks,
   graph,
   visual,
+  usage,
   agents,
   bundles,
   sessions,
