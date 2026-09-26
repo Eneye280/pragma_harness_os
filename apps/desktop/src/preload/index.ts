@@ -108,6 +108,10 @@ export interface GraphBridge {
   onUpdated: (cb: (delta: GraphDelta) => void) => () => void;
 }
 
+export interface LearningBridge {
+  get: () => Promise<{ postmortems: Array<{ sessionId: string; goal: string; outcome: string }>; summary: { total: number; failed: number; blocked: number; done: number }; proposals: Array<{ trigger: string; content: string; confidence: number }> }>;
+}
+
 export interface EvidenceBridge {
   save: (payload: { task: string; dataUrl: string }) => Promise<{ ok: boolean; path?: string; bytes?: number; gitignored?: boolean; error?: string }>;
 }
@@ -221,6 +225,7 @@ export interface HarnessBridge {
   hotreload: HotReloadBridge;
   licenses: LicensesBridge;
   evidence: EvidenceBridge;
+  learning: LearningBridge;
   agents: AgentsBridge;
   bundles: BundlesBridge;
   sessions: SessionsBridge;
@@ -373,6 +378,10 @@ const diagnostics: DiagnosticsBridge = {
   paths: () => ipcRenderer.invoke("diagnostics:paths"),
 };
 
+const learning: LearningBridge = {
+  get: () => ipcRenderer.invoke("learning:get"),
+};
+
 const evidence: EvidenceBridge = {
   save: (payload) => ipcRenderer.invoke("evidence:save", payload),
 };
@@ -460,6 +469,7 @@ const harness: HarnessBridge = {
   hotreload,
   licenses,
   evidence,
+  learning,
   agents,
   bundles,
   sessions,

@@ -9,6 +9,7 @@ import { CustomPluginHost } from "../plugins/custom";
 import { ToolApprovalBroker } from "../tools/approval-broker";
 import { effectiveToolPermission } from "../../shared/settings";
 import { UsageStore } from "../usage/usage-store";
+import { LearningStore, resolveLearningPath } from "../learning/learning-store";
 import { aggregateUsage, compareModes, filterByRange, toCsv } from "../../shared/usage";
 import { DreamingScheduler } from "../dreaming";
 import { vault } from "../memory/vault";
@@ -86,6 +87,7 @@ export function registerIpcHandlers(
   const customPluginHost = new CustomPluginHost(() => workspace.current());
   const toolApprovalBroker = new ToolApprovalBroker();
   const usageStore = new UsageStore();
+  const learningStore = () => new LearningStore(resolveLearningPath(workspace.current() ?? ""));
   const chatService = createChatService(
     settingsController,
     costTracker,

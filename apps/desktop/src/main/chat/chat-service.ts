@@ -66,6 +66,7 @@ export interface ChatServiceDeps {
   requestToolApproval?: (request: import("../tools").ToolApprovalRequest) => Promise<import("../tools").ToolApprovalDecision>;
   consumeFallback?: () => import("../llm/fallback").FallbackAttempt | null;
   stuckTimeoutMs?: number;
+  onPostmortem?: (entry: { sessionId: string; goal: string; outcome: "done" | "failed" | "blocked"; failures: string[]; fixes: string[]; lessons: string[] }) => void;
 }
 
 export function buildAgentPrompt(request: ChatSendRequest, needs: string[], approvedPlan?: string): string {
@@ -380,6 +381,7 @@ export class ChatService {
         }
       }
 
+      this.deps.onPostmortem?.({ sessionId, goal: request.message, outcome: "done", failures: [], fixes: [], lessons: [] });
       emit({ kind: "harness-step", sessionId, phase: "agent", status: "done", label: "listo" });
     } catch (error) {
       emit({

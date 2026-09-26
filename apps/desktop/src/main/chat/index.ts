@@ -95,7 +95,8 @@ export function createChatService(
     resolvePermission: (tool: import("../tools").ToolName) => import("../tools").PermissionMode;
     requestApproval: (request: import("../tools").ToolApprovalRequest) => Promise<import("../tools").ToolApprovalDecision>;
   },
-  onUsageEntry?: (entry: UsageEntry) => void
+  onUsageEntry?: (entry: UsageEntry) => void,
+  onPostmortem?: (entry: { sessionId: string; goal: string; outcome: "done" | "failed" | "blocked"; failures: string[]; fixes: string[]; lessons: string[] }) => void
 ): ChatService {
   let lastFallback: import("../llm/fallback").FallbackAttempt | null = null;
   const gateway: ChatGateway = {
@@ -182,6 +183,7 @@ export function createChatService(
     pollSteer,
     resolveToolPermission: toolApproval?.resolvePermission,
     requestToolApproval: toolApproval?.requestApproval,
+    onPostmortem,
     consumeFallback: () => {
       const attempt = lastFallback;
       lastFallback = null;
