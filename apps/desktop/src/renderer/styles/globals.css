@@ -25,6 +25,29 @@
   --phs-elevation-3: 0 24px 60px rgba(0, 0, 0, 0.55);
   --phs-blur: 18px;
   --phs-blur-strong: 28px;
+
+  /* v1.0.1 · expansión: tipografía, espaciado y radios */
+  --phs-text-hero: clamp(1.5rem, 1.1rem + 1.4vw, 2rem);
+  --phs-text-title: 1.125rem;
+  --phs-text-subtitle: 1rem;
+  --phs-text-body: 0.875rem;
+  --phs-text-label: 0.75rem;
+  --phs-text-caption: 0.6875rem;
+  --phs-tracking-tight: -0.01em;
+  --phs-tracking-wide: 0.16em;
+  --phs-space-1: 0.25rem;
+  --phs-space-2: 0.5rem;
+  --phs-space-3: 0.75rem;
+  --phs-space-4: 1rem;
+  --phs-space-6: 1.5rem;
+  --phs-space-8: 2rem;
+  --radius-pill: 9999px;
+
+  /* Neumorfismo sutil (dark): luz arriba-izq, sombra abajo-der */
+  --phs-neumorph: 6px 6px 14px rgba(0, 0, 0, 0.55), -6px -6px 14px rgba(255, 255, 255, 0.02);
+  --phs-neumorph-inset: inset 2px 2px 6px rgba(0, 0, 0, 0.5), inset -2px -2px 6px rgba(255, 255, 255, 0.02);
+  --phs-glass-border: 1px solid rgba(255, 255, 255, 0.06);
+  --phs-glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 :root {
@@ -102,7 +125,6 @@ body {
 .floating-panel {
   background: color-mix(in srgb, var(--color-surface-raised) 82%, transparent);
   backdrop-filter: blur(var(--phs-blur));
-  -webkit-backdrop-filter: blur(var(--phs-blur));
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-panel);
   box-shadow: var(--phs-elevation-2);
@@ -111,7 +133,6 @@ body {
 .floating-toolbar {
   background: color-mix(in srgb, var(--color-surface) 70%, transparent);
   backdrop-filter: blur(var(--phs-blur-strong));
-  -webkit-backdrop-filter: blur(var(--phs-blur-strong));
   border-bottom: 1px solid var(--color-hairline);
   box-shadow: var(--phs-elevation-1);
 }
@@ -119,7 +140,6 @@ body {
 .sheet {
   background: color-mix(in srgb, var(--color-surface-raised) 88%, transparent);
   backdrop-filter: blur(var(--phs-blur-strong));
-  -webkit-backdrop-filter: blur(var(--phs-blur-strong));
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-sheet);
   box-shadow: var(--phs-elevation-3);
@@ -131,6 +151,44 @@ body {
   border-radius: var(--radius-panel);
   box-shadow: var(--phs-elevation-1);
 }
+
+/* v1.0.1 · expansión: glassmorphism, neumorfismo sutil y escala tipográfica */
+.glass {
+  background: color-mix(in srgb, var(--color-surface-raised) 66%, transparent);
+  backdrop-filter: blur(var(--phs-blur));
+  border: var(--phs-glass-border);
+  box-shadow: var(--phs-elevation-2), var(--phs-glass-highlight);
+}
+
+.glass-strong {
+  background: color-mix(in srgb, var(--color-surface-raised) 82%, transparent);
+  backdrop-filter: blur(var(--phs-blur-strong));
+  border: var(--phs-glass-border);
+  box-shadow: var(--phs-elevation-3), var(--phs-glass-highlight);
+}
+
+.neumorph {
+  background: var(--color-surface-raised);
+  border: 1px solid color-mix(in srgb, var(--color-hairline) 60%, transparent);
+  box-shadow: var(--phs-neumorph);
+}
+
+.neumorph-inset {
+  background: var(--color-surface);
+  box-shadow: var(--phs-neumorph-inset);
+}
+
+.elevation-1 { box-shadow: var(--phs-elevation-1); }
+.elevation-2 { box-shadow: var(--phs-elevation-2); }
+.elevation-3 { box-shadow: var(--phs-elevation-3); }
+
+.text-hero { font-size: var(--phs-text-hero); letter-spacing: var(--phs-tracking-tight); font-weight: 600; }
+.text-title { font-size: var(--phs-text-title); letter-spacing: var(--phs-tracking-tight); font-weight: 600; }
+.text-subtitle { font-size: var(--phs-text-subtitle); font-weight: 500; }
+.text-body { font-size: var(--phs-text-body); }
+.text-label { font-size: var(--phs-text-label); font-weight: 500; }
+.text-caption { font-size: var(--phs-text-caption); color: var(--color-hairline-strong); }
+.tracking-label { letter-spacing: var(--phs-tracking-wide); text-transform: uppercase; }
 
 @media (prefers-reduced-motion: reduce) {
   .floating-panel,

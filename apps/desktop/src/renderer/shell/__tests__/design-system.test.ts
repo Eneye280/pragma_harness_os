@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "fs";
 import { join } from "path";
 import { auditPalette, contrastRatio } from "../../theme/contrast";
+import { REQUIRED_CSS_TOKENS, REQUIRED_CSS_UTILITIES } from "../../theme/tokens";
 
 const CSS_PATH = join(process.cwd(), "src", "renderer", "styles", "globals.css");
 
@@ -16,6 +17,14 @@ describe("floating design system", () => {
     }
     expect(css).toContain("backdrop-filter: blur(var(--phs-blur))");
     expect(css).toContain("@media (prefers-reduced-motion: reduce)");
+  });
+
+  it("defines the v2 typography, spacing and glass/neumorph tokens", () => {
+    const css = readFileSync(CSS_PATH, "utf8");
+    for (const token of REQUIRED_CSS_TOKENS) expect(css, token).toContain(token);
+    for (const utility of REQUIRED_CSS_UTILITIES) expect(css, utility).toContain(utility);
+    expect(css).toContain("box-shadow: var(--phs-neumorph)");
+    expect(css).toContain("box-shadow: var(--phs-elevation-2), var(--phs-glass-highlight)");
   });
 
   it("keeps the palette at AA contrast on the dark surface", () => {

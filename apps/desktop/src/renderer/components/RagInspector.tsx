@@ -54,7 +54,7 @@ export function RagInspector({ onOpenFile }: { onOpenFile: (path: string) => voi
   }
 
   return (
-    <div className="rounded-control border border-hairline bg-surface-raised/60">
+    <div className="glass rounded-control">
       <div className="flex items-center gap-2 border-b border-hairline px-2.5 py-2">
         <span className="text-[10px] uppercase tracking-widest text-zinc-500">RAG Inspector</span>
         <span className="ml-auto text-[10px] text-zinc-400">{stats ? `${stats.size} docs` : "—"}</span>

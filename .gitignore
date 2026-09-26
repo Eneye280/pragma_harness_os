@@ -67,6 +67,7 @@ temp/
 !/docs/HANDBOOK.md
 !/docs/ARCHITECTURE.md
 !/docs/PLUGIN-SDK.md
+!/docs/DESIGN-SYSTEM.md
 !/docs/assets/
 !/docs/assets/**
 
