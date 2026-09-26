@@ -183,13 +183,13 @@ export function TitleBar({
         </button>
 
         <div className="mx-0.5 h-4 w-px bg-hairline" aria-hidden="true" />
-        <WindowButton label="Minimize" onClick={() => controls?.minimize()}>
+        <WindowButton label="Minimizar" onClick={() => controls?.minimize()}>
           <IconMinimize width={14} height={14} />
         </WindowButton>
-        <WindowButton label={isMaximized ? "Restore" : "Maximize"} onClick={handleMaximize}>
+        <WindowButton label={isMaximized ? "Restaurar" : "Maximizar"} onClick={handleMaximize}>
           <IconMaximize width={13} height={13} />
         </WindowButton>
-        <WindowButton label="Close" danger onClick={() => controls?.close()}>
+        <WindowButton label="Cerrar" danger onClick={() => controls?.close()}>
           <IconClose width={14} height={14} />
         </WindowButton>
       </div>

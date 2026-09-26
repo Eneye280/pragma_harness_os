@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { ChatService, buildAgentPrompt, parseToolRequest, parseToolRequests } from "../chat-service";
+import { ChatService, buildAgentPrompt, parseToolRequest, parseToolRequests, renderHistory } from "../chat-service";
 import type { ChatStreamEvent } from "../../../shared/chat-events";
 import type { ToolObservation, ToolRunner } from "../../tools";
 
@@ -63,8 +63,17 @@ describe("ChatService", () => {
       '```tool\n{"tool":"rm-rf","args":{}}\n```',
       "```tool\nnot json\n```",
       '```tool\n{"tool":"runTests","args":{}}\n```',
+      '```json\n{"tool":"fileRead","args":{"path":"b.ts"}}\n```',
     ].join("\n");
-    expect(parseToolRequests(text).map((request) => request.tool)).toEqual(["fileEdit", "runTests"]);
+    expect(parseToolRequests(text).map((request) => request.tool)).toEqual(["fileEdit", "runTests", "fileRead"]);
+  });
+
+  it("understands loose tool lines some models emit", () => {
+    expect(parseToolRequests("[fileRead] calc-harness/index.html")).toEqual([{ tool: "fileRead", args: { path: "calc-harness/index.html" } }]);
+    expect(parseToolRequests('fileRead: "styles.css"')).toEqual([{ tool: "fileRead", args: { path: "styles.css" } }]);
+    expect(parseToolRequests("fileRead(script.js) ")).toEqual([{ tool: "fileRead", args: { path: "script.js" } }]);
+    expect(parseToolRequests("runTests:")[0]).toMatchObject({ tool: "runTests" });
+    expect(parseToolRequests("webFetch: https://example.com")[0]).toMatchObject({ tool: "webFetch", args: { url: "https://example.com" } });
   });
 
   it("runs multiple tools and feeds results back until the model stops", async () => {
@@ -129,6 +138,55 @@ describe("ChatService", () => {
     for (const tool of ["fileRead", "fileEdit", "terminal", "runTests", "runBuild", "runLint", "webFetch", "mcp_call"]) {
       expect(prompt).toContain(tool);
     }
+  });
+
+  it("includes recent conversation history in the prompt", () => {
+    const history = [
+      { role: "user" as const, content: "crea una calculadora en calc-harness/" },
+      { role: "assistant" as const, content: "Listo, escribí index.html, styles.css y script.js" },
+    ];
+    const block = renderHistory(history);
+    expect(block).toContain("[historial]");
+    expect(block).toContain("Usuario: crea una calculadora");
+    expect(block).toContain("Harness: Listo, escribí");
+
+    const prompt = buildAgentPrompt({ message: "ahora verifícala", sessionId: "s", workspacePath: "/w", history }, []);
+    expect(prompt).toContain("[historial]");
+    expect(prompt).toContain("calc-harness/");
+    expect(renderHistory(undefined)).toBe("");
+  });
+
+  it("runs automatic QA after a run that used tools and reports failures", async () => {
+    const toolBlock = '```tool\n{"tool":"fileEdit","args":{"path":"a.js","content":"x"}}\n```';
+    const events: ChatStreamEvent[] = [];
+    const service = new ChatService({
+      gateway: { stream: () => streamChunks(["escribo\n", toolBlock]) },
+      toolRunner: makeRunner({}),
+      toolWorkspacePath: "/tmp/ws",
+      qaVerifier: async () => ({ ok: false, detail: "✕ abrir index.html: sin título" }),
+      shouldAutoQa: () => true,
+    });
+    await service.run({ message: "crea la calculadora", sessionId: "s", workspacePath: "/tmp/repo" }, (event) => events.push(event));
+    const qaStep = events.find((event) => event.kind === "harness-step" && (event as { label?: string }).label === "QA con fallos");
+    expect(qaStep).toBeTruthy();
+    expect(events.some((event) => event.kind === "assistant-delta" && (event as { text: string }).text.includes("Verificación QA automática"))).toBe(true);
+  });
+
+  it("skips automatic QA when no tool was used", async () => {
+    const events: ChatStreamEvent[] = [];
+    let called = 0;
+    const service = new ChatService({
+      gateway: { stream: () => streamChunks(["solo una respuesta"]) },
+      toolRunner: makeRunner({}),
+      toolWorkspacePath: "/tmp/ws",
+      qaVerifier: async () => {
+        called += 1;
+        return { ok: true, detail: "ok" };
+      },
+      shouldAutoQa: () => true,
+    });
+    await service.run({ message: "explícame algo", sessionId: "s", workspacePath: "/tmp/repo" }, (event) => events.push(event));
+    expect(called).toBe(0);
   });
 
   it("proposes a plan and waits for approval before executing", async () => {

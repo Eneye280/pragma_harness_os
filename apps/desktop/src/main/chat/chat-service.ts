@@ -25,19 +25,59 @@ export function parseToolRequest(rawText: string): z.infer<typeof ToolRequestSch
   }
 }
 
-/** Todos los bloques ```tool válidos del texto, en orden. */
+const LENIENT_TOOLS = ["fileRead", "fileEdit", "terminal", "runTests", "runBuild", "runLint", "webFetch", "mcp_call"] as const;
+const LENIENT_LINE = /^\s*(?:[-*]\s*)?\[?(fileRead|terminal|webFetch|runTests|runBuild|runLint|mcp_call)\]?(?:\(|:|\s)\s*(.*?)\s*\)?\s*$/gim;
+
+function lenientArgs(tool: string, rest: string): Record<string, unknown> | null {
+  const value = rest.replace(/[`"']/g, "").trim();
+  if (tool === "fileRead") return value ? { path: value } : null;
+  if (tool === "webFetch") return /^https?:\/\//i.test(value) ? { url: value } : null;
+  if (tool === "terminal") {
+    const [command, ...args] = value.split(/\s+/).filter(Boolean);
+    return command ? { command, args } : null;
+  }
+  if (tool === "runTests" || tool === "runBuild" || tool === "runLint") return {};
+  return null;
+}
+
+/**
+ * Todos los bloques/bloques válidos del texto, en orden. Acepta el formato
+ * canónico ` ```tool `, bloques ` ```json ` y formas sueltas que algunos
+ * modelos escriben (`[fileRead] path`, `fileRead: path`, `fileRead(path)`).
+ */
 export function parseToolRequests(rawText: string): Array<z.infer<typeof ToolRequestSchema>> {
   const requests: Array<z.infer<typeof ToolRequestSchema>> = [];
-  for (const match of rawText.matchAll(/```tool\s*([\s\S]*?)```/g)) {
+  const seen = new Set<string>();
+
+  const push = (request: z.infer<typeof ToolRequestSchema>): void => {
+    const key = JSON.stringify(request);
+    if (!seen.has(key)) {
+      seen.add(key);
+      requests.push(request);
+    }
+  };
+
+  for (const match of rawText.matchAll(/```(?:tool|json)\s*([\s\S]*?)```/g)) {
     try {
-      const parsed: unknown = JSON.parse(match[1].trim());
-      const result = ToolRequestSchema.safeParse(parsed);
-      if (result.success) requests.push(result.data);
+      const result = ToolRequestSchema.safeParse(JSON.parse(match[1].trim()));
+      if (result.success) push(result.data);
     } catch {
       // bloque inválido: se ignora
     }
   }
-  return requests;
+
+  if (requests.length === 0) {
+    for (const match of rawText.matchAll(LENIENT_LINE)) {
+      const tool = match[1];
+      if (!(LENIENT_TOOLS as readonly string[]).includes(tool)) continue;
+      const args = lenientArgs(tool, match[2] ?? "");
+      if (!args) continue;
+      const result = ToolRequestSchema.safeParse({ tool, args });
+      if (result.success) push(result.data);
+    }
+  }
+
+  return requests.slice(0, 20);
 }
 
 export const MAX_TOOL_ROUNDS = 6;
@@ -85,6 +125,8 @@ export interface ChatServiceDeps {
   consumeFallback?: () => import("../llm/fallback").FallbackAttempt | null;
   stuckTimeoutMs?: number;
   workspaceBlock?: (message: string) => Promise<string>;
+  qaVerifier?: () => Promise<{ ok: boolean; detail: string }>;
+  shouldAutoQa?: () => boolean;
   onPostmortem?: (entry: { sessionId: string; goal: string; outcome: "done" | "failed" | "blocked"; failures: string[]; fixes: string[]; lessons: string[] }) => void;
 }
 
@@ -97,6 +139,27 @@ export const TOOL_PROTOCOL = [
   "[tools] disponibles: fileRead{path}, fileEdit{path,content}, terminal{command,args[]}, runTests{}, runBuild{}, runLint{}, webFetch{url}, mcp_call{server,tool,args}. Las rutas son relativas al proyecto. Un bloque por archivo. Nunca respondas que no puedes leer o listar: el listado [workspace files] y fileRead están disponibles.",
 ].join("\n");
 
+export const MAX_HISTORY_ENTRIES = 6;
+export const MAX_HISTORY_CHARS = 4000;
+
+/** Historial reciente (últimos turnos) para que el agente tenga contexto. */
+export function renderHistory(history: Array<{ role: "user" | "assistant"; content: string }> | undefined): string {
+  if (!history || history.length === 0) return "";
+  const recent = history.filter((entry) => entry.content.trim().length > 0).slice(-MAX_HISTORY_ENTRIES);
+  if (recent.length === 0) return "";
+  const lines: string[] = [];
+  let total = 0;
+  for (const entry of recent) {
+    const label = entry.role === "user" ? "Usuario" : "Harness";
+    const content = entry.content.replace(/\s+/g, " ").trim().slice(0, 600);
+    const line = `${label}: ${content}`;
+    if (total + line.length > MAX_HISTORY_CHARS) break;
+    total += line.length;
+    lines.push(line);
+  }
+  return lines.length > 0 ? `[historial] (turnos recientes, solo contexto)\n${lines.join("\n")}` : "";
+}
+
 export function buildAgentPrompt(request: ChatSendRequest, needs: string[], approvedPlan?: string): string {
   const sections = [
     "[harness] compila reglas, skills y contexto antes de despertar al agente.",
@@ -105,6 +168,8 @@ export function buildAgentPrompt(request: ChatSendRequest, needs: string[], appr
     "[scope] haz exactamente lo pedido, ni más ni menos. Si detectas algo extra útil, sugiérelo al final en una sección «Sugerencias», pero NO lo ejecutes ni modifiques nada fuera del alcance.",
     TOOL_PROTOCOL,
   ];
+  const history = renderHistory(request.history);
+  if (history) sections.push(history);
   if (approvedPlan) sections.push("[plan aprobado por el usuario]", approvedPlan);
   sections.push("[user]", request.message);
   return sections.join("\n");
@@ -278,9 +343,12 @@ export class ChatService {
 
       emit({ kind: "harness-step", sessionId, phase: "agent", status: "running", label: "agente escribiendo…" });
 
+      const historyBlock = renderHistory(request.history);
       const prompt = approvedPlanMarkdown
         ? buildAgentPrompt(request, intent.needs, approvedPlanMarkdown)
-        : assembledPrompt || buildAgentPrompt(request, intent.needs);
+        : assembledPrompt
+          ? `${assembledPrompt}${historyBlock ? `\n\n${historyBlock}` : ""}`
+          : buildAgentPrompt(request, intent.needs);
       let workspaceBlock = "";
       if (this.deps.workspaceBlock) {
         try {
@@ -448,6 +516,27 @@ export class ChatService {
           emit({ kind: "assistant-done", sessionId });
           emit({ kind: "harness-step", sessionId, phase: "agent", status: "done", label: "bloqueado por post-gate" });
           return;
+        }
+      }
+
+      if (!request.bypassHarness && executed.size > 0 && this.deps.qaVerifier && (this.deps.shouldAutoQa?.() ?? false)) {
+        emit({ kind: "harness-step", sessionId, phase: "agent", status: "running", label: "verificación QA automática…" });
+        try {
+          const qa = await this.deps.qaVerifier();
+          emit({
+            kind: "harness-step",
+            sessionId,
+            phase: "agent",
+            status: qa.ok ? "done" : "blocked",
+            label: qa.ok ? "QA en verde" : "QA con fallos",
+            detail: qa.detail.slice(0, 500),
+          });
+          if (!qa.ok) {
+            emit({ kind: "assistant-delta", sessionId, text: `\n\n**Verificación QA automática — fallos**\n\n${qa.detail}` });
+            emit({ kind: "assistant-done", sessionId });
+          }
+        } catch {
+          emit({ kind: "harness-step", sessionId, phase: "agent", status: "running", label: "QA no disponible" });
         }
       }
 

@@ -41,6 +41,7 @@ const PostGateSchema = z.object({
   tests: z.boolean(),
   security: z.boolean(),
   visual: z.boolean(),
+  qa: z.boolean().default(true),
 });
 
 export const SettingsSchema = z.object({

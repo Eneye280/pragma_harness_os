@@ -223,6 +223,7 @@ export interface SendMessageOptions {
   sessionId?: string;
   bypassHarness?: boolean;
   attachments?: Attachment[];
+  history?: Array<{ role: "user" | "assistant"; content: string }>;
 }
 
 export interface HarnessBridge {

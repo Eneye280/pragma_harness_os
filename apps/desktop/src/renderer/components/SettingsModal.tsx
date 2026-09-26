@@ -52,6 +52,7 @@ const POST_GATE_LABELS: Array<{ key: keyof HarnessSettings["gates"]["post"]; lab
   { key: "tests", label: "tests" },
   { key: "security", label: "security" },
   { key: "visual", label: "visual" },
+  { key: "qa", label: "qa" },
 ];
 
 export function SettingsModal({ open, onClose, settingsState, cost, updater, skillsState, agentsState, themeMode, onThemeChange, accent, onAccentChange }: SettingsModalProps): React.ReactElement | null {

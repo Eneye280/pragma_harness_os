@@ -61,6 +61,10 @@ const sendMessageSchema = z.object({
     )
     .max(10)
     .optional(),
+  history: z
+    .array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(20000) }))
+    .max(12)
+    .optional(),
 });
 const pingResponse = { status: "harness:ready" as const, version: APP_VERSION };
 
@@ -291,6 +295,7 @@ export function registerIpcHandlers(
           workspacePath: context.workspacePath,
           bypassHarness: parsed.data.bypassHarness,
           attachments: parsed.data.attachments,
+          history: parsed.data.history,
         },
         (chatEvent) => {
           const targetWindow = getMainWindow();

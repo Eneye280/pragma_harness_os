@@ -148,7 +148,7 @@ export function GraphPanel({ open, onClose, storageKey = "" }: GraphPanelProps):
         }}
       >
         <div className="flex cursor-grab items-center gap-3 border-b border-hairline px-3 py-2" onMouseDown={beginDrag}>
-          <span className="text-[12px] font-semibold uppercase tracking-[0.16em] text-harness-soft">Dependency graph</span>
+          <span className="text-[12px] font-semibold uppercase tracking-[0.16em] text-harness-soft">Grafo de dependencias</span>
           <span className="text-[12px] text-zinc-500">{graph ? `${graph.nodes.length} nodos · ${graph.edges.length} aristas · ${graph.cycles.length} ciclos` : "—"}</span>
           {delta ? (
             <span className="rounded-full bg-harness/15 px-2 py-[1px] text-[12px] text-harness-soft">

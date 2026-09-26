@@ -15,6 +15,7 @@ import type { CostTracker } from "../cost";
 import { ChatService, type ChatGateway } from "./chat-service";
 import { matchScenario } from "./mock-scenarios";
 import { buildWorkspaceBlock } from "./workspace-files";
+import { runProjectQa } from "../qa/project-qa";
 import { estimateCostUsd } from "../cost/pricing";
 import type { UsageEntry } from "../../shared/usage";
 
@@ -180,6 +181,15 @@ export function createChatService(
     pluginRunner: createPluginRunner((name) => settingsController.store.get().plugins[name] === true, customPlugins),
     pollSteer,
     workspaceBlock: (message) => buildWorkspaceBlock(toolWorkspacePath(), message),
+    qaVerifier: async () => {
+      const report = await runProjectQa(toolWorkspacePath());
+      const detail = report.steps.map((step) => `${step.ok ? "✓" : "✕"} ${step.name}: ${step.detail}`).join("\n");
+      return { ok: report.ok, detail: detail || "sin pasos" };
+    },
+    shouldAutoQa: () => {
+      const gates = settingsController.store.get().gates.post;
+      return gates.enabled && gates.qa;
+    },
     resolveToolPermission: toolApproval?.resolvePermission,
     requestToolApproval: toolApproval?.requestApproval,
     onPostmortem,

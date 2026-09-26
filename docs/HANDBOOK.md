@@ -263,3 +263,28 @@ Iteración sobre v1.0.2 enfocada en diseño y claridad, sin tocar el motor:
   viven dentro del proyecto activo y no se muestran carpetas vacías.
 - **E2E real**: con DeepSeek el harness creó `calculadora/{index.html,styles.css,script.js}` en un
   proyecto vacío (suma, resta, multiplicación y división); `node --check` OK.
+
+---
+
+## v1.0.8 — endurecimiento para producción
+
+- **Versionado unificado**: `package.json`, `APP_VERSION` y el tag de git comparten semver (1.0.8);
+  se eliminó el desfase `buildVersion`.
+- **Agente con memoria**: los últimos turnos de la conversación entran al prompt (`[historial]`).
+- **Tools tolerantes**: además del bloque ` ```tool `, se aceptan bloques `json` y formas sueltas
+  (`[fileRead] path`, `fileRead: path`, `fileRead(path)`).
+- **QA multi-package-manager**: detecta el gestor por lockfile (pnpm/npm/yarn/bun/deno) y corre los
+  scripts reales; en web abre el HTML y captura pantalla + consola.
+- **QA automático como gate**: tras un run que usó tools, el harness ejecuta la verificación y marca
+  bloqueo si falla (configurable en Gates → post → qa).
+- **Lint propio + CI**: `scripts/lint.mjs` recorre el AST (TypeScript) y prohíbe `console.log`,
+  `debugger`, `@ts-ignore`, `any` y TODO/FIXME; corre en `quality-gate` y en CI.
+- **Cobertura ampliada**: el umbral cubre ahora `main` + `shared` + lógica del `renderer`
+  (líneas ≥ 65, funciones ≥ 78, ramas ≥ 72).
+- **Tests de UI**: suite de render con `react-dom/server` para plan, notificaciones, palette,
+  explorer, telemetría, pipeline, código y QA.
+- **A11y y microcopy**: contraste AA verificado para los 10 acentos en claro y oscuro; textos en
+  español en toda la UI.
+- **Plan como grafo**: `PlanCanvas` dibuja las tareas conectadas + pensamiento y verificación.
+- **Release**: workflow `release.yml` que en cada tag `v*` corre el quality gate, construye el
+  instalador y publica un Release (draft) con el `.exe`, `.blockmap` y `latest.yml`.

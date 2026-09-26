@@ -376,7 +376,7 @@ export function App(): React.ReactElement {
               key={`${notification.trigger}-${notification.ts}`}
               className="palette-anim rounded-panel border border-harness/40 bg-surface-raised px-3 py-2 shadow-xl shadow-black/50"
             >
-              <p className="text-[12px] font-semibold text-harness-soft">New instinct learned</p>
+              <p className="text-[12px] font-semibold text-harness-soft">Nuevo instinto aprendido</p>
               <p className="mt-0.5 text-[12px] text-zinc-300">{notification.content}</p>
               <p className="mt-0.5 font-mono text-[12px] text-zinc-600">
                 {notification.trigger} · confidence {notification.confidence.toFixed(2)}

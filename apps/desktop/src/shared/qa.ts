@@ -124,3 +124,30 @@ export interface QaProjectReport {
   screenshotPath?: string;
   screenshotDataUrl?: string;
 }
+export type PackageManager = "pnpm" | "npm" | "yarn" | "bun" | "deno";
+
+const LOCKFILES: Array<{ file: string; manager: PackageManager }> = [
+  { file: "pnpm-lock.yaml", manager: "pnpm" },
+  { file: "package-lock.json", manager: "npm" },
+  { file: "yarn.lock", manager: "yarn" },
+  { file: "bun.lockb", manager: "bun" },
+  { file: "bun.lock", manager: "bun" },
+  { file: "deno.json", manager: "deno" },
+  { file: "deno.jsonc", manager: "deno" },
+];
+
+/** Detecta el gestor por lockfiles; null si el proyecto no es JS/TS. */
+export function detectPackageManager(files: string[]): PackageManager | null {
+  const lower = files.map((file) => file.toLowerCase());
+  for (const entry of LOCKFILES) {
+    if (lower.includes(entry.file)) return entry.manager;
+  }
+  return lower.includes("package.json") ? "npm" : null;
+}
+
+/** Argumentos para ejecutar un script con el gestor detectado. */
+export function packageRunArgs(manager: PackageManager, script: string): string[] {
+  if (manager === "deno") return ["task", script];
+  if (manager === "yarn") return [script];
+  return ["run", script];
+}

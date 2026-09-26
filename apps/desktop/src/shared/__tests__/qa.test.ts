@@ -49,3 +49,17 @@ describe("ordered qa scripts", () => {
     expect(orderedScriptNames(undefined)).toEqual([]);
   });
 });
+describe("package manager detection", () => {
+  it("detects the manager from lockfiles", async () => {
+    const { detectPackageManager, packageRunArgs } = await import("../qa");
+    expect(detectPackageManager(["pnpm-lock.yaml", "package.json"])).toBe("pnpm");
+    expect(detectPackageManager(["package-lock.json"])).toBe("npm");
+    expect(detectPackageManager(["yarn.lock"])).toBe("yarn");
+    expect(detectPackageManager(["bun.lockb"])).toBe("bun");
+    expect(detectPackageManager(["deno.json"])).toBe("deno");
+    expect(detectPackageManager(["package.json"])).toBe("npm");
+    expect(detectPackageManager(["README.md"])).toBeNull();
+    expect(packageRunArgs("pnpm", "test")).toEqual(["run", "test"]);
+    expect(packageRunArgs("deno", "test")).toEqual(["task", "test"]);
+  });
+});

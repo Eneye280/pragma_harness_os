@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import type { PlanProposal } from "@shared/plan";
 import { MarkdownView } from "../chat/MarkdownView";
+import { Dialog } from "../ui/Dialog";
+import { PlanCanvas } from "./PlanCanvas";
 
 interface PlanChatCardProps {
   plan: PlanProposal;
@@ -11,11 +13,12 @@ interface PlanChatCardProps {
 
 /**
  * Aprobación del plan dentro del mismo chat (no reemplaza la conversación).
- * Se puede editar el markdown antes de aprobar.
+ * Se puede editar el markdown antes de aprobar y verlo como grafo de tareas.
  */
 export function PlanChatCard({ plan, onApprove, onRevise, onDiscard }: PlanChatCardProps): React.ReactElement {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(plan.markdown);
+  const [graphOpen, setGraphOpen] = useState(false);
 
   useEffect(() => {
     setDraft(plan.markdown);
@@ -80,6 +83,9 @@ export function PlanChatCard({ plan, onApprove, onRevise, onDiscard }: PlanChatC
             <button type="button" onClick={() => setEditing(true)} className="rounded-control border border-hairline px-3 py-1.5 text-[12px] text-zinc-300 hover:bg-surface-raised">
               Editar plan
             </button>
+            <button type="button" onClick={() => setGraphOpen(true)} className="rounded-control border border-harness/40 bg-harness/10 px-3 py-1.5 text-[12px] text-harness-soft hover:bg-harness/20">
+              Ver como grafo
+            </button>
             <button type="button" onClick={onDiscard} className="rounded-control border border-red-500/40 px-3 py-1.5 text-[12px] text-red-300 hover:bg-red-500/10">
               Descartar
             </button>
@@ -87,6 +93,18 @@ export function PlanChatCard({ plan, onApprove, onRevise, onDiscard }: PlanChatC
         )}
         <span className="ml-auto text-[12px] text-zinc-600">El harness no ejecuta hasta que apruebes.</span>
       </footer>
+
+      <Dialog open={graphOpen} onClose={() => setGraphOpen(false)} label="Grafo del plan" maxWidth="46rem">
+        <div className="flex items-center gap-2 border-b border-hairline px-4 py-3">
+          <span className="text-[14px] font-semibold text-zinc-100">Grafo del plan</span>
+          <button type="button" onClick={() => setGraphOpen(false)} className="ml-auto rounded-control border border-hairline px-2.5 py-1 text-[12px] text-zinc-300 hover:bg-surface-raised">
+            Cerrar
+          </button>
+        </div>
+        <div className="max-h-[70vh] overflow-y-auto p-4">
+          <PlanCanvas plan={plan} />
+        </div>
+      </Dialog>
     </section>
   );
 }

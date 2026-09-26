@@ -491,13 +491,13 @@ textarea.bg-transparent:focus {
 :root[data-accent="pink"] { --color-harness: #ec4899; --color-harness-strong: #db2777; --color-harness-soft: #f9a8d4; }
 :root[data-accent="violet"] { --color-harness: #8b5cf6; --color-harness-strong: #7c3aed; --color-harness-soft: #a78bfa; }
 
-:root[data-theme="light"][data-accent="blue"] { --color-harness-soft: #2563eb; }
+:root[data-theme="light"][data-accent="blue"] { --color-harness-soft: #1d4ed8; }
 :root[data-theme="light"][data-accent="cyan"] { --color-harness-soft: #0e7490; }
 :root[data-theme="light"][data-accent="teal"] { --color-harness-soft: #0f766e; }
 :root[data-theme="light"][data-accent="emerald"] { --color-harness-soft: #047857; }
-:root[data-theme="light"][data-accent="lime"] { --color-harness-soft: #4d7c0f; }
-:root[data-theme="light"][data-accent="amber"] { --color-harness-soft: #b45309; }
-:root[data-theme="light"][data-accent="orange"] { --color-harness-soft: #c2410c; }
-:root[data-theme="light"][data-accent="rose"] { --color-harness-soft: #be123c; }
-:root[data-theme="light"][data-accent="pink"] { --color-harness-soft: #be185d; }
+:root[data-theme="light"][data-accent="lime"] { --color-harness-soft: #3f6212; }
+:root[data-theme="light"][data-accent="amber"] { --color-harness-soft: #92400e; }
+:root[data-theme="light"][data-accent="orange"] { --color-harness-soft: #9a3412; }
+:root[data-theme="light"][data-accent="rose"] { --color-harness-soft: #9f1239; }
+:root[data-theme="light"][data-accent="pink"] { --color-harness-soft: #9d174d; }
 :root[data-theme="light"][data-accent="violet"] { --color-harness-soft: #6d28d9; }

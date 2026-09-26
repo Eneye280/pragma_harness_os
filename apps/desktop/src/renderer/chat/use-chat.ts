@@ -35,6 +35,16 @@ export function useChat(workspacePath = ""): UseChatResult {
   const sessionRef = useRef<string>(createId());
   const [sessionId, setSessionId] = useState<string>(() => sessionRef.current);
   const [hydrated, setHydrated] = useState(false);
+  const historyRef = useRef<Array<{ role: "user" | "assistant"; content: string }>>([]);
+
+  const activeState = states[sessionId];
+  useEffect(() => {
+    const messages = activeState?.messages ?? [];
+    historyRef.current = messages
+      .filter((message) => message.content.trim().length > 0)
+      .slice(-6)
+      .map((message) => ({ role: message.role, content: message.content }));
+  }, [activeState]);
 
   const adoptSession = useCallback((id: string) => {
     sessionRef.current = id;
@@ -102,7 +112,7 @@ export function useChat(workspacePath = ""): UseChatResult {
     const id = createId();
     dispatch({ type: "send", sessionId: sessionRef.current, id, text: trimmed, attachments });
     window.harness
-      ?.sendMessage(trimmed || "(adjunto)", { sessionId: sessionRef.current, bypassHarness: options?.bypassHarness, attachments })
+      ?.sendMessage(trimmed || "(adjunto)", { sessionId: sessionRef.current, bypassHarness: options?.bypassHarness, attachments, history: historyRef.current })
       .catch(() => {
         dispatch({
           type: "stream",

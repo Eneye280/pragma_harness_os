@@ -99,6 +99,7 @@ export interface ChatSendRequest {
   workspacePath: string;
   bypassHarness?: boolean;
   attachments?: import("./attachments").Attachment[];
+  history?: Array<{ role: "user" | "assistant"; content: string }>;
 }
 
 export const HARNESS_PHASE_ORDER: HarnessPhase[] = [

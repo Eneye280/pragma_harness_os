@@ -28,6 +28,7 @@ export interface PostGateFlags {
   tests: boolean;
   security: boolean;
   visual: boolean;
+  qa: boolean;
 }
 
 export interface BudgetSettings {
@@ -117,7 +118,7 @@ export const DEFAULT_SETTINGS: HarnessSettings = {
   budget: { tokensPerDay: 200000, usdPerDay: 5 },
   gates: {
     pre: { enabled: true, secret: true, budget: true, schema: true },
-    post: { enabled: true, build: true, typecheck: true, lint: true, tests: true, security: true, visual: true },
+    post: { enabled: true, build: true, typecheck: true, lint: true, tests: true, security: true, visual: true, qa: true },
   },
   plugins: { "commit-guard": false, "secret-scan": true, "no-console-log": true },
   skills: {},

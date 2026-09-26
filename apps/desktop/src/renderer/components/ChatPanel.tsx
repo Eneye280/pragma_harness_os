@@ -325,7 +325,7 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
           aria-label="Ir al final de la conversación"
           className="absolute bottom-28 left-1/2 -translate-x-1/2 rounded-full border border-hairline bg-zinc-800 px-3 py-1 text-[12px] text-zinc-300 shadow-lg transition-colors hover:bg-zinc-700"
         >
-          ↓ scroll to bottom
+          ↓ ir al final
         </button>
       ) : null}
 
@@ -410,7 +410,7 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
               type="button"
               onClick={() => submit(false)}
               disabled={!draft.trim()}
-              aria-label="Send message"
+              aria-label="Enviar mensaje"
               className={cn(
                 "flex h-8 w-8 items-center justify-center rounded-control transition-colors",
                 !draft.trim() ? "bg-zinc-800 text-zinc-600" : "bg-harness text-white hover:bg-harness-strong",
@@ -441,7 +441,7 @@ function EmptyConversation({ onPick }: { onPick: (text: string) => void }): Reac
           <IconSparkles width={18} height={18} />
         </span>
         <div>
-          <h1 className="text-lg font-semibold tracking-tight text-zinc-100">Harness Controls. Agent Executes.</h1>
+          <h1 className="text-lg font-semibold tracking-tight text-zinc-100">El harness controla. El agente ejecuta.</h1>
           <p className="text-[12px] text-zinc-400">El harness compila reglas, skills, RAG y contexto antes de despertar al agente.</p>
         </div>
       </div>

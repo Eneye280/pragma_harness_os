@@ -1,29 +1,34 @@
 import { execFile } from "child_process";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 import fastGlob from "fast-glob";
 import { resolveInsideWorkspace } from "../tools/file-tools";
 import { captureHtmlPage } from "./html-capture";
-import { orderedScriptNames, type QaProjectReport, type QaProjectStep } from "../../shared/qa";
+import { detectPackageManager, orderedScriptNames, packageRunArgs, type PackageManager, type QaProjectReport, type QaProjectStep } from "../../shared/qa";
 
 export type { QaProjectReport, QaProjectStep } from "../../shared/qa";
 
 const SCRIPT_TIMEOUT_MS = 180_000;
 
-function runScript(workspacePath: string, script: string): Promise<QaProjectStep> {
+function runScript(workspacePath: string, manager: PackageManager, script: string): Promise<QaProjectStep> {
   const started = Date.now();
-  const command = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
+  const command = process.platform === "win32" ? `${manager}.cmd` : manager;
   return new Promise((resolve) => {
-    execFile(command, [script], { cwd: workspacePath, timeout: SCRIPT_TIMEOUT_MS, maxBuffer: 4 * 1024 * 1024, shell: process.platform === "win32" }, (error, stdout, stderr) => {
-      const output = `${stdout ?? ""}\n${stderr ?? ""}`.trim();
-      const tail = output.slice(-800);
-      resolve({
-        name: `pnpm ${script}`,
-        ok: !error,
-        detail: error ? (tail || (error as Error).message) : tail.split("\n").slice(-6).join("\n") || "ok",
-        durationMs: Date.now() - started,
-      });
-    });
+    execFile(
+      command,
+      packageRunArgs(manager, script),
+      { cwd: workspacePath, timeout: SCRIPT_TIMEOUT_MS, maxBuffer: 4 * 1024 * 1024, shell: process.platform === "win32" },
+      (error, stdout, stderr) => {
+        const output = `${stdout ?? ""}\n${stderr ?? ""}`.trim();
+        const tail = output.slice(-800);
+        resolve({
+          name: `${manager} ${script}`,
+          ok: !error,
+          detail: error ? (tail || (error as Error).message) : tail.split("\n").slice(-6).join("\n") || "ok",
+          durationMs: Date.now() - started,
+        });
+      },
+    );
   });
 }
 
@@ -57,17 +62,28 @@ export async function runProjectQa(workspacePath: string | null | undefined): Pr
   const packageJsonPath = join(workspacePath, "package.json");
   let stack: QaProjectReport["stack"] = "unknown";
 
-  if (existsSync(packageJsonPath)) {
+  let rootFiles: string[] = [];
+  try {
+    rootFiles = readdirSync(workspacePath);
+  } catch {
+    rootFiles = [];
+  }
+  const manager = detectPackageManager(rootFiles);
+
+  if (manager) {
     stack = "node";
     let scripts: Record<string, string> = {};
-    try {
-      scripts = (JSON.parse(readFileSync(packageJsonPath, "utf8")) as { scripts?: Record<string, string> }).scripts ?? {};
-    } catch {
-      scripts = {};
+    if (existsSync(packageJsonPath)) {
+      try {
+        scripts = (JSON.parse(readFileSync(packageJsonPath, "utf8")) as { scripts?: Record<string, string> }).scripts ?? {};
+      } catch {
+        scripts = {};
+      }
     }
     const present = orderedScriptNames(scripts);
-    if (present.length === 0) steps.push({ name: "package.json", ok: true, detail: "sin scripts lint/typecheck/test/build" });
-    for (const script of present) steps.push(await runScript(workspacePath, script));
+    steps.push({ name: "gestor detectado", ok: true, detail: manager });
+    if (present.length === 0) steps.push({ name: "scripts", ok: true, detail: "sin scripts lint/typecheck/test/build" });
+    for (const script of present) steps.push(await runScript(workspacePath, manager, script));
   }
 
   const htmlEntry = findHtmlEntry(workspacePath);

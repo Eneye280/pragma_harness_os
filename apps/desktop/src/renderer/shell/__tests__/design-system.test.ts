@@ -11,8 +11,9 @@ function walk(dir: string): string[] {
   const out: string[] = [];
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry);
+    if (entry === "__tests__") continue;
     if (statSync(full).isDirectory()) out.push(...walk(full));
-    else if (/\.(tsx?|css)$/.test(entry)) out.push(full);
+    else if (/\.(tsx?|css)$/.test(entry) && !/\.test\./.test(entry)) out.push(full);
   }
   return out;
 }
@@ -72,5 +73,15 @@ describe("floating design system", () => {
     const css = readFileSync(CSS_PATH, "utf8");
     for (const token of ["--phs-z-panel", "--phs-z-overlay", "--phs-z-toast"]) expect(css).toContain(token);
     for (const utility of [".layer-overlay", ".layer-toast", ".overlay-surface", ".field"]) expect(css).toContain(utility);
+  });
+
+  it("keeps user-facing copy in Spanish", () => {
+    const forbidden = ["Harness Controls", "Dependency graph", "scroll to bottom", "New instinct learned"];
+    const offenders: string[] = [];
+    for (const file of walk(RENDERER_DIR)) {
+      const content = readFileSync(file, "utf8");
+      for (const text of forbidden) if (content.includes(text)) offenders.push(`${file}: ${text}`);
+    }
+    expect(offenders).toEqual([]);
   });
 });

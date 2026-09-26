@@ -74,7 +74,7 @@ docs/                   HANDBOOK · ARCHITECTURE · PLUGIN-SDK
 
 ## Estado
 
-**SPEC v1.0.2.1 (frozen).** Acumula v1.0.0/v1.0.1/v1.0.2 (workspace/perfiles, sesiones, adjuntos,
+**SPEC v1.0.8 (frozen).** Acumula v1.0.0/v1.0.1/v1.0.2 (workspace/perfiles, sesiones, adjuntos,
 plan con aprobación, autoría de skills/plugins, RAG, grafo, permisos por tool, sandbox, tools de
 verificación, gate visual, routing, dashboard, health, feed privado, ayuda + tour, hot-reload,
 código resaltado, light/dark, QA runner, terceros, multi-agente, telemetría) y el **rediseño

@@ -1,5 +1,5 @@
 /**
- * Versión visible del producto (SPEC). La forma semver para empaquetado es
- * `package.json` (1.0.3); este es el nombre de release que ve el usuario.
+ * Versión visible del producto. Unificada con `package.json` y el tag de git
+ * (semver, objetivo v1.0.8).
  */
-export const APP_VERSION = "1.0.2.5";
+export const APP_VERSION = "1.0.8";

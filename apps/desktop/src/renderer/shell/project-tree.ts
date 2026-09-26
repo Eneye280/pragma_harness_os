@@ -12,7 +12,7 @@ export function basenameOf(path: string): string {
   return segments[segments.length - 1] ?? path;
 }
 
-const key = (path: string): string => path.replace(/[\\/]+$/, "").toLowerCase();
+const key = (path: string): string => path.replace(/[\\/]+/g, "/").replace(/\/+$/, "").toLowerCase();
 
 /**
  * Agrupa sesiones por proyecto (folder). El proyecto activo va primero y
