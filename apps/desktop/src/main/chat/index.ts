@@ -24,11 +24,8 @@ const TERMINAL_INTENT_PATTERN = /(inspecciona|git status|estado del repo|revisa 
 
 async function* mockResponder(prompt: string): AsyncGenerator<string> {
   const answerParts = [
-    "## Harness-first listo\n\n",
-    "El harness compiló **reglas**, **skills** y **contexto** antes de despertar al agente.\n\n",
-    "- clasificación determinista\n",
-    "- skills compiladas en un bloque\n",
-    "- presupuesto de tokens respetado\n",
+    "Estás usando el **provider mock**: esto es una respuesta de ejemplo.\n\n",
+    "El pipeline real (clasificar → reglas → skills → contexto → gates → agente) se muestra en la **línea de tiempo** del chat.\n\n",
   ];
   for (const part of answerParts) {
     await new Promise((resolve) => setTimeout(resolve, 120));

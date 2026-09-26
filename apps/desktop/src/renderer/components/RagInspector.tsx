@@ -56,12 +56,12 @@ export function RagInspector({ onOpenFile }: { onOpenFile: (path: string) => voi
   return (
     <div className="glass rounded-control">
       <div className="flex items-center gap-2 border-b border-hairline px-2.5 py-2">
-        <span className="text-[10px] uppercase tracking-widest text-zinc-500">RAG Inspector</span>
-        <span className="ml-auto text-[10px] text-zinc-400">{stats ? `${stats.size} docs` : "—"}</span>
+        <span className="text-[12px] uppercase tracking-widest text-zinc-500">RAG Inspector</span>
+        <span className="ml-auto text-[12px] text-zinc-400">{stats ? `${stats.size} docs` : "—"}</span>
       </div>
       <div className="space-y-2 px-2.5 py-2">
         {progress && !progress.done ? (
-          <p className="text-[10px] text-harness-soft" role="status">
+          <p className="text-[12px] text-harness-soft" role="status">
             indexando {progress.processed}/{progress.total}…
           </p>
         ) : null}
@@ -71,7 +71,7 @@ export function RagInspector({ onOpenFile }: { onOpenFile: (path: string) => voi
             type="button"
             onClick={() => void reindex("incremental")}
             disabled={busy}
-            className="rounded-control border border-hairline px-2 py-1 text-[10px] text-zinc-300 transition-colors hover:bg-zinc-800 disabled:opacity-40"
+            className="rounded-control border border-hairline px-2 py-1 text-[12px] text-zinc-300 transition-colors hover:bg-zinc-800 disabled:opacity-40"
           >
             Reindex incremental
           </button>
@@ -79,26 +79,26 @@ export function RagInspector({ onOpenFile }: { onOpenFile: (path: string) => voi
             type="button"
             onClick={() => void reindex("full")}
             disabled={busy}
-            className="rounded-control border border-hairline px-2 py-1 text-[10px] text-zinc-300 transition-colors hover:bg-zinc-800 disabled:opacity-40"
+            className="rounded-control border border-hairline px-2 py-1 text-[12px] text-zinc-300 transition-colors hover:bg-zinc-800 disabled:opacity-40"
           >
             Reindex full
           </button>
         </div>
 
-        <label className="block text-[10px] text-zinc-500">
+        <label className="block text-[12px] text-zinc-500">
           Excluir rutas (glob, separadas por coma)
           <textarea
             value={excludesText}
             aria-label="Excluir rutas del RAG"
             onChange={(event) => setExcludesText(event.target.value)}
             rows={1}
-            className="mt-1 w-full resize-y rounded-control border border-hairline bg-surface px-2 py-1 font-mono text-[10px] text-zinc-300 outline-none"
+            className="mt-1 w-full resize-y rounded-control border border-hairline bg-surface px-2 py-1 font-mono text-[12px] text-zinc-300 outline-none"
           />
         </label>
         <button
           type="button"
           onClick={() => void saveExcludes()}
-          className="rounded-control border border-harness/40 px-2 py-1 text-[10px] text-harness-soft transition-colors hover:bg-harness/10"
+          className="rounded-control border border-harness/40 px-2 py-1 text-[12px] text-harness-soft transition-colors hover:bg-harness/10"
         >
           Guardar exclusiones
         </button>
@@ -112,12 +112,12 @@ export function RagInspector({ onOpenFile }: { onOpenFile: (path: string) => voi
               if (event.key === "Enter") void runQuery();
             }}
             placeholder="probar consulta…"
-            className="min-w-0 flex-1 rounded-control border border-hairline bg-surface px-2 py-1 text-[10px] text-zinc-300 outline-none"
+            className="min-w-0 flex-1 rounded-control border border-hairline bg-surface px-2 py-1 text-[12px] text-zinc-300 outline-none"
           />
           <button
             type="button"
             onClick={() => void runQuery()}
-            className="rounded-control border border-hairline px-2 py-1 text-[10px] text-zinc-400 transition-colors hover:bg-zinc-800"
+            className="rounded-control border border-hairline px-2 py-1 text-[12px] text-zinc-400 transition-colors hover:bg-zinc-800"
           >
             Buscar
           </button>
@@ -134,10 +134,10 @@ export function RagInspector({ onOpenFile }: { onOpenFile: (path: string) => voi
                 >
                   <span className="flex items-center gap-1.5">
                     <IconFile width={11} height={11} className="text-zinc-600" />
-                    <span className="truncate font-mono text-[10px] text-zinc-300">{hit.path}</span>
-                    <span className="ml-auto text-[10px] text-harness-soft">{hit.score}</span>
+                    <span className="truncate font-mono text-[12px] text-zinc-300">{hit.path}</span>
+                    <span className="ml-auto text-[12px] text-harness-soft">{hit.score}</span>
                   </span>
-                  <span className="mt-0.5 block truncate text-[10px] text-zinc-600">{hit.snippet.slice(0, 90)}</span>
+                  <span className="mt-0.5 block truncate text-[12px] text-zinc-600">{hit.snippet.slice(0, 90)}</span>
                 </button>
               </li>
             ))}
@@ -145,7 +145,7 @@ export function RagInspector({ onOpenFile }: { onOpenFile: (path: string) => voi
         ) : null}
 
         {stats ? (
-          <details className="text-[10px] text-zinc-500">
+          <details className="text-[12px] text-zinc-500">
             <summary className="cursor-pointer">documentos indexados ({stats.documents.length})</summary>
             <ul className="mt-1 max-h-40 space-y-0.5 overflow-y-auto">
               {stats.documents.map((document) => (
@@ -153,7 +153,7 @@ export function RagInspector({ onOpenFile }: { onOpenFile: (path: string) => voi
                   <button
                     type="button"
                     onClick={() => onOpenFile(document.path)}
-                    className="w-full truncate text-left font-mono text-[10px] text-zinc-500 transition-colors hover:text-harness-soft"
+                    className="w-full truncate text-left font-mono text-[12px] text-zinc-500 transition-colors hover:text-harness-soft"
                   >
                     {document.path} · {document.chars}
                   </button>

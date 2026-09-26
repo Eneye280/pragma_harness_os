@@ -19,7 +19,7 @@ export function MessageTasks({ tasks }: { tasks: MessageTask[] }) {
         type="button"
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
-        className="rounded-control border border-hairline bg-surface-raised px-2 py-1 text-[10px] text-zinc-300 transition-colors hover:text-zinc-100"
+        className="rounded-control border border-hairline bg-surface-raised px-2 py-1 text-[12px] text-zinc-300 transition-colors hover:text-zinc-100"
       >
         {summary}
       </button>
@@ -28,12 +28,12 @@ export function MessageTasks({ tasks }: { tasks: MessageTask[] }) {
           {tasks.map((task) => {
             const status = STATUS[task.status];
             return (
-              <li key={task.id} className="flex items-start gap-2 text-[11px]">
+              <li key={task.id} className="flex items-start gap-2 text-[12px]">
                 <span aria-hidden="true" className={status.className}>
                   {status.icon}
                 </span>
                 <span className="text-zinc-300">{task.label}</span>
-                <span className={`text-[10px] ${status.className}`}>{status.label}</span>
+                <span className={`text-[12px] ${status.className}`}>{status.label}</span>
               </li>
             );
           })}

@@ -209,3 +209,24 @@ SPEC **v1.0.1**. Cambios de arquitectura → nuevo ADR + bump de versión.
 ## 15. Freeze v1.0.2
 
 SPEC **v1.0.2** (`configVersion: 3`). Cambios de arquitectura → nuevo ADR + bump.
+
+## 16. Capas y overlays (v1.0.2.1)
+
+Tres niveles, sin excepciones:
+
+| Capa | Token | Uso |
+| --- | --- | --- |
+| contenido | `--phs-z-panel` | paneles y chat |
+| cabecera | `--phs-z-header` | titlebar |
+| overlay | `--phs-z-overlay` | palette, menús, popups, settings |
+| toast | `--phs-z-toast` | notificaciones efímeras |
+
+`.layer-overlay` es `position: fixed; inset: 0`. Los menús usan `createPortal(document.body)`
+para escapar de los stacking contexts que crean `backdrop-filter`; por eso un menú del titlebar
+nunca queda detrás de un panel.
+
+## 17. Modelo proyecto → sesiones (v1.0.2.1)
+
+El harness trabaja siempre **sobre un proyecto (folder)**. `groupSessionsByProject(sessions,
+activePath, recents)` agrupa las sesiones por `workspacePath` (activo primero, luego recientes) y
+el Explorer las anida bajo cada proyecto. No hay sesión sin proyecto.

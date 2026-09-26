@@ -57,6 +57,7 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
   const [revealKey, setRevealKey] = useState(false);
   const [skillQuery, setSkillQuery] = useState("");
   const [categoryQuery, setCategoryQuery] = useState("");
+  const [activeSection, setActiveSection] = useState("sec-apariencia");
   const [integrationResult, setIntegrationResult] = useState<string | null>(null);
   const [skillEditor, setSkillEditor] = useState<{ name: string | null } | null>(null);
   const [customPlugins, setCustomPlugins] = useState<CustomPluginDef[]>([]);
@@ -111,45 +112,67 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
         aria-modal="true"
         aria-labelledby="settings-title"
       >
-        <div className="flex items-center gap-2 border-b border-hairline px-4 py-3">
-          <span id="settings-title" className="text-[13px] font-semibold text-zinc-100">Settings</span>
-          <span className="rounded-full bg-zinc-800 px-2 py-[1px] text-[10px] text-zinc-400">{resolved?.provider ?? "—"}</span>
-          {resolved ? <span className="font-mono text-[10px] text-zinc-600">{resolved.model}</span> : null}
+        <div className="flex items-center gap-3 border-b border-hairline px-5 py-4">
+          <div>
+            <h2 id="settings-title" className="text-[15px] font-semibold text-zinc-100">Settings</h2>
+            <p className="mt-0.5 text-[12px] text-zinc-500">Proveedor, gates, herramientas y proyecto.</p>
+          </div>
+          <span className="ml-auto rounded-pill border border-hairline bg-surface-raised px-2.5 py-1 text-[12px] text-zinc-300">{resolved?.provider ?? "—"}</span>
+          {resolved ? <span className="font-mono text-[12px] text-zinc-500">{resolved.model}</span> : null}
           <button
             type="button"
             onClick={onClose}
             aria-label="Cerrar settings"
-            className="ml-auto rounded-control p-1 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
+            className="rounded-control p-1.5 text-zinc-500 transition-colors hover:bg-surface-raised hover:text-zinc-200"
           >
-            <IconClose width={14} height={14} />
+            <IconClose width={16} height={16} />
           </button>
         </div>
 
-        <div className="grid min-h-0 flex-1 grid-cols-[190px_1fr] divide-x divide-hairline">
-          <nav aria-label="Categorías de settings" className="min-h-0 overflow-y-auto p-2">
-            <input
-              value={categoryQuery}
-              aria-label="Buscar ajuste"
-              placeholder="buscar ajuste…"
-              onChange={(event) => setCategoryQuery(event.target.value)}
-              className="mb-2 w-full rounded-control border border-hairline bg-surface px-2 py-1.5 text-[11px] text-zinc-200 outline-none focus:border-harness/60"
-            />
-            {SETTINGS_CATEGORIES.filter((category) => {
+        <div className="grid min-h-0 flex-1 grid-cols-[220px_1fr] divide-x divide-hairline">
+          <nav aria-label="Categorías de settings" className="min-h-0 overflow-y-auto p-3">
+            <div className="field mb-3 flex items-center gap-2 px-2.5 py-1.5">
+              <span aria-hidden="true" className="text-[12px] text-zinc-500">⌕</span>
+              <input
+                value={categoryQuery}
+                aria-label="Buscar ajuste"
+                placeholder="Buscar ajuste…"
+                onChange={(event) => setCategoryQuery(event.target.value)}
+                className="min-w-0 flex-1 bg-transparent text-[13px] text-zinc-200 outline-none"
+              />
+            </div>
+            {SETTINGS_GROUPS.map((group) => {
               const query = categoryQuery.trim().toLowerCase();
-              return !query || `${category.label} ${category.keywords}`.toLowerCase().includes(query);
-            }).map((category) => (
-              <button
-                key={category.id}
-                type="button"
-                onClick={() => document.getElementById(category.target)?.scrollIntoView({ behavior: "smooth", block: "start" })}
-                className="mb-0.5 block w-full rounded-control px-2.5 py-1.5 text-left text-[12px] text-zinc-300 transition-colors hover:bg-harness/15 hover:text-zinc-100"
-              >
-                {category.label}
-              </button>
-            ))}
+              const categories = SETTINGS_CATEGORIES.filter(
+                (category) => category.group === group.id && (!query || `${category.label} ${category.keywords}`.toLowerCase().includes(query)),
+              );
+              if (categories.length === 0) return null;
+              return (
+                <div key={group.id} className="mb-3">
+                  <p className="mb-1 px-2 text-[12px] font-medium text-zinc-500">{group.label}</p>
+                  {categories.map((category) => (
+                    <button
+                      key={category.id}
+                      type="button"
+                      onClick={() => {
+                        setActiveSection(category.target);
+                        document.getElementById(category.target)?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      }}
+                      className={cn(
+                        "mb-0.5 flex w-full items-center gap-2 rounded-control px-2.5 py-2 text-left text-[13px] transition-colors",
+                        activeSection === category.target ? "bg-harness/15 text-harness-soft" : "text-zinc-300 hover:bg-surface-raised hover:text-zinc-100",
+                      )}
+                    >
+                      <span aria-hidden="true" className="w-4 text-center text-[12px] text-zinc-500">{category.glyph}</span>
+                      {category.label}
+                    </button>
+                  ))}
+                </div>
+              );
+            })}
           </nav>
 
-          <div className="min-h-0 space-y-5 overflow-y-auto px-4 py-4">
+          <div className="min-h-0 space-y-3 overflow-y-auto px-5 py-5">
           <Section title="Apariencia">
             <div className="flex items-center gap-2">
               {(["system", "light", "dark"] as const).map((mode) => (
@@ -159,7 +182,7 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
                   aria-pressed={themeMode === mode}
                   onClick={() => onThemeChange(mode)}
                   className={cn(
-                    "rounded-control border px-3 py-1.5 text-[11px] transition-colors",
+                    "rounded-control border px-3 py-1.5 text-[12px] transition-colors",
                     themeMode === mode ? "border-harness/50 bg-harness/10 text-harness-soft" : "border-hairline bg-surface text-zinc-400 hover:bg-zinc-800",
                   )}
                 >
@@ -167,7 +190,7 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
                 </button>
               ))}
             </div>
-            <p className="text-[10px] text-zinc-600">El tema sigue al sistema salvo que lo fijes. Se guarda por usuario.</p>
+            <p className="text-[12px] text-zinc-600">El tema sigue al sistema salvo que lo fijes. Se guarda por usuario.</p>
           </Section>
 
           <Section title="Provider (BYOK)" description="Quién ejecuta el modelo: mock local o un proveedor real con tu API key (nunca sale de tu máquina).">
@@ -207,7 +230,7 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
                 <button
                   type="button"
                   onClick={() => setRevealKey((value) => !value)}
-                  className="shrink-0 rounded-control border border-hairline px-2 py-1.5 text-[11px] text-zinc-400 transition-colors hover:bg-zinc-800"
+                  className="shrink-0 rounded-control border border-hairline px-2 py-1.5 text-[12px] text-zinc-400 transition-colors hover:bg-zinc-800"
                 >
                   {revealKey ? "ocultar" : "ver"}
                 </button>
@@ -235,12 +258,12 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
               <button
                 type="button"
                 onClick={() => void testProvider()}
-                className="rounded-control border border-harness/40 bg-harness/10 px-3 py-1.5 text-[11px] text-harness-soft transition-colors hover:bg-harness/20"
+                className="rounded-control border border-harness/40 bg-harness/10 px-3 py-1.5 text-[12px] text-harness-soft transition-colors hover:bg-harness/20"
               >
                 Probar conexión
               </button>
               {testResult ? (
-                <span className={cn("text-[11px]", testResult.ok ? "text-emerald-400" : "text-red-400")}>
+                <span className={cn("text-[12px]", testResult.ok ? "text-emerald-400" : "text-red-400")}>
                   {testResult.ok ? "✓" : "✕"} {testResult.reason}
                 </span>
               ) : null}
@@ -266,13 +289,13 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
                   </Field>
                 </div>
                 <div className="mt-1 rounded-control border border-hairline bg-surface p-2">
-                  <p className="text-[10px] uppercase tracking-widest text-zinc-600">Por dominio</p>
+                  <p className="text-[12px] uppercase tracking-widest text-zinc-600">Por dominio</p>
                   {cost.perDomain.length === 0 ? (
-                    <p className="mt-1 text-[11px] text-zinc-500">sin uso todavía</p>
+                    <p className="mt-1 text-[12px] text-zinc-500">sin uso todavía</p>
                   ) : (
                     <ul className="mt-1 space-y-0.5">
                       {cost.perDomain.map((domain) => (
-                        <li key={domain.domain} className="flex items-center justify-between text-[11px]">
+                        <li key={domain.domain} className="flex items-center justify-between text-[12px]">
                           <span className="text-zinc-400">{domain.domain}</span>
                           <span className="font-mono text-zinc-500">
                             {domain.tokens.toLocaleString()} tok · ${domain.usd.toFixed(4)} · {domain.calls} calls
@@ -282,12 +305,12 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
                     </ul>
                   )}
                 </div>
-                <p className="text-[10px] text-zinc-600">
+                <p className="text-[12px] text-zinc-600">
                   token+USD se cuentan por llamada y se persisten en metrics.json
                 </p>
               </>
             ) : (
-              <p className="text-[11px] text-zinc-500">sin datos de costo</p>
+              <p className="text-[12px] text-zinc-500">sin datos de costo</p>
             )}
           </Section>
 
@@ -349,7 +372,7 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
             <button
               type="button"
               onClick={() => setPluginEditor({ def: null })}
-              className="rounded-control border border-harness/40 px-3 py-1.5 text-[11px] text-harness-soft transition-colors hover:bg-harness/10"
+              className="rounded-control border border-harness/40 px-3 py-1.5 text-[12px] text-harness-soft transition-colors hover:bg-harness/10"
             >
               Nuevo plugin
             </button>
@@ -359,13 +382,13 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
                   <li key={plugin.name} className="flex items-center gap-2 rounded-control border border-hairline bg-surface px-2 py-1.5">
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[12px] text-zinc-200">{plugin.name}</p>
-                      <p className="truncate text-[10px] text-zinc-500">{plugin.stage} · {plugin.action} · /{plugin.match}/</p>
+                      <p className="truncate text-[12px] text-zinc-500">{plugin.stage} · {plugin.action} · /{plugin.match}/</p>
                     </div>
                     <button
                       type="button"
                       aria-label={`Editar ${plugin.name}`}
                       onClick={() => setPluginEditor({ def: plugin })}
-                      className="rounded-control border border-hairline px-2 py-1 text-[10px] text-zinc-400 transition-colors hover:bg-zinc-800"
+                      className="rounded-control border border-hairline px-2 py-1 text-[12px] text-zinc-400 transition-colors hover:bg-zinc-800"
                     >
                       Editar
                     </button>
@@ -380,7 +403,7 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
             ) : null}
           </Section>
 
-          <Section title={`Tareas del proyecto (${tasks.filter((task) => task.done).length}/${tasks.length})`}>
+          <Section anchor="sec-tareas" title={`Tareas del proyecto (${tasks.filter((task) => task.done).length}/${tasks.length})`}>
             <div className="flex items-center gap-2">
               <input
                 value={newTask}
@@ -402,7 +425,7 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
                   void persistTasks([...tasks, { id: `${Date.now().toString(36)}`, title: newTask.trim(), done: false }]);
                   setNewTask("");
                 }}
-                className="rounded-control border border-hairline px-2 py-1.5 text-[11px] text-zinc-300 hover:bg-zinc-800"
+                className="rounded-control border border-hairline px-2 py-1.5 text-[12px] text-zinc-300 hover:bg-zinc-800"
               >
                 Añadir
               </button>
@@ -422,7 +445,7 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
                       type="button"
                       aria-label={`Quitar ${task.title}`}
                       onClick={() => void persistTasks(tasks.filter((entry) => entry.id !== task.id))}
-                      className="rounded-control border border-hairline px-2 py-1 text-[10px] text-zinc-500 hover:bg-zinc-800"
+                      className="rounded-control border border-hairline px-2 py-1 text-[12px] text-zinc-500 hover:bg-zinc-800"
                     >
                       ✕
                     </button>
@@ -432,13 +455,13 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
             ) : null}
           </Section>
 
-          <Section title={`Agentes (${agentsState.agents.length})`}>
+          <Section anchor="sec-agentes" title={`Agentes (${agentsState.agents.length})`}>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => void agentsState.select("")}
                 className={cn(
-                  "rounded-control border px-2.5 py-1 text-[11px] transition-colors",
+                  "rounded-control border px-2.5 py-1 text-[12px] transition-colors",
                   agentsState.active === null
                     ? "border-harness/40 bg-harness/10 text-harness-soft"
                     : "border-hairline bg-surface text-zinc-400 hover:text-zinc-200",
@@ -446,19 +469,19 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
               >
                 Automático por dominio
               </button>
-              <span className="text-[10px] text-zinc-500">
+              <span className="text-[12px] text-zinc-500">
                 {agentsState.active ? `activo: ${agentsState.active.name}` : "el harness elige según el dominio"}
               </span>
             </div>
             {agentsState.loading ? (
-              <p className="text-[11px] text-zinc-500">cargando agentes…</p>
+              <p className="text-[12px] text-zinc-500">cargando agentes…</p>
             ) : (
               <ul className="max-h-[200px] space-y-1 overflow-y-auto">
                 {agentsState.agents.map((agent) => (
                   <li key={agent.id} className="flex items-center gap-2 rounded-control border border-hairline bg-surface px-2 py-1.5">
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[12px] text-zinc-200">{agent.name}</p>
-                      <p className="truncate text-[10px] text-zinc-500">
+                      <p className="truncate text-[12px] text-zinc-500">
                         {agent.role} · {agent.domains.join(", ")}
                         {agent.skills.length > 0 ? ` · skills: ${agent.skills.join(", ")}` : ""}
                       </p>
@@ -467,7 +490,7 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
                       type="button"
                       onClick={() => void agentsState.select(agent.active ? "" : agent.id)}
                       className={cn(
-                        "shrink-0 rounded-control border px-2 py-1 text-[11px] transition-colors",
+                        "shrink-0 rounded-control border px-2 py-1 text-[12px] transition-colors",
                         agent.active
                           ? "border-harness/40 bg-harness/10 text-harness-soft"
                           : "border-hairline text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200",
@@ -481,11 +504,11 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
             )}
           </Section>
 
-          <Section title={`Skills (${skillsState.skills.filter((skill) => skill.enabled).length}/${skillsState.skills.length})`}>
+          <Section anchor="sec-skills" title={`Skills (${skillsState.skills.filter((skill) => skill.enabled).length}/${skillsState.skills.length})`}>
             <button
               type="button"
               onClick={() => setSkillEditor({ name: null })}
-              className="rounded-control border border-harness/40 px-3 py-1.5 text-[11px] text-harness-soft transition-colors hover:bg-harness/10"
+              className="rounded-control border border-harness/40 px-3 py-1.5 text-[12px] text-harness-soft transition-colors hover:bg-harness/10"
             >
               Nueva skill
             </button>
@@ -497,9 +520,9 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
               className="w-full rounded-control border border-hairline bg-surface px-2 py-1.5 text-[12px] text-zinc-200 outline-none focus:border-harness/60 placeholder:text-zinc-500"
             />
             {skillsState.loading ? (
-              <p className="text-[11px] text-zinc-500">cargando catálogo…</p>
+              <p className="text-[12px] text-zinc-500">cargando catálogo…</p>
             ) : skillsState.skills.length === 0 ? (
-              <p className="text-[11px] text-zinc-500">sin skills en este workspace</p>
+              <p className="text-[12px] text-zinc-500">sin skills en este workspace</p>
             ) : (
               <ul className="max-h-[220px] space-y-1 overflow-y-auto">
                 {skillsState.skills
@@ -521,18 +544,18 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
                         <p className="truncate text-[12px] text-zinc-200" title={skill.path}>
                           {skill.name}
                         </p>
-                        <p className="truncate text-[10px] text-zinc-500">
+                        <p className="truncate text-[12px] text-zinc-500">
                           {skill.description || skill.triggers.join(", ") || "sin descripción"}
                         </p>
                       </div>
-                      <span className="rounded bg-zinc-800 px-1.5 py-[1px] font-mono text-[10px] text-zinc-400" title="prioridad">
+                      <span className="rounded bg-zinc-800 px-1.5 py-[1px] font-mono text-[12px] text-zinc-400" title="prioridad">
                         {skill.priority}
                       </span>
                       <button
                         type="button"
                         aria-label={`Editar ${skill.name}`}
                         onClick={() => setSkillEditor({ name: skill.name })}
-                        className="rounded-control border border-hairline px-2 py-1 text-[10px] text-zinc-400 transition-colors hover:bg-zinc-800"
+                        className="rounded-control border border-hairline px-2 py-1 text-[12px] text-zinc-400 transition-colors hover:bg-zinc-800"
                       >
                         Editar
                       </button>
@@ -598,7 +621,7 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
             />
             <div className="grid grid-cols-4 gap-2">
               {KNOWN_TOOLS.map((tool) => (
-                <label key={tool} className="block text-[10px] uppercase tracking-widest text-zinc-500">
+                <label key={tool} className="block text-[12px] uppercase tracking-widest text-zinc-500">
                   {tool}
                   <select
                     aria-label={`Permiso ${tool}`}
@@ -612,7 +635,7 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
                         },
                       })
                     }
-                    className="mt-1 w-full rounded-control border border-hairline bg-surface px-2 py-1 text-[11px] text-zinc-300 outline-none"
+                    className="mt-1 w-full rounded-control border border-hairline bg-surface px-2 py-1 text-[12px] text-zinc-300 outline-none"
                   >
                     <option value="">auto</option>
                     <option value="allow">allow</option>
@@ -626,14 +649,14 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
               <button
                 type="button"
                 onClick={() => setDraft({ ...draft, tools: TOOL_PERMISSION_PRESETS.seguro })}
-                className="rounded-control border border-hairline px-2 py-1 text-[11px] text-zinc-300 hover:bg-zinc-800"
+                className="rounded-control border border-hairline px-2 py-1 text-[12px] text-zinc-300 hover:bg-zinc-800"
               >
                 preset seguro
               </button>
               <button
                 type="button"
                 onClick={() => setDraft({ ...draft, tools: TOOL_PERMISSION_PRESETS.autonomo })}
-                className="rounded-control border border-hairline px-2 py-1 text-[11px] text-zinc-300 hover:bg-zinc-800"
+                className="rounded-control border border-hairline px-2 py-1 text-[12px] text-zinc-300 hover:bg-zinc-800"
               >
                 preset autónomo
               </button>
@@ -644,7 +667,7 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
             <div className="flex items-center gap-3">
               <span
                 className={cn(
-                  "rounded-full px-2 py-[1px] text-[10px]",
+                  "rounded-full px-2 py-[1px] text-[12px]",
                   updater.status?.stage === "downloaded"
                     ? "bg-emerald-500/15 text-emerald-300"
                     : updater.status?.stage === "error"
@@ -654,19 +677,19 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
               >
                 {UPDATE_STAGE_LABEL[updater.status?.stage ?? "idle"] ?? "—"}
               </span>
-              <span className="font-mono text-[10px] text-zinc-600">
+              <span className="font-mono text-[12px] text-zinc-600">
                 v{updater.status?.currentVersion ?? "—"}
                 {updater.status?.version ? ` → v${updater.status.version}` : ""}
                 {typeof updater.status?.percent === "number" ? ` · ${updater.status.percent}%` : ""}
               </span>
             </div>
-            {updater.status?.message ? <p className="text-[11px] text-zinc-500">{updater.status.message}</p> : null}
+            {updater.status?.message ? <p className="text-[12px] text-zinc-500">{updater.status.message}</p> : null}
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 disabled={updater.busy || updater.status?.stage === "disabled"}
                 onClick={() => void updater.check()}
-                className="rounded-control border border-hairline px-3 py-1.5 text-[11px] text-zinc-300 transition-colors hover:bg-zinc-800 disabled:opacity-40"
+                className="rounded-control border border-hairline px-3 py-1.5 text-[12px] text-zinc-300 transition-colors hover:bg-zinc-800 disabled:opacity-40"
               >
                 Buscar actualizaciones
               </button>
@@ -675,7 +698,7 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
                   type="button"
                   disabled={updater.busy}
                   onClick={() => void updater.download()}
-                  className="rounded-control border border-harness/40 bg-harness/10 px-3 py-1.5 text-[11px] text-harness-soft hover:bg-harness/20 disabled:opacity-40"
+                  className="rounded-control border border-harness/40 bg-harness/10 px-3 py-1.5 text-[12px] text-harness-soft hover:bg-harness/20 disabled:opacity-40"
                 >
                   Descargar
                 </button>
@@ -684,20 +707,20 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
                 <button
                   type="button"
                   onClick={() => void updater.install()}
-                  className="rounded-control bg-harness px-3 py-1.5 text-[11px] font-medium text-white hover:bg-harness-strong"
+                  className="rounded-control bg-harness px-3 py-1.5 text-[12px] font-medium text-white hover:bg-harness-strong"
                 >
                   Reiniciar e instalar
                 </button>
               ) : null}
             </div>
-            <p className="text-[10px] text-zinc-600">feed: GitHub Releases · autoDownload on</p>
+            <p className="text-[12px] text-zinc-600">feed: GitHub Releases · autoDownload on</p>
 
             <Field label="Feed privado (URL firmada / S3)">
               <input
                 aria-label="Feed URL"
                 value={draft.updater.feedUrl}
                 onChange={(event) => setDraft({ ...draft, updater: { ...draft.updater, feedUrl: event.target.value } })}
-                className="w-full rounded-control border border-hairline bg-surface px-2 py-1.5 font-mono text-[11px] text-zinc-200 outline-none focus:border-harness/60"
+                className="w-full rounded-control border border-hairline bg-surface px-2 py-1.5 font-mono text-[12px] text-zinc-200 outline-none focus:border-harness/60"
               />
             </Field>
             <div className="flex items-center gap-2">
@@ -705,7 +728,7 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
                 aria-label="Canal de actualización"
                 value={draft.updater.channel}
                 onChange={(event) => setDraft({ ...draft, updater: { ...draft.updater, channel: event.target.value === "beta" ? "beta" : "stable" } })}
-                className="rounded-control border border-hairline bg-surface px-2 py-1.5 text-[11px] text-zinc-300 outline-none"
+                className="rounded-control border border-hairline bg-surface px-2 py-1.5 text-[12px] text-zinc-300 outline-none"
               >
                 <option value="stable">stable</option>
                 <option value="beta">beta</option>
@@ -716,20 +739,20 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
                 placeholder="token (opcional)"
                 value={draft.updater.token}
                 onChange={(event) => setDraft({ ...draft, updater: { ...draft.updater, token: event.target.value } })}
-                className="min-w-0 flex-1 rounded-control border border-hairline bg-surface px-2 py-1.5 font-mono text-[11px] text-zinc-200 outline-none focus:border-harness/60"
+                className="min-w-0 flex-1 rounded-control border border-hairline bg-surface px-2 py-1.5 font-mono text-[12px] text-zinc-200 outline-none focus:border-harness/60"
               />
               <button
                 type="button"
                 onClick={() => void window.harness?.updater.feed().then(setFeedResult)}
-                className="rounded-control border border-harness/40 px-3 py-1.5 text-[11px] text-harness-soft hover:bg-harness/10"
+                className="rounded-control border border-harness/40 px-3 py-1.5 text-[12px] text-harness-soft hover:bg-harness/10"
               >
                 Comprobar feed
               </button>
             </div>
             {feedResult ? (
               <div className="rounded-control border border-hairline bg-surface p-2">
-                <p className="text-[11px] text-zinc-300">{feedResult.available ? "disponible" : feedResult.ok ? "al día" : "error"} · {feedResult.reason}</p>
-                {feedResult.release?.notes ? <p className="mt-1 whitespace-pre-wrap text-[10px] text-zinc-500">{feedResult.release.notes}</p> : null}
+                <p className="text-[12px] text-zinc-300">{feedResult.available ? "disponible" : feedResult.ok ? "al día" : "error"} · {feedResult.reason}</p>
+                {feedResult.release?.notes ? <p className="mt-1 whitespace-pre-wrap text-[12px] text-zinc-500">{feedResult.release.notes}</p> : null}
               </div>
             ) : null}
           </Section>
@@ -746,7 +769,7 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
                   aria-label="Supabase URL"
                   value={draft.integrations.supabase.url}
                   onChange={(event) => setDraft({ ...draft, integrations: { ...draft.integrations, supabase: { ...draft.integrations.supabase, url: event.target.value } } })}
-                  className="w-full rounded-control border border-hairline bg-surface px-2 py-1.5 font-mono text-[11px] text-zinc-200 outline-none focus:border-harness/60"
+                  className="w-full rounded-control border border-hairline bg-surface px-2 py-1.5 font-mono text-[12px] text-zinc-200 outline-none focus:border-harness/60"
                 />
               </Field>
               <Field label="Anon key (pública)">
@@ -755,7 +778,7 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
                   type="password"
                   value={draft.integrations.supabase.anonKey}
                   onChange={(event) => setDraft({ ...draft, integrations: { ...draft.integrations, supabase: { ...draft.integrations.supabase, anonKey: event.target.value } } })}
-                  className="w-full rounded-control border border-hairline bg-surface px-2 py-1.5 font-mono text-[11px] text-zinc-200 outline-none focus:border-harness/60"
+                  className="w-full rounded-control border border-hairline bg-surface px-2 py-1.5 font-mono text-[12px] text-zinc-200 outline-none focus:border-harness/60"
                 />
               </Field>
             </div>
@@ -763,32 +786,32 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
               <button
                 type="button"
                 onClick={() => void window.harness?.integrations.test("supabase").then((result) => setIntegrationResult(`${result.ok ? "ok" : "error"} · ${result.detail}`))}
-                className="rounded-control border border-harness/40 px-3 py-1.5 text-[11px] text-harness-soft hover:bg-harness/10"
+                className="rounded-control border border-harness/40 px-3 py-1.5 text-[12px] text-harness-soft hover:bg-harness/10"
               >
                 Probar Supabase
               </button>
-              {integrationResult ? <span className="text-[11px] text-zinc-400">{integrationResult}</span> : null}
+              {integrationResult ? <span className="text-[12px] text-zinc-400">{integrationResult}</span> : null}
             </div>
-            <p className="text-[10px] text-zinc-600">Guarda para persistir. Los MCP de terceros se activan por config.</p>
+            <p className="text-[12px] text-zinc-600">Guarda para persistir. Los MCP de terceros se activan por config.</p>
           </Section>
 
           <Section title="Perfil del proyecto">
             <div className="flex items-center gap-2">
               <span
                 className={cn(
-                  "rounded-full px-2 py-[1px] text-[10px]",
+                  "rounded-full px-2 py-[1px] text-[12px]",
                   resolved?.profile.active ? "bg-harness/15 text-harness-soft" : "bg-zinc-800 text-zinc-400",
                 )}
               >
                 {resolved?.profile.active ? `perfil: ${resolved.profile.name ?? "sin nombre"}` : "sin perfil"}
               </span>
               {resolved?.profile.path ? (
-                <span className="truncate font-mono text-[10px] text-zinc-500" title={resolved.profile.path}>
+                <span className="truncate font-mono text-[12px] text-zinc-500" title={resolved.profile.path}>
                   {resolved.profile.path}
                 </span>
               ) : null}
             </div>
-            <p className="text-[10px] text-zinc-500">
+            <p className="text-[12px] text-zinc-500">
               Un perfil en <span className="font-mono">.pragma-harness/profile.json</span> sobreescribe la config global
               (provider, gates, plugins, sandbox) sólo para este proyecto.
             </p>
@@ -796,7 +819,7 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
               <button
                 type="button"
                 onClick={() => void writeProfile()}
-                className="rounded-control border border-harness/40 bg-harness/10 px-3 py-1.5 text-[11px] text-harness-soft transition-colors hover:bg-harness/20"
+                className="rounded-control border border-harness/40 bg-harness/10 px-3 py-1.5 text-[12px] text-harness-soft transition-colors hover:bg-harness/20"
               >
                 Guardar settings actuales como perfil
               </button>
@@ -804,7 +827,7 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
                 <button
                   type="button"
                   onClick={() => void clearProfile()}
-                  className="rounded-control border border-hairline px-3 py-1.5 text-[11px] text-zinc-400 transition-colors hover:bg-zinc-800"
+                  className="rounded-control border border-hairline px-3 py-1.5 text-[12px] text-zinc-400 transition-colors hover:bg-zinc-800"
                 >
                   Eliminar perfil
                 </button>
@@ -812,16 +835,16 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
             </div>
           </Section>
 
-          {error ? <p className="text-[11px] text-red-400">{error}</p> : null}
+          {error ? <p className="text-[12px] text-red-400">{error}</p> : null}
           </div>
         </div>
 
         <div className="flex items-center gap-2 border-t border-hairline px-4 py-3">
-          <span className="font-mono text-[10px] text-zinc-600">{resolved?.configPath}</span>
+          <span className="font-mono text-[12px] text-zinc-600">{resolved?.configPath}</span>
           <button
             type="button"
             onClick={onClose}
-            className="ml-auto rounded-control border border-hairline px-3 py-1.5 text-[11px] text-zinc-400 transition-colors hover:bg-zinc-800"
+            className="ml-auto rounded-control border border-hairline px-3 py-1.5 text-[12px] text-zinc-400 transition-colors hover:bg-zinc-800"
           >
             Cancelar
           </button>
@@ -829,7 +852,7 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
             type="button"
             disabled={saving}
             onClick={() => void save(draft).then((ok) => (ok ? onClose() : undefined))}
-            className="rounded-control bg-harness px-3 py-1.5 text-[11px] font-medium text-white transition-colors hover:bg-harness-strong disabled:opacity-50"
+            className="rounded-control bg-harness px-3 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-harness-strong disabled:opacity-50"
           >
             {saving ? "Guardando…" : "Guardar"}
           </button>
@@ -852,35 +875,69 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
   );
 }
 
-function Section({ title, description, children }: { title: string; description?: string; children: React.ReactNode }): React.ReactElement {
-  const id = `sec-${title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+function Section({ title, description, anchor, children }: { title: string; description?: string; anchor?: string; children: React.ReactNode }): React.ReactElement {
+  const id = anchor ?? `sec-${title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+  const [open, setOpen] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(`phs:settings:${id}`) !== "closed";
+    } catch {
+      return true;
+    }
+  });
+
+  function toggle(): void {
+    setOpen((value) => {
+      try {
+        localStorage.setItem(`phs:settings:${id}`, value ? "closed" : "open");
+      } catch {
+        // storage unavailable
+      }
+      return !value;
+    });
+  }
+
   return (
     <section id={id} className="scroll-mt-4">
-      <h2 className="text-[11px] font-semibold tracking-label text-harness-soft">{title}</h2>
-      {description ? <p className="mb-2 mt-0.5 text-[11px] text-zinc-500">{description}</p> : <div className="mb-2" />}
-      <div className="space-y-2">{children}</div>
+      <div className="overflow-hidden rounded-sheet border border-hairline bg-surface-raised/40">
+        <button type="button" onClick={toggle} aria-expanded={open} className="flex w-full items-start gap-3 px-4 py-3.5 text-left transition-colors hover:bg-surface-raised/60">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-[14px] font-semibold text-zinc-100">{title}</h2>
+            {description ? <p className="mt-0.5 text-[12px] leading-snug text-zinc-500">{description}</p> : null}
+          </div>
+          <span className="mt-0.5 shrink-0 text-[12px] text-zinc-500" aria-hidden="true">{open ? "▾" : "▸"}</span>
+        </button>
+        {open ? <div className="space-y-3 border-t border-hairline px-4 py-4">{children}</div> : null}
+      </div>
     </section>
   );
 }
 
-const SETTINGS_CATEGORIES: Array<{ id: string; label: string; keywords: string; target: string }> = [
-  { id: "appearance", label: "Apariencia", keywords: "tema color claro oscuro", target: "sec-apariencia" },
-  { id: "provider", label: "Provider", keywords: "api key modelo byok coste", target: "sec-provider-byok" },
-  { id: "budget", label: "Presupuesto", keywords: "tokens usd limite budget", target: "sec-budget-diario" },
-  { id: "gates", label: "Gates", keywords: "build typecheck lint tests security visual", target: "sec-gates" },
-  { id: "plugins", label: "Plugins", keywords: "commit-guard secret-scan no-console-log tareas", target: "sec-plugins" },
-  { id: "agents", label: "Agentes", keywords: "agente rol dominio skills", target: "sec-agentes" },
-  { id: "skills", label: "Skills", keywords: "skill catálogo prioridad", target: "sec-skills" },
-  { id: "security", label: "Seguridad y tools", keywords: "sandbox docker permisos allow ask deny", target: "sec-sandbox" },
-  { id: "updates", label: "Actualizaciones", keywords: "update feed canal notas", target: "sec-actualizaciones" },
-  { id: "integrations", label: "Integraciones", keywords: "supabase mcp terceros integraciones", target: "sec-integraciones-terceros" },
-  { id: "project", label: "Proyecto", keywords: "perfil workspace recientes", target: "sec-perfil-del-proyecto" },
+const SETTINGS_GROUPS: Array<{ id: string; label: string }> = [
+  { id: "general", label: "General" },
+  { id: "model", label: "Modelo y coste" },
+  { id: "agent", label: "Agente" },
+  { id: "security", label: "Seguridad y datos" },
+  { id: "project", label: "Proyecto" },
+];
+
+const SETTINGS_CATEGORIES: Array<{ id: string; label: string; keywords: string; target: string; group: string; glyph: string }> = [
+  { id: "appearance", label: "Apariencia", keywords: "tema color claro oscuro", target: "sec-apariencia", group: "general", glyph: "◐" },
+  { id: "provider", label: "Provider", keywords: "api key modelo byok coste", target: "sec-provider-byok", group: "model", glyph: "◇" },
+  { id: "budget", label: "Presupuesto", keywords: "tokens usd limite budget", target: "sec-budget-diario", group: "model", glyph: "$" },
+  { id: "updates", label: "Actualizaciones", keywords: "update feed canal notas", target: "sec-actualizaciones", group: "general", glyph: "↻" },
+  { id: "gates", label: "Gates", keywords: "build typecheck lint tests security visual", target: "sec-gates", group: "agent", glyph: "⊦" },
+  { id: "plugins", label: "Plugins", keywords: "commit-guard secret-scan no-console-log tareas", target: "sec-plugins", group: "agent", glyph: "⬡" },
+  { id: "agents", label: "Agentes", keywords: "agente rol dominio skills", target: "sec-agentes", group: "agent", glyph: "★" },
+  { id: "skills", label: "Skills", keywords: "skill catálogo prioridad", target: "sec-skills", group: "agent", glyph: "✦" },
+  { id: "security", label: "Seguridad y tools", keywords: "sandbox docker permisos allow ask deny", target: "sec-sandbox", group: "security", glyph: "⛨" },
+  { id: "integrations", label: "Integraciones", keywords: "supabase mcp terceros integraciones", target: "sec-integraciones-terceros", group: "security", glyph: "⇄" },
+  { id: "project", label: "Perfil del proyecto", keywords: "perfil workspace recientes", target: "sec-perfil-del-proyecto", group: "project", glyph: "▸" },
 ];
 
 function Field({ label, children }: { label: string; children: React.ReactNode }): React.ReactElement {
   return (
     <label className="block">
-      <span className="mb-1 block text-[11px] text-zinc-500">{label}</span>
+      <span className="mb-1 block text-[12px] text-zinc-500">{label}</span>
       {children}
     </label>
   );
@@ -894,7 +951,7 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
       aria-checked={checked}
       onClick={() => onChange(!checked)}
       className={cn(
-        "flex items-center gap-2 rounded-control border px-2.5 py-1.5 text-[11px] transition-colors",
+        "flex items-center gap-2 rounded-control border px-2.5 py-1.5 text-[12px] transition-colors",
         checked ? "border-harness/40 bg-harness/10 text-harness-soft" : "border-hairline bg-surface text-zinc-500 hover:text-zinc-300",
       )}
     >

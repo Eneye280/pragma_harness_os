@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useReducer, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import type { ExplorerFile } from "@shared/explorer";
 import { CommandPalette } from "./components/CommandPalette";
+import { buildCommands } from "./shell/commands";
 import { OnboardingCard } from "./components/OnboardingCard";
 import { SessionsPanel } from "./components/SessionsPanel";
 import { GraphPanel } from "./components/GraphPanel";
@@ -212,6 +213,26 @@ export function App(): React.ReactElement {
     agentsState.refresh();
   }, [workspace.active, settingsState, skillsState, agentsState]);
 
+  const commands = useMemo(
+    () =>
+      buildCommands({
+        onNewSession: () => chat.startNewSession(),
+        onOpenFolder: () => void workspace.pick(),
+        onOpenSessions: openSessions,
+        onToggleExplorer: toggleExplorer,
+        onToggleContext: toggleContext,
+        onToggleTerminal: toggleTerminal,
+        onOpenSettings: openSettings,
+        onOpenUsage: () => setUsageOpen(true),
+        onOpenGraph: () => setGraphOpen(true),
+        onOpenDiagnostics: () => setDiagnosticsOpen(true),
+        onOpenHelp: () => setHelpOpen(true),
+        onOpenNotifications: () => setNotificationsOpen(true),
+        onTheme: (mode) => theme.setMode(mode),
+      }),
+    [chat, workspace, openSessions, toggleExplorer, toggleContext, toggleTerminal, openSettings, theme],
+  );
+
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-surface text-zinc-100">
       <a href="#main" className="skip-link">
@@ -222,6 +243,7 @@ export function App(): React.ReactElement {
         cost={cost}
         git={git.status}
         workspaceName={workspace.active ? (workspace.active.split(/[\\/]/).filter(Boolean).pop() ?? "workspace") : "Pragma Harness OS"}
+        projectPath={workspace.active}
         onOpenPalette={openPalette}
         onToggleExplorer={toggleExplorer}
         onToggleContext={toggleContext}
@@ -253,13 +275,18 @@ export function App(): React.ReactElement {
         recents={workspace.recents}
         onPickRecent={(path) => void workspace.activate(path)}
         openingFolder={workspace.busy}
+        activePath={workspace.active}
+        sessions={sessionsState.sessions}
+        currentSessionId={chat.sessionId}
+        runningSessions={chat.runningSessions}
+        onOpenSession={(id) => void chat.openSession(id)}
+        onNewSession={() => chat.startNewSession()}
+        onOpenSettings={openSettings}
       />
       <CommandPalette
         open={panels.paletteOpen}
         onClose={closePalette}
-        onToggleExplorer={toggleExplorer}
-        onToggleContext={toggleContext}
-        onOpenSettings={openSettings}
+        commands={commands}
         files={explorer.files}
         onOpenFile={openFile}
       />
@@ -347,9 +374,9 @@ export function App(): React.ReactElement {
               key={`${notification.trigger}-${notification.ts}`}
               className="palette-anim rounded-panel border border-harness/40 bg-surface-raised px-3 py-2 shadow-xl shadow-black/50"
             >
-              <p className="text-[11px] font-semibold text-harness-soft">New instinct learned</p>
-              <p className="mt-0.5 text-[11px] text-zinc-300">{notification.content}</p>
-              <p className="mt-0.5 font-mono text-[10px] text-zinc-600">
+              <p className="text-[12px] font-semibold text-harness-soft">New instinct learned</p>
+              <p className="mt-0.5 text-[12px] text-zinc-300">{notification.content}</p>
+              <p className="mt-0.5 font-mono text-[12px] text-zinc-600">
                 {notification.trigger} · confidence {notification.confidence.toFixed(2)}
               </p>
             </div>

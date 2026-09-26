@@ -1,16 +1,16 @@
 import { useState } from "react";
-import { layout } from "ui-tokens";
 import type { CostSnapshot } from "@shared/cost";
 import type { GitStatus } from "@shared/git";
 import { cn } from "../lib/cn";
 import { Menu } from "../ui/Menu";
-import { IconCommand, IconClose, IconMaximize, IconMinimize } from "./icons";
+import { IconCommand, IconMinimize, IconMaximize, IconClose } from "./icons";
 
 interface TitleBarProps {
   status: string;
   cost: CostSnapshot | null;
   git: GitStatus | null;
   workspaceName: string;
+  projectPath?: string;
   onOpenPalette: () => void;
   onToggleExplorer: () => void;
   onToggleContext: () => void;
@@ -30,6 +30,7 @@ export function TitleBar({
   cost,
   git,
   workspaceName,
+  projectPath,
   onOpenPalette,
   onToggleExplorer,
   onToggleContext,
@@ -46,6 +47,7 @@ export function TitleBar({
   const [isMaximized, setIsMaximized] = useState(false);
   const controls = window.harness?.windowControls;
   const healthy = status.includes("ready") || status.includes("ok");
+  const hasProject = Boolean(projectPath);
 
   async function handleMaximize(): Promise<void> {
     if (!controls) return;
@@ -54,40 +56,48 @@ export function TitleBar({
 
   return (
     <header
-      className="draggable floating-toolbar flex shrink-0 items-center gap-2 px-3"
-      style={{ height: layout.titleBarHeight }}
+      className="draggable relative flex shrink-0 items-center gap-2 border-b border-hairline px-3"
+      style={{ height: "var(--phs-titlebar-height)", zIndex: "var(--phs-z-header)" }}
     >
-      <div className="flex min-w-0 items-center gap-2">
-        <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-harness shadow-[0_0_6px_rgba(139,92,246,0.4)]" />
-        <span className="truncate text-title tracking-tight text-zinc-100" title={workspaceName}>
-          {workspaceName || "Pragma Harness OS"}
-        </span>
-        <span className="hidden shrink-0 text-[10px] tracking-label text-zinc-500 sm:inline">PRAGMA HARNESS OS</span>
-      </div>
+      <div className="flex min-w-0 items-center gap-2.5">
+        <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-harness" style={{ boxShadow: "var(--phs-shadow-glow)" }} aria-hidden="true" />
+        <span className="shrink-0 text-title tracking-tight text-zinc-100">Pragma Harness OS</span>
 
-      {git?.isRepo ? (
+        <span className="hidden h-4 w-px shrink-0 bg-hairline sm:block" aria-hidden="true" />
+
         <span
-          aria-label={`Rama ${git.detached ? "detached" : git.branch}${git.dirty ? `, ${git.changedCount} cambios sin commitear` : ", limpia"}`}
-          title={`${git.branch ?? "HEAD"}${git.dirty ? ` · ${git.changedCount} cambios` : ""}`}
+          title={projectPath ?? "Sin proyecto abierto"}
           className={cn(
-            "flex shrink-0 items-center gap-1.5 rounded-pill border px-2 py-[3px] font-mono text-[10px]",
-            git.dirty ? "border-amber-500/40 bg-amber-500/10 text-amber-300" : "border-hairline bg-surface-raised/70 text-zinc-400",
+            "flex min-w-0 items-center gap-1.5 rounded-pill border px-2.5 py-1 text-[12px]",
+            hasProject ? "border-hairline bg-surface-raised/70 text-zinc-200" : "border-dashed border-hairline text-zinc-500",
           )}
         >
-          <span aria-hidden="true">⑂</span>
-          <span className="max-w-[140px] truncate">{git.detached ? "detached" : git.branch}</span>
-          {git.dirty ? <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-amber-400" /> : null}
-          {git.ahead > 0 ? <span aria-hidden="true">↑{git.ahead}</span> : null}
-          {git.behind > 0 ? <span aria-hidden="true">↓{git.behind}</span> : null}
+          <span aria-hidden="true" className={hasProject ? "text-harness-soft" : "text-zinc-600"}>
+            ▸
+          </span>
+          <span className="truncate">{hasProject ? workspaceName : "sin proyecto"}</span>
         </span>
-      ) : null}
+
+        {git?.isRepo ? (
+          <span
+            aria-label={`Rama ${git.detached ? "detached" : git.branch}${git.dirty ? `, ${git.changedCount} cambios sin commitear` : ", limpia"}`}
+            title={`${git.branch ?? "HEAD"}${git.dirty ? ` · ${git.changedCount} cambios` : ""}`}
+            className={cn(
+              "hidden shrink-0 items-center gap-1.5 rounded-pill border px-2 py-1 font-mono text-[12px] lg:flex",
+              git.dirty ? "border-amber-500/40 bg-amber-500/10 text-amber-300" : "border-hairline bg-surface-raised/70 text-zinc-400",
+            )}
+          >
+            <span aria-hidden="true">⑂</span>
+            <span className="max-w-[140px] truncate">{git.detached ? "detached" : git.branch}</span>
+            {git.ahead > 0 ? <span aria-hidden="true">↑{git.ahead}</span> : null}
+            {git.behind > 0 ? <span aria-hidden="true">↓{git.behind}</span> : null}
+          </span>
+        ) : null}
+      </div>
 
       <div className="no-drag ml-auto flex items-center gap-1.5">
         <span
-          className={cn(
-            "hidden items-center gap-1.5 rounded-pill border px-2 py-[3px] text-[10px] font-medium md:flex",
-            healthy ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300" : "border-amber-500/40 bg-amber-500/10 text-amber-300",
-          )}
+          className={cn("hidden items-center gap-1.5 rounded-pill border px-2 py-1 text-[12px] md:flex", healthy ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300" : "border-amber-500/40 bg-amber-500/10 text-amber-300")}
           title={status}
         >
           <span aria-hidden="true" className={cn("h-1.5 w-1.5 rounded-full", healthy ? "bg-emerald-400" : "bg-amber-400")} />
@@ -98,50 +108,81 @@ export function TitleBar({
           <span
             title={`${cost.today.tokens.toLocaleString()} tokens hoy · ${cost.today.calls} llamadas`}
             className={cn(
-              "hidden rounded-pill border px-2 py-[3px] font-mono text-[10px] md:inline",
+              "hidden rounded-pill border px-2 py-1 font-mono text-[12px] md:inline",
               cost.today.usd >= cost.budget.usdPerDay ? "border-red-500/40 bg-red-500/10 text-red-300" : "border-hairline bg-surface-raised/70 text-zinc-400",
             )}
           >
-            ${cost.today.usd.toFixed(2)} / ${cost.budget.usdPerDay.toFixed(2)}
+            ${cost.today.usd.toFixed(2)}
           </span>
         ) : null}
 
-        <div className="hidden items-center gap-0.5 rounded-pill border border-hairline bg-surface-raised/50 p-0.5 sm:flex" role="group" aria-label="Paneles">
-          <IconToggle label="Explorer (Ctrl/Cmd+B)" onClick={onToggleExplorer}>▤</IconToggle>
-          <IconToggle label="Context (Ctrl/Cmd+Shift+C)" onClick={onToggleContext}>◫</IconToggle>
-          <IconToggle label="Terminal (Ctrl/Cmd+`)" onClick={onToggleTerminal}>▭</IconToggle>
-        </div>
-
-        <IconButton label="Command palette (Ctrl/Cmd+K)" onClick={onOpenPalette}>
+        <button
+          type="button"
+          aria-label="Command palette (Ctrl/Cmd+K)"
+          title="Command palette · Ctrl/Cmd+K"
+          onClick={onOpenPalette}
+          className="flex h-8 items-center gap-1.5 rounded-control border border-hairline bg-surface-raised/50 px-2.5 text-zinc-400 outline-none transition-colors hover:border-harness/40 hover:text-zinc-100"
+        >
           <IconCommand width={14} height={14} />
-        </IconButton>
+          <span className="hidden font-mono text-[12px] text-zinc-500 xl:inline">⌘K</span>
+        </button>
 
         <Menu
           label="Más"
           trigger={<span aria-hidden="true">⋯</span>}
+          header="Paneles y vistas"
           items={[
-            { id: "sessions", label: "Sesiones", hint: "⇧⌘H", onSelect: onOpenSessions },
-            { id: "graph", label: "Grafo de dependencias", onSelect: onOpenGraph },
-            { id: "usage", label: "Uso y coste", onSelect: onOpenUsage },
-            { id: "health", label: "Diagnóstico / health", onSelect: onOpenDiagnostics },
-            { id: "help", label: "Centro de ayuda", onSelect: onOpenHelp },
+            {
+              label: "Paneles",
+              items: [
+                { id: "explorer", label: "Explorer", hint: "⌘B", onSelect: onToggleExplorer },
+                { id: "context", label: "Context", hint: "⇧⌘C", onSelect: onToggleContext },
+                { id: "terminal", label: "Terminal", hint: "⌘`", onSelect: onToggleTerminal },
+              ],
+            },
+            {
+              label: "Proyecto",
+              items: [
+                { id: "sessions", label: "Sesiones y proyectos", hint: "⇧⌘H", onSelect: onOpenSessions },
+                { id: "graph", label: "Grafo de dependencias", onSelect: onOpenGraph },
+                { id: "usage", label: "Uso y coste", onSelect: onOpenUsage },
+                { id: "health", label: "Diagnóstico / health", onSelect: onOpenDiagnostics },
+                { id: "help", label: "Centro de ayuda", onSelect: onOpenHelp },
+              ],
+            },
+            {
+              label: "Aplicación",
+              items: [{ id: "settings", label: "Settings", hint: "⌘,", onSelect: onOpenSettings }],
+            },
           ]}
         />
 
-        <IconButton label={`Notificaciones (${unreadNotifications})`} onClick={onOpenNotifications}>
-          <span className="relative">
-            ◔
-            {unreadNotifications > 0 ? (
-              <span className="absolute -right-2 -top-1.5 rounded-pill bg-harness px-1 text-[9px] font-semibold text-white">{unreadNotifications > 9 ? "9+" : unreadNotifications}</span>
-            ) : null}
-          </span>
-        </IconButton>
+        <button
+          type="button"
+          aria-label={`Notificaciones (${unreadNotifications})`}
+          title={`Notificaciones (${unreadNotifications})`}
+          onClick={onOpenNotifications}
+          className="relative flex h-8 w-8 items-center justify-center rounded-control text-zinc-400 outline-none transition-colors hover:bg-surface-raised hover:text-zinc-100"
+        >
+          <span aria-hidden="true">◔</span>
+          {unreadNotifications > 0 ? (
+            <span className="absolute -right-0.5 -top-0.5 rounded-pill bg-harness px-1 text-[12px] font-semibold text-white">
+              {unreadNotifications > 9 ? "9+" : unreadNotifications}
+            </span>
+          ) : null}
+        </button>
 
-        <IconButton label="Settings (Ctrl/Cmd+,)" onClick={onOpenSettings}>
+        <button
+          type="button"
+          aria-label="Settings (Ctrl/Cmd+,)"
+          title="Settings · Ctrl/Cmd+," 
+          onClick={onOpenSettings}
+          className="flex h-8 w-8 items-center justify-center rounded-control text-zinc-400 outline-none transition-colors hover:bg-surface-raised hover:text-zinc-100"
+        >
           <span aria-hidden="true">⚙</span>
-        </IconButton>
+        </button>
 
-        <div className="mx-0.5 h-4 w-px bg-hairline" />
+        <div className="mx-0.5 h-4 w-px bg-hairline" aria-hidden="true" />
         <WindowButton label="Minimize" onClick={() => controls?.minimize()}>
           <IconMinimize width={14} height={14} />
         </WindowButton>
@@ -153,34 +194,6 @@ export function TitleBar({
         </WindowButton>
       </div>
     </header>
-  );
-}
-
-function IconButton({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }): React.ReactElement {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      title={label}
-      onClick={onClick}
-      className="flex h-7 w-8 items-center justify-center rounded-control text-zinc-400 outline-none transition-colors hover:bg-zinc-800 hover:text-zinc-100 focus-visible:ring-1 focus-visible:ring-harness"
-    >
-      {children}
-    </button>
-  );
-}
-
-function IconToggle({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }): React.ReactElement {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      title={label}
-      onClick={onClick}
-      className="flex h-6 w-7 items-center justify-center rounded-pill text-[11px] text-zinc-400 outline-none transition-colors hover:bg-zinc-800 hover:text-zinc-100 focus-visible:ring-1 focus-visible:ring-harness"
-    >
-      {children}
-    </button>
   );
 }
 
@@ -203,7 +216,7 @@ function WindowButton({
       onClick={onClick}
       className={cn(
         "flex h-7 w-9 items-center justify-center rounded-control text-zinc-400 outline-none transition-colors focus-visible:ring-1 focus-visible:ring-harness",
-        danger ? "hover:bg-red-500/90 hover:text-white" : "hover:bg-zinc-700 hover:text-zinc-100",
+        danger ? "hover:bg-red-500/90 hover:text-white" : "hover:bg-surface-raised hover:text-zinc-100",
       )}
     >
       {children}

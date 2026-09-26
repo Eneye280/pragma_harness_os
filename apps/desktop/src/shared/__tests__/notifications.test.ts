@@ -1,10 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
   createNotification,
+  formatDuration,
   markAllRead,
   markRead,
+  notificationFromBlockedStep,
   notificationFromBudget,
   notificationFromChatError,
+  notificationFromRunSummary,
+  notificationFromToolApproval,
+  notificationFromToolFailure,
   pushNotification,
   removeNotification,
   unreadCount,
@@ -50,5 +55,30 @@ describe("notifications", () => {
     expect(notificationFromBudget(10, 100, 6, 5)?.kind).toBe("warning");
     expect(notificationFromBudget(10, 100, 1, 5)).toBeNull();
     expect(notificationFromChatError("provider caído").message).toBe("provider caído");
+  });
+
+  it("formats durations across scales", () => {
+    expect(formatDuration(320)).toBe("320ms");
+    expect(formatDuration(4200)).toBe("4.2s");
+    expect(formatDuration(65_000)).toBe("1m 5s");
+  });
+
+  it("writes real run messages with prompt, tools, failures and time", () => {
+    const ok = notificationFromRunSummary({ prompt: "crea un endpoint /users para el backend", status: "done", toolCalls: 3, failures: 0, durationMs: 4200 });
+    expect(ok.kind).toBe("success");
+    expect(ok.message).toContain("3 tools");
+    expect(ok.message).toContain("4.2s");
+    expect(ok.message).toContain("/users");
+
+    const bad = notificationFromRunSummary({ status: "blocked", toolCalls: 2, failures: 1, durationMs: 1500 });
+    expect(bad.kind).toBe("warning");
+    expect(bad.message).toContain("1 fallo");
+  });
+
+  it("builds tool and step notifications with the real detail", () => {
+    expect(notificationFromToolFailure("runTests", "3 tests fallaron").kind).toBe("error");
+    expect(notificationFromToolFailure("runTests", "3 tests fallaron").message).toBe("3 tests fallaron");
+    expect(notificationFromBlockedStep("pre-gates", "budget", "tokens 120/100").message).toBe("tokens 120/100");
+    expect(notificationFromToolApproval("fileEdit", "crear harness-note.md").title).toContain("fileEdit");
   });
 });

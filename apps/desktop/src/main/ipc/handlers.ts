@@ -10,6 +10,7 @@ import { ToolApprovalBroker } from "../tools/approval-broker";
 import { effectiveToolPermission } from "../../shared/settings";
 import { executeParallel, type ParallelTask } from "../../shared/parallel";
 import { UsageStore } from "../usage/usage-store";
+import { APP_VERSION } from "../../shared/version";
 import { LearningStore, resolveLearningPath } from "../learning/learning-store";
 import { aggregateUsage, compareModes, filterByRange, toCsv } from "../../shared/usage";
 import { DreamingScheduler } from "../dreaming";
@@ -61,7 +62,7 @@ const sendMessageSchema = z.object({
     .max(10)
     .optional(),
 });
-const pingResponse = { status: "harness:ready" as const, version: "1.0.2" };
+const pingResponse = { status: "harness:ready" as const, version: APP_VERSION };
 
 const memoryLog = new MemoryEventLog();
 

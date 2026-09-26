@@ -1,8 +1,9 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Tipografía nítida: fuentes del sistema con buen hinting en Windows/mac */
+  --font-sans: "Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, Inter, sans-serif;
+  --font-mono: "Cascadia Code", "Cascadia Mono", "JetBrains Mono", ui-monospace, Consolas, monospace;
 
   --color-harness: #8b5cf6;
   --color-harness-strong: #7c3aed;
@@ -10,31 +11,39 @@
   --color-success: #22c55e;
   --color-warning: #f59e0b;
   --color-danger: #ef4444;
-  --color-surface: #09090b;
-  --color-surface-raised: #18181b;
+  --color-surface: #0a0a0c;
+  --color-surface-raised: #17171b;
   --color-surface-sunken: #09090b;
-  --color-hairline: #27272a;
-  --color-hairline-strong: #3f3f46;
+  --color-hairline: #26262b;
+  --color-hairline-strong: #494950;
 
   --radius-panel: 0.75rem;
   --radius-control: 0.5rem;
-  --radius-sheet: 1.125rem;
+  --radius-sheet: 1rem;
 
-  --phs-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.18);
-  --phs-elevation-2: 0 6px 18px rgba(0, 0, 0, 0.2);
-  --phs-elevation-3: 0 14px 34px rgba(0, 0, 0, 0.24);
+  /* Sombras · v1.0.2.1: reducidas 35% respecto de v1.0.2 (offset, blur y alpha ×0.65) */
+  --phs-elevation-1: 0 1px 1px rgba(0, 0, 0, 0.12);
+  --phs-elevation-2: 0 4px 12px rgba(0, 0, 0, 0.13);
+  --phs-elevation-3: 0 9px 22px rgba(0, 0, 0, 0.16);
+  --phs-shadow-glow: 0 0 4px rgba(139, 92, 246, 0.28);
   --phs-blur: 18px;
   --phs-blur-strong: 28px;
 
-  /* v1.0.1 · expansión: tipografía, espaciado y radios */
+  /* Capas únicas: todo overlay por encima del contenido */
+  --phs-z-panel: 10;
+  --phs-z-header: 30;
+  --phs-z-overlay: 1000;
+  --phs-z-toast: 1100;
+
+  /* Escala tipográfica — mínimo absoluto 12px */
   --phs-text-hero: clamp(1.5rem, 1.1rem + 1.4vw, 2rem);
   --phs-text-title: 1.125rem;
   --phs-text-subtitle: 1rem;
   --phs-text-body: 0.875rem;
-  --phs-text-label: 0.75rem;
-  --phs-text-caption: 0.6875rem;
-  --phs-tracking-tight: -0.01em;
-  --phs-tracking-wide: 0.16em;
+  --phs-text-label: 0.8125rem;
+  --phs-text-caption: 0.75rem;
+  --phs-tracking-tight: -0.011em;
+  --phs-tracking-wide: 0.14em;
   --phs-space-1: 0.25rem;
   --phs-space-2: 0.5rem;
   --phs-space-3: 0.75rem;
@@ -43,50 +52,53 @@
   --phs-space-8: 2rem;
   --radius-pill: 9999px;
 
-  /* Neumorfismo sutil (dark): luz arriba-izq, sombra abajo-der */
-  --phs-neumorph: 4px 4px 10px rgba(0, 0, 0, 0.26), -4px -4px 10px rgba(255, 255, 255, 0.012);
-  --phs-neumorph-inset: inset 2px 2px 5px rgba(0, 0, 0, 0.24), inset -2px -2px 5px rgba(255, 255, 255, 0.012);
-  --phs-glass-border: 1px solid rgba(255, 255, 255, 0.06);
-  --phs-glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  /* Neumorfismo sutil (dark), también ×0.65 */
+  --phs-neumorph: 3px 3px 7px rgba(0, 0, 0, 0.17), -3px -3px 7px rgba(255, 255, 255, 0.008);
+  --phs-neumorph-inset: inset 1px 1px 3px rgba(0, 0, 0, 0.16), inset -1px -1px 3px rgba(255, 255, 255, 0.008);
+  --phs-glass-border: 1px solid rgba(255, 255, 255, 0.07);
+  --phs-glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+
+  --phs-placeholder: #8b8b96;
 }
 
 :root {
   color-scheme: dark;
-  --phs-titlebar-height: 38px;
-  --phs-explorer-width: 260px;
-  --phs-context-width: 320px;
-  --phs-motion-fast: 150ms;
-  --phs-motion-base: 200ms;
+  --phs-titlebar-height: 40px;
+  --phs-explorer-width: 272px;
+  --phs-context-width: 336px;
+  --phs-motion-fast: 140ms;
+  --phs-motion-base: 190ms;
   --phs-easing: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 :root[data-theme="light"] {
   color-scheme: light;
-  --color-surface: #f4f4f5;
+  --color-surface: #f3f3f5;
   --color-surface-raised: #ffffff;
-  --color-surface-sunken: #ececef;
-  --color-hairline: #e4e4e7;
-  --color-hairline-strong: #a1a1aa;
+  --color-surface-sunken: #eaeaf0;
+  --color-hairline: #e2e2e7;
+  --color-hairline-strong: #9c9ca8;
   --color-harness: #7c3aed;
   --color-harness-strong: #6d28d9;
   --color-harness-soft: #6d28d9;
   --color-success: #15803d;
   --color-warning: #b45309;
   --color-danger: #b91c1c;
-  --phs-glass-border: 1px solid rgba(0, 0, 0, 0.06);
-  --phs-glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  --phs-neumorph: 4px 4px 10px rgba(0, 0, 0, 0.04), -4px -4px 10px rgba(255, 255, 255, 0.45);
-  --phs-neumorph-inset: inset 2px 2px 5px rgba(0, 0, 0, 0.04), inset -2px -2px 5px rgba(255, 255, 255, 0.45);
+  --phs-placeholder: #71717a;
+  --phs-glass-border: 1px solid rgba(0, 0, 0, 0.07);
+  --phs-glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  --phs-neumorph: 3px 3px 7px rgba(0, 0, 0, 0.03), -3px -3px 7px rgba(255, 255, 255, 0.5);
+  --phs-neumorph-inset: inset 1px 1px 3px rgba(0, 0, 0, 0.03), inset -1px -1px 3px rgba(255, 255, 255, 0.5);
 }
 
 :root[data-theme="light"] body {
-  background: #f4f4f5;
+  background: #f3f3f5;
   color: #18181b;
 }
 
 :root[data-theme="light"] ::-webkit-scrollbar-thumb {
-  background: #d4d4d8;
-  border-color: #f4f4f5;
+  background: #cfcfd8;
+  border-color: #f3f3f5;
 }
 
 :root[data-theme="light"] .text-zinc-100,
@@ -105,22 +117,25 @@
 }
 
 :root[data-theme="light"] .text-zinc-600 {
-  color: #71717a;
+  color: #63636d;
 }
 
-:root[data-theme="light"] .bg-zinc-800 {
-  background-color: #e4e4e7;
+:root[data-theme="light"] .bg-zinc-800,
+:root[data-theme="light"] .bg-zinc-700 {
+  background-color: #e4e4e9;
 }
 
 :root[data-theme="light"] .bg-zinc-800\/40,
-:root[data-theme="light"] .bg-zinc-800\/60 {
-  background-color: rgba(228, 228, 231, 0.55);
+:root[data-theme="light"] .bg-zinc-800\/50,
+:root[data-theme="light"] .bg-zinc-800\/60,
+:root[data-theme="light"] .bg-zinc-800\/70 {
+  background-color: rgba(228, 228, 233, 0.6);
 }
 
 :root[data-theme="light"] .bg-black\/40,
 :root[data-theme="light"] .bg-black\/50,
 :root[data-theme="light"] .bg-black\/60 {
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: rgba(0, 0, 0, 0.06);
 }
 
 * {
@@ -135,10 +150,11 @@ body,
 
 body {
   margin: 0;
-  background: #09090b;
+  background: #0a0a0c;
   color: #f4f4f5;
   font-family: var(--font-sans);
   font-size: 14px;
+  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   overflow: hidden;
 }
@@ -148,12 +164,14 @@ body {
   height: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #27272a;
+  background: #2e2e34;
   border-radius: 9999px;
-  border: 2px solid #09090b;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3f3f46;
+  background: #47474f;
+  background-clip: padding-box;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
@@ -185,47 +203,78 @@ body {
   animation: slide-up var(--phs-motion-base) var(--phs-easing);
 }
 
+/* Capas: el contenido va por debajo; overlays y toasts siempre encima. */
+.layer-content {
+  position: relative;
+  z-index: var(--phs-z-panel);
+}
+
+.layer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--phs-z-overlay);
+}
+
+.layer-toast {
+  position: fixed;
+  z-index: var(--phs-z-toast);
+}
+
+/* Superficie de overlay flotante (compartida por palette, menús, popups, notificaciones) */
+.overlay-surface {
+  background: color-mix(in srgb, var(--color-surface-raised) 90%, transparent);
+  backdrop-filter: blur(var(--phs-blur-strong));
+  -webkit-backdrop-filter: blur(var(--phs-blur-strong));
+  border: var(--phs-glass-border);
+  border-radius: var(--radius-sheet);
+  box-shadow: var(--phs-elevation-3), var(--phs-glass-highlight);
+}
+
 .floating-panel {
   background: color-mix(in srgb, var(--color-surface-raised) 82%, transparent);
   backdrop-filter: blur(var(--phs-blur));
+  -webkit-backdrop-filter: blur(var(--phs-blur));
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-panel);
   box-shadow: var(--phs-elevation-2);
 }
 
 .floating-toolbar {
-  background: color-mix(in srgb, var(--color-surface) 70%, transparent);
+  background: color-mix(in srgb, var(--color-surface) 80%, transparent);
   backdrop-filter: blur(var(--phs-blur-strong));
+  -webkit-backdrop-filter: blur(var(--phs-blur-strong));
   border-bottom: 1px solid var(--color-hairline);
   box-shadow: var(--phs-elevation-1);
 }
 
 .sheet {
-  background: color-mix(in srgb, var(--color-surface-raised) 88%, transparent);
+  background: color-mix(in srgb, var(--color-surface-raised) 92%, transparent);
   backdrop-filter: blur(var(--phs-blur-strong));
+  -webkit-backdrop-filter: blur(var(--phs-blur-strong));
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-sheet);
   box-shadow: var(--phs-elevation-3);
 }
 
 .card {
-  background: color-mix(in srgb, var(--color-surface-raised) 70%, transparent);
+  background: color-mix(in srgb, var(--color-surface-raised) 72%, transparent);
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-panel);
   box-shadow: var(--phs-elevation-1);
 }
 
-/* v1.0.1 · expansión: glassmorphism, neumorfismo sutil y escala tipográfica */
 .glass {
-  background: color-mix(in srgb, var(--color-surface-raised) 66%, transparent);
+  background: color-mix(in srgb, var(--color-surface-raised) 68%, transparent);
   backdrop-filter: blur(var(--phs-blur));
+  -webkit-backdrop-filter: blur(var(--phs-blur));
   border: var(--phs-glass-border);
   box-shadow: var(--phs-elevation-2), var(--phs-glass-highlight);
 }
 
 .glass-strong {
-  background: color-mix(in srgb, var(--color-surface-raised) 82%, transparent);
+  background: color-mix(in srgb, var(--color-surface-raised) 84%, transparent);
   backdrop-filter: blur(var(--phs-blur-strong));
+  -webkit-backdrop-filter: blur(var(--phs-blur-strong));
   border: var(--phs-glass-border);
   box-shadow: var(--phs-elevation-3), var(--phs-glass-highlight);
 }
@@ -245,19 +294,68 @@ body {
 .elevation-2 { box-shadow: var(--phs-elevation-2); }
 .elevation-3 { box-shadow: var(--phs-elevation-3); }
 
+/* Campos visibles en claro y oscuro (búsquedas, filtros, formularios). */
+.field {
+  background: color-mix(in srgb, var(--color-surface-raised) 96%, transparent);
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-control);
+  color: var(--color-zinc-100, #f4f4f5);
+  transition:
+    border-color var(--phs-motion-fast) var(--phs-easing),
+    box-shadow var(--phs-motion-fast) var(--phs-easing);
+}
+.field::placeholder {
+  color: var(--phs-placeholder);
+}
+.field:hover:not(:focus) {
+  border-color: color-mix(in srgb, var(--color-harness) 45%, var(--color-hairline-strong));
+}
+.field:focus,
+.field:focus-visible {
+  outline: none;
+  border-color: var(--color-harness);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-harness) 28%, transparent);
+}
+
+/* Defaults de campos del app: borde visible aunque la clase no use `.field`. */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+select,
+textarea {
+  border-radius: var(--radius-control);
+}
+input::placeholder,
+textarea::placeholder {
+  color: var(--phs-placeholder);
+  opacity: 1;
+}
+input.bg-surface,
+select.bg-surface,
+textarea.bg-surface,
+input.border-hairline,
+select.border-hairline,
+textarea.border-hairline {
+  background: color-mix(in srgb, var(--color-surface-raised) 96%, transparent);
+  border-color: var(--color-hairline-strong);
+}
+input.bg-transparent:focus,
+textarea.bg-transparent:focus {
+  outline: none;
+}
+
 .text-hero { font-size: var(--phs-text-hero); letter-spacing: var(--phs-tracking-tight); font-weight: 600; }
 .text-title { font-size: var(--phs-text-title); letter-spacing: var(--phs-tracking-tight); font-weight: 600; }
 .text-subtitle { font-size: var(--phs-text-subtitle); font-weight: 500; }
 .text-body { font-size: var(--phs-text-body); }
 .text-label { font-size: var(--phs-text-label); font-weight: 500; }
 .text-caption { font-size: var(--phs-text-caption); color: var(--color-hairline-strong); }
-.tracking-label { letter-spacing: var(--phs-tracking-wide); text-transform: uppercase; }
+.tracking-label { letter-spacing: var(--phs-tracking-wide); }
 
 @media (prefers-reduced-motion: reduce) {
   .floating-panel,
   .floating-toolbar,
   .sheet,
-  .card {
+  .card,
+  .overlay-surface {
     transition: none;
   }
 }
@@ -284,7 +382,7 @@ body {
   position: absolute;
   left: 8px;
   top: -48px;
-  z-index: 100;
+  z-index: var(--phs-z-overlay);
   border-radius: 0.5rem;
   background: var(--color-harness);
   color: #fff;

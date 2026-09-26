@@ -1,4 +1,5 @@
 import type { ExplorerFile } from "@shared/explorer";
+import type { SessionSummary } from "@shared/session";
 import { cn } from "../lib/cn";
 import { ChatPanel } from "./ChatPanel";
 import { ContextPanel } from "./ContextPanel";
@@ -28,6 +29,13 @@ interface ShellLayoutProps {
   recents: string[];
   onPickRecent: (path: string) => void;
   openingFolder: boolean;
+  activePath: string;
+  sessions: SessionSummary[];
+  currentSessionId: string;
+  runningSessions: string[];
+  onOpenSession: (id: string) => void;
+  onNewSession: () => void;
+  onOpenSettings: () => void;
 }
 
 export function ShellLayout({
@@ -48,6 +56,13 @@ export function ShellLayout({
   recents,
   onPickRecent,
   openingFolder,
+  activePath,
+  sessions,
+  currentSessionId,
+  runningSessions,
+  onOpenSession,
+  onNewSession,
+  onOpenSettings,
 }: ShellLayoutProps): React.ReactElement {
   const pendingPlan = chat.state.planStatus === "proposed" ? chat.state.plan : null;
 
@@ -73,6 +88,12 @@ export function ShellLayout({
               recents={recents}
               onPickRecent={onPickRecent}
               openingFolder={openingFolder}
+              activePath={activePath}
+              sessions={sessions}
+              currentSessionId={currentSessionId}
+              runningSessions={runningSessions}
+              onOpenSession={onOpenSession}
+              onNewSession={onNewSession}
             />
           </div>
         </aside>
@@ -107,7 +128,7 @@ export function ShellLayout({
           style={{ width: contextOpen ? PANEL_WIDTHS.context : 0 }}
         >
           <div className="h-full" style={{ width: PANEL_WIDTHS.context }}>
-            <ContextPanel snapshot={chat.state.context} onOpenFile={onSelectFile} />
+            <ContextPanel snapshot={chat.state.context} onOpenFile={onSelectFile} onOpenSettings={onOpenSettings} />
           </div>
         </aside>
       </div>

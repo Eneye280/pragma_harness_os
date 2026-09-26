@@ -215,3 +215,35 @@ Cierra la lista de mejoras pedida. Lo visible:
 ### Migración v1.0.1 → v1.0.2
 
 `migrateSettingsV1_0_2` agrega `integrations` con defaults, preserva todo lo demás y sella `configVersion: 3`. Idempotente. El arranque encadena v1.0.0→v1.0.1→v1.0.2.
+
+---
+
+## v1.0.2.1 — rediseño del shell (iteración UX)
+
+Iteración sobre v1.0.2 enfocada en diseño y claridad, sin tocar el motor:
+
+- **Jerarquía y capas**: un único sistema de overlays (`--phs-z-overlay`/`--phs-z-toast`) y un
+  solo nivel de paneles. Menús y popups se **portalizan a `body`**, así nunca quedan detrás del
+  contenido (arregla el menú “Más”).
+- **Explorer proyecto → sesiones**: el workspace es un **proyecto (folder)**; cada proyecto agrupa
+  sus sesiones (`groupSessionsByProject`). Abrir/crear sesión dentro de su folder.
+- **Chat con pipeline gráfico**: `PipelineTimeline` dibuja las fases reales (clasificar → reglas →
+  skills → contexto → plugins → pre-gates → plan → agente) con estado, detalle y progreso. Se
+  eliminó el texto de relleno del provider mock.
+- **Context hub**: cada bloque explica en una línea qué hace y permite **crear skills** y
+  **reindexar RAG** desde ahí.
+- **Command palette real**: registry de comandos del app (nueva sesión, abrir proyecto, paneles,
+  vistas, settings, tema) con búsqueda sin acentos y ranking; los archivos siguen disponibles.
+- **Notificaciones**: popup flotante tipo palette con margen, agrupado por leídas/no leídas, y
+  **mensajes reales** (qué se pidió, tools, fallos, duración) construidos desde los eventos.
+- **Settings**: secciones en tarjetas con descripción, **foldouts** (estado recordado) y navegación
+  agrupada con búsqueda.
+- **Tipografía y sombras**: mínimo **12px** en toda la UI, fuentes del sistema más nítidas, y
+  sombras reducidas **35%** respecto de v1.0.2.
+- **Campos visibles**: clase `.field` + defaults de `input/select/textarea` con borde de contraste
+  AA en claro y oscuro.
+
+### Migración v1.0.2 → v1.0.2.1
+
+`migrateSettingsV1_0_2_1` no añade claves obligatorias: rellena defaults, preserva todo y sella
+`configVersion: 4`. Idempotente. El arranque encadena v1.0.0 → v1.0.1 → v1.0.2 → v1.0.2.1.

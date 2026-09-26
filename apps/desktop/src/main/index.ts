@@ -1,4 +1,5 @@
 import { app, BrowserWindow } from "electron";
+import { APP_VERSION } from "../shared/version";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 import { is } from "@electron-toolkit/utils";
@@ -118,7 +119,7 @@ app.whenReady().then(() => {
   registerQaHandlers();
   registerIntegrationsHandlers(settingsController);
   registerDiagnosticsHandlers({
-    version: app.getVersion(),
+    version: APP_VERSION,
     settingsController,
     workspace,
     sqliteAvailable: () => false,

@@ -13,21 +13,21 @@ export function TelemetryCharts({ buckets, comparison }: { buckets: UsageBucket[
   return (
     <div className="grid grid-cols-3 gap-3">
       <div className="card p-3">
-        <p className="text-[10px] tracking-label text-zinc-500">Tokens por periodo</p>
+        <p className="text-[12px] tracking-label text-zinc-500">Tokens por periodo</p>
         <svg viewBox="0 0 320 60" className="mt-2 h-[60px] w-full" role="img" aria-label="Tokens por periodo">
           {bars.map((bar, index) => (
             <rect key={index} x={bar.x} y={bar.y} width={bar.width} height={bar.height} rx={2} fill={PALETTE[0]} opacity={0.85} />
           ))}
         </svg>
-        <p className="mt-1 text-[10px] text-zinc-500">máx {max} tok</p>
+        <p className="mt-1 text-[12px] text-zinc-500">máx {max} tok</p>
       </div>
 
       <div className="card p-3">
-        <p className="text-[10px] tracking-label text-zinc-500">Tendencia</p>
+        <p className="text-[12px] tracking-label text-zinc-500">Tendencia</p>
         <svg viewBox="0 0 320 60" className="mt-2 h-[60px] w-full" role="img" aria-label="Tendencia de tokens">
           <path d={sparklinePath(tokens, 320, 60, 3)} fill="none" stroke={PALETTE[4]} strokeWidth={2} strokeLinecap="round" />
         </svg>
-        <p className="mt-1 text-[10px] text-zinc-500">{buckets.length} periodos</p>
+        <p className="mt-1 text-[12px] text-zinc-500">{buckets.length} periodos</p>
       </div>
 
       <div className="card flex items-center gap-3 p-3">
@@ -48,7 +48,7 @@ export function TelemetryCharts({ buckets, comparison }: { buckets: UsageBucket[
             />
           ))}
         </svg>
-        <div className="text-[11px]">
+        <div className="text-[12px]">
           <p className="tracking-label text-zinc-500">Harness vs bypass</p>
           <p className="mt-1 text-zinc-300">{comparison ? `${comparison.harness.tokens} tok` : "sin datos"}</p>
           <p className="text-zinc-500">{comparison ? `${comparison.bypass.tokens} tok bypass` : ""}</p>
