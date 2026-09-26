@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildAttachmentNote, chunkText, describeAttachment, pngSizeFromDataUrl, type Attachment } from "../attachments";
+import { buildAttachmentNote, chunkText, describeAttachment, estimateAttachmentTokens, pngSizeFromDataUrl, totalAttachmentTokens, type Attachment } from "../attachments";
 
 const PNG_1x1 =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
@@ -43,5 +43,11 @@ describe("attachments", () => {
     const chunked = chunkText(long, 10);
     expect(chunked.startsWith("x".repeat(10))).toBe(true);
     expect(chunked).toContain("[truncado 40 chars]");
+  });
+
+  it("estimates attachment tokens", () => {
+    expect(estimateAttachmentTokens(image())).toBe(200);
+    expect(estimateAttachmentTokens({ id: "d", kind: "document", name: "a.txt", mime: "text/plain", size: 4, text: "12345678" })).toBe(2);
+    expect(totalAttachmentTokens([image(), { id: "d", kind: "document", name: "a.txt", mime: "text/plain", size: 4, text: "1234" }])).toBe(201);
   });
 });
