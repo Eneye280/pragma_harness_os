@@ -114,3 +114,28 @@ Referencia adicional: `apps/desktop/plugins/README.md`.
 - No lanzar excepciones sin capturar: devuelve `pass` o `block`.
 - No esconder secretos en logs.
 - Un plugin que siempre bloquea hace inútil el harness — documenta por qué.
+
+## 9. Autoría in-app (v1.0.1)
+
+Además de escribir el plugin a mano, el harness puede crearlo desde **Settings → Plugins → Nuevo plugin**:
+
+- Los plugins declarativos se guardan en `<workspace>/.pragma-harness/plugins/<name>.json` y se cargan en caliente (sin reiniciar).
+- Campos: `name` (kebab-case), `description`, `stage` (`pre-classify`|`pre-compile`|`pre-agent`|`post-agent`), `priority`, `match` (regex sobre mensaje **y** diff), `action` (`block`|`transform`|`inject-skill`) y su payload (`message`/`skillName`).
+- Al guardar, el plugin queda **activo** por defecto y aparece como toggle en Settings.
+- Validación antes de persistir: name kebab-case, regex compilable y payload presente según la acción.
+
+Las **skills** se editan en la misma sección: frontmatter `name/description/triggers/needs/priority` + cuerpo con secciones (`When to use`, `Procedure`, `Rules`, `Done when`). `needs` conecta la skill con las intenciones del classifier para que `SkillCompiler.resolve` la dispare.
+
+### Ejemplo mínimo (declarativo)
+
+```json
+{
+  "name": "no-todo",
+  "description": "Bloquea cambios que dejan TODO",
+  "stage": "post-agent",
+  "priority": 30,
+  "match": "TODO|FIXME",
+  "action": "block",
+  "message": "quita el TODO antes de seguir"
+}
+```

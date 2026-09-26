@@ -148,3 +148,39 @@ Detalle de bugs resueltos que no deben reintroducirse:
 ## 11. Freeze
 
 SPEC **v1.0.0**. Cambios de arquitectura → nuevo ADR + bump de versión.
+
+## 12. v1.0.1 — extensiones de arquitectura
+
+Sobre el freeze v1.0.0 se añadieron módulos aislados con contrato compartido y tests propios:
+
+| Área | Módulo (main) | Contrato (shared) | IPC |
+| --- | --- | --- | --- |
+| Workspace/perfil | `workspace-folder`, `profile` | `workspace`, `profile` | `workspace:*`, `settings:*` |
+| Sesiones | `sessions` (JSON repo) | `session` | `sessions:*` |
+| Adjuntos | `attachments` (pdf) | `attachments` | `attachments:extractText` |
+| Tareas | `shared/task-list` (derivado), `plan-editor` | `task-list`, `plan-editor` | `plan:*` |
+| Autoría | `plugins/custom`, `skills/skill-compiler` | `plugin-authoring`, `skill-authoring` | `plugins:*`, `skills:*`, `tasks:*` |
+| RAG | `harness/rag` + `rag-handlers` | `rag` | `rag:*` |
+| Grafo | `graph/builder` + `graph-service` | `graph` | `graph:*`, evento `graph:updated` |
+| Permisos | `tools` (gate) + `approval-broker` | `settings.tools` | `harness:approveTool`, evento `tool-approval` |
+| Sandbox | `sandbox` (docker/local) | — | via `ToolRunner.sandboxExecutor` |
+| Gate visual | `visual/png` + `visual-gate` | — | `visual:evaluate` |
+| Routing/fallback | `llm/fallback` | `routing` | — |
+| Uso | `usage/usage-store` | `usage` | `usage:get`, `usage:csv` |
+| Diagnóstico | `diagnostics/health` | — | `diagnostics:*` |
+| Updater | `updater/feed` | `settings.updater` | `updater:feed` |
+| Migración | `migrations/v1_0_1` | `settings` | — |
+
+Principios sostenidos: **determinista antes que LLM**, contratos `shared` tipados, tests por módulo (no solo e2e), y comportamiento *graceful* ante fallos externos (docker ausente, feed 401/404/offline, provider caído → fallback encadenado).
+
+### Persistencia
+
+- Config global: `~/.pragma-harness/config.json` (`configVersion: 2`).
+- Perfil por proyecto: `<workspace>/.pragma-harness/profile.json`.
+- Sesiones: `<userData>/pragma-harness/sessions/<id>.json`.
+- Plugins/tasks/visual del proyecto: `.pragma-harness/{plugins,tasks.json,visual}/`.
+- Uso: `usage.jsonl` junto a `metrics.json`.
+
+## 13. Freeze v1.0.1
+
+SPEC **v1.0.1**. Cambios de arquitectura → nuevo ADR + bump de versión.

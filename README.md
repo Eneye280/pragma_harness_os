@@ -7,7 +7,7 @@ Control plane de escritorio (Electron) que envuelve a un agente LLM con un
 archivos relevantes **antes** de despertar al modelo, y verifica el resultado
 con gates **después**.
 
-![Pragma Harness OS](./docs/assets/hero.png)
+![Pragma Harness OS](./docs/assets/hero-v1.0.1.png)
 
 [![CI](https://github.com/Eneye280/pragma_harness_os/actions/workflows/ci.yml/badge.svg)](https://github.com/Eneye280/pragma_harness_os/actions/workflows/ci.yml)
 
@@ -74,5 +74,12 @@ docs/                   HANDBOOK · ARCHITECTURE · PLUGIN-SDK
 
 ## Estado
 
-**SPEC v1.0.0 (frozen).** Cambios de arquitectura requieren un ADR nuevo y bump
+**SPEC v1.0.1 (frozen).** Sobre v1.0.0 suma: sesiones persistentes y reanudar,
+adjuntos (imagen/PDF/texto), plan editable con aprobación parcial, tareas por
+mensaje, autoría in-app de skills y plugins, inspector RAG, grafo de
+dependencias en vivo, permisos por tool (`askBeforeTools`), sandbox Docker,
+tools `runTests/runBuild/runLint`, gate visual por diff, routing con fallback,
+dashboard de uso, diagnóstico/health, feed privado de auto-update, design system
+flotante con docking persistente, ayuda + tour, y migración de config
+v1.0.0→v1.0.1 idempotente. Cambios de arquitectura requieren un ADR nuevo y bump
 de versión. Repo privado — acceso bajo invitación.
