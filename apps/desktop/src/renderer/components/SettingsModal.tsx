@@ -511,6 +511,34 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
                 className="w-40 rounded-control border border-hairline bg-surface px-2 py-1.5 font-mono text-[12px] text-zinc-200 outline-none focus:border-harness/60"
               />
             </Field>
+            <div className="grid grid-cols-4 gap-2">
+              <Toggle
+                label="red"
+                checked={draft.sandbox.network}
+                onChange={(value) => setDraft({ ...draft, sandbox: { ...draft.sandbox, network: value } })}
+              />
+              <Toggle
+                label="worktree ro"
+                checked={draft.sandbox.readOnlyWorkspace}
+                onChange={(value) => setDraft({ ...draft, sandbox: { ...draft.sandbox, readOnlyWorkspace: value } })}
+              />
+              <Field label="cpus">
+                <input
+                  aria-label="sandbox cpus"
+                  value={draft.sandbox.cpus}
+                  onChange={(event) => setDraft({ ...draft, sandbox: { ...draft.sandbox, cpus: Number(event.target.value) || 0 } })}
+                  className="w-full rounded-control border border-hairline bg-surface px-2 py-1.5 font-mono text-[12px] text-zinc-200 outline-none focus:border-harness/60"
+                />
+              </Field>
+              <Field label="memoryMb">
+                <input
+                  aria-label="sandbox memory"
+                  value={draft.sandbox.memoryMb}
+                  onChange={(event) => setDraft({ ...draft, sandbox: { ...draft.sandbox, memoryMb: Number(event.target.value) || 0 } })}
+                  className="w-full rounded-control border border-hairline bg-surface px-2 py-1.5 font-mono text-[12px] text-zinc-200 outline-none focus:border-harness/60"
+                />
+              </Field>
+            </div>
           </Section>
 
           <Section title="Herramientas del agente">

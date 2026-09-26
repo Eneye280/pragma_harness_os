@@ -122,6 +122,33 @@ describe("Sandbox Docker opt-in", () => {
     expect(fakeClient.lastContainer?.removeCalled).toBe(true);
   });
 
+  it("mounts the worktree read-only by default, no network, with cpu/memory limits", async () => {
+    const fakeClient = new FakeDockerClient("ok\n", 0);
+    const runner = new SandboxRunner({
+      settings: { enabled: true, cpus: 1.5, memoryMb: 512, network: false, readOnlyWorkspace: true },
+      dockerClient: fakeClient,
+    });
+    await runner.execute({ command: "ls", args: [], workspacePath });
+    const hostConfig = (fakeClient.lastCreateOptions as { HostConfig: { Binds: string[]; NetworkMode: string; NanoCpus?: number; Memory?: number; SecurityOpt?: string[] } }).HostConfig;
+    expect(hostConfig.Binds[0].endsWith(":ro")).toBe(true);
+    expect(hostConfig.NetworkMode).toBe("none");
+    expect(hostConfig.NanoCpus).toBe(1_500_000_000);
+    expect(hostConfig.Memory).toBe(512 * 1024 * 1024);
+    expect(hostConfig.SecurityOpt).toContain("no-new-privileges");
+  });
+
+  it("allows a writable mount and network only when explicitly enabled", async () => {
+    const fakeClient = new FakeDockerClient("ok\n", 0);
+    const runner = new SandboxRunner({
+      settings: { enabled: true, network: true, readOnlyWorkspace: false },
+      dockerClient: fakeClient,
+    });
+    await runner.execute({ command: "ls", args: [], workspacePath });
+    const hostConfig = (fakeClient.lastCreateOptions as { HostConfig: { Binds: string[]; NetworkMode: string } }).HostConfig;
+    expect(hostConfig.Binds[0].endsWith(":ro")).toBe(false);
+    expect(hostConfig.NetworkMode).toBe("bridge");
+  });
+
   it("reports timeout and stops the container when the command hangs", async () => {
     const fakeClient = new FakeDockerClient("", 0, true);
     const backend = new DockerBackend(fakeClient);

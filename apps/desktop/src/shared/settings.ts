@@ -31,6 +31,10 @@ export interface BudgetSettings {
 export interface SandboxFlags {
   enabled: boolean;
   image: string;
+  network: boolean;
+  cpus: number;
+  memoryMb: number;
+  readOnlyWorkspace: boolean;
 }
 
 export interface WorkspaceSettings {
@@ -97,7 +101,7 @@ export const DEFAULT_SETTINGS: HarnessSettings = {
   plugins: { "commit-guard": false, "secret-scan": true, "no-console-log": true },
   skills: {},
   agent: "",
-  sandbox: { enabled: false, image: "node:22" },
+  sandbox: { enabled: false, image: "node:22", network: false, cpus: 1, memoryMb: 1024, readOnlyWorkspace: true },
   workspace: { active: "", recents: [] },
   tools: { askBeforeTools: true, perTool: {} },
 };

@@ -13,6 +13,7 @@ export interface SandboxRunnerOptions {
   settings?: SandboxSettings;
   dockerClient?: SandboxDockerClient;
   createDefaultClient?: () => SandboxDockerClient;
+  onLog?: (entry: { sessionId?: string; command: string; exitCode: number; durationMs: number; containerId: string }) => void;
 }
 
 export class SandboxRunner {
@@ -54,7 +55,15 @@ export class SandboxRunner {
         command: [request.command, ...(request.args ?? [])].join(" "),
       };
     }
-    const dockerBackend = new DockerBackend(dockerClient, { image: this.runnerOptions.settings?.image });
+    const dockerBackend = new DockerBackend(dockerClient, {
+      image: this.runnerOptions.settings?.image,
+      containerWorkdir: this.runnerOptions.settings?.containerWorkdir,
+      network: this.runnerOptions.settings?.network,
+      cpus: this.runnerOptions.settings?.cpus,
+      memoryMb: this.runnerOptions.settings?.memoryMb,
+      readOnlyWorkspace: this.runnerOptions.settings?.readOnlyWorkspace,
+      onLog: this.runnerOptions.onLog,
+    });
     const dockerAvailable = await dockerBackend.isAvailable();
     if (!dockerAvailable) {
       return {

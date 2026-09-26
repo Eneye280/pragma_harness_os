@@ -4,6 +4,10 @@ export interface SandboxSettings {
   enabled: boolean;
   image?: string;
   containerWorkdir?: string;
+  network?: boolean;
+  cpus?: number;
+  memoryMb?: number;
+  readOnlyWorkspace?: boolean;
 }
 
 export interface TaskSandboxOverride {
@@ -15,6 +19,7 @@ export interface SandboxExecRequest {
   args?: string[];
   workspacePath: string;
   timeoutMs?: number;
+  sessionId?: string;
 }
 
 export interface SandboxExecResult {
