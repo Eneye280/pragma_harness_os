@@ -56,6 +56,7 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
   const [draft, setDraft] = useState<HarnessSettings | null>(settings);
   const [revealKey, setRevealKey] = useState(false);
   const [skillQuery, setSkillQuery] = useState("");
+  const [categoryQuery, setCategoryQuery] = useState("");
   const [skillEditor, setSkillEditor] = useState<{ name: string | null } | null>(null);
   const [customPlugins, setCustomPlugins] = useState<CustomPluginDef[]>([]);
   const [pluginEditor, setPluginEditor] = useState<{ def: CustomPluginDef | null } | null>(null);
@@ -103,7 +104,7 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 px-4 py-10 backdrop-blur-sm" onMouseDown={onClose} role="presentation">
       <div
         ref={containerRef}
-        className="palette-anim flex max-h-full w-full max-w-[680px] flex-col overflow-hidden sheet"
+        className="palette-anim flex max-h-full w-full max-w-[880px] flex-col overflow-hidden sheet"
         onMouseDown={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -123,7 +124,31 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
           </button>
         </div>
 
-        <div className="flex-1 space-y-5 overflow-y-auto px-4 py-4">
+        <div className="grid min-h-0 flex-1 grid-cols-[190px_1fr] divide-x divide-hairline">
+          <nav aria-label="Categorías de settings" className="min-h-0 overflow-y-auto p-2">
+            <input
+              value={categoryQuery}
+              aria-label="Buscar ajuste"
+              placeholder="buscar ajuste…"
+              onChange={(event) => setCategoryQuery(event.target.value)}
+              className="mb-2 w-full rounded-control border border-hairline bg-surface px-2 py-1.5 text-[11px] text-zinc-200 outline-none focus:border-harness/60"
+            />
+            {SETTINGS_CATEGORIES.filter((category) => {
+              const query = categoryQuery.trim().toLowerCase();
+              return !query || `${category.label} ${category.keywords}`.toLowerCase().includes(query);
+            }).map((category) => (
+              <button
+                key={category.id}
+                type="button"
+                onClick={() => document.getElementById(category.target)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                className="mb-0.5 block w-full rounded-control px-2.5 py-1.5 text-left text-[12px] text-zinc-300 transition-colors hover:bg-harness/15 hover:text-zinc-100"
+              >
+                {category.label}
+              </button>
+            ))}
+          </nav>
+
+          <div className="min-h-0 space-y-5 overflow-y-auto px-4 py-4">
           <Section title="Apariencia">
             <div className="flex items-center gap-2">
               {(["system", "light", "dark"] as const).map((mode) => (
@@ -144,7 +169,7 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
             <p className="text-[10px] text-zinc-600">El tema sigue al sistema salvo que lo fijes. Se guarda por usuario.</p>
           </Section>
 
-          <Section title="Provider (BYOK)">
+          <Section title="Provider (BYOK)" description="Quién ejecuta el modelo: mock local o un proveedor real con tu API key (nunca sale de tu máquina).">
             <div className="grid grid-cols-2 gap-3">
               <Field label="Provider">
                 <select
@@ -287,7 +312,7 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
             </div>
           </Section>
 
-          <Section title="Gates">
+          <Section title="Gates" description="Controles deterministas antes y después del agente: bloquean si no se cumplen.">
             <Toggle label="pre-gates activos" checked={draft.gates.pre.enabled} onChange={(value) => patchPre("enabled", value)} />
             <div className="mt-2 grid grid-cols-3 gap-2">
               <Toggle label="secret" checked={draft.gates.pre.secret} onChange={(value) => patchPre("secret", value)} />
@@ -521,7 +546,7 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
             )}
           </Section>
 
-          <Section title="Sandbox">
+          <Section title="Sandbox" description="Aislamiento de comandos: contenedor, sin red y worktree en solo lectura por defecto.">
             <Toggle
               label="ejecutar en Docker (opt-in)"
               checked={draft.sandbox.enabled}
@@ -564,7 +589,7 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
             </div>
           </Section>
 
-          <Section title="Herramientas del agente">
+          <Section title="Herramientas del agente" description="Qué puede ejecutar el agente sin preguntar, con permiso, o nunca.">
             <Toggle
               label={draft.tools.askBeforeTools ? "preguntar antes de ejecutar tools" : "el harness continúa solo"}
               checked={draft.tools.askBeforeTools}
@@ -749,6 +774,7 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
           </Section>
 
           {error ? <p className="text-[11px] text-red-400">{error}</p> : null}
+          </div>
         </div>
 
         <div className="flex items-center gap-2 border-t border-hairline px-4 py-3">
@@ -787,14 +813,29 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }): React.ReactElement {
+function Section({ title, description, children }: { title: string; description?: string; children: React.ReactNode }): React.ReactElement {
+  const id = `sec-${title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
   return (
-    <section>
-      <h2 className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">{title}</h2>
+    <section id={id} className="scroll-mt-4">
+      <h2 className="text-[11px] font-semibold tracking-label text-harness-soft">{title}</h2>
+      {description ? <p className="mb-2 mt-0.5 text-[11px] text-zinc-500">{description}</p> : <div className="mb-2" />}
       <div className="space-y-2">{children}</div>
     </section>
   );
 }
+
+const SETTINGS_CATEGORIES: Array<{ id: string; label: string; keywords: string; target: string }> = [
+  { id: "appearance", label: "Apariencia", keywords: "tema color claro oscuro", target: "sec-apariencia" },
+  { id: "provider", label: "Provider", keywords: "api key modelo byok coste", target: "sec-provider-byok" },
+  { id: "budget", label: "Presupuesto", keywords: "tokens usd limite budget", target: "sec-budget-diario" },
+  { id: "gates", label: "Gates", keywords: "build typecheck lint tests security visual", target: "sec-gates" },
+  { id: "plugins", label: "Plugins", keywords: "commit-guard secret-scan no-console-log tareas", target: "sec-plugins" },
+  { id: "agents", label: "Agentes", keywords: "agente rol dominio skills", target: "sec-agentes" },
+  { id: "skills", label: "Skills", keywords: "skill catálogo prioridad", target: "sec-skills" },
+  { id: "security", label: "Seguridad y tools", keywords: "sandbox docker permisos allow ask deny", target: "sec-sandbox" },
+  { id: "updates", label: "Actualizaciones", keywords: "update feed canal notas", target: "sec-actualizaciones" },
+  { id: "project", label: "Proyecto", keywords: "perfil workspace recientes", target: "sec-perfil-del-proyecto" },
+];
 
 function Field({ label, children }: { label: string; children: React.ReactNode }): React.ReactElement {
   return (
