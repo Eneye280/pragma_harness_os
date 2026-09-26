@@ -8,6 +8,7 @@ import { PlanController } from "../plan";
 import { CustomPluginHost } from "../plugins/custom";
 import { ToolApprovalBroker } from "../tools/approval-broker";
 import { effectiveToolPermission } from "../../shared/settings";
+import { executeParallel, type ParallelTask } from "../../shared/parallel";
 import { UsageStore } from "../usage/usage-store";
 import { LearningStore, resolveLearningPath } from "../learning/learning-store";
 import { aggregateUsage, compareModes, filterByRange, toCsv } from "../../shared/usage";
@@ -190,6 +191,28 @@ export function registerIpcHandlers(
     if (!payload.success) return { ok: false, error: "invalid plan revision" };
     return { ok: planController.revise(payload.data.sessionId, payload.data.markdown) };
   });
+  const parallelSchema = z.object({
+    tasks: z.array(z.object({ message: z.string().min(1).max(20000) })).min(1).max(6),
+    maxConcurrency: z.number().int().min(1).max(4).optional(),
+  });
+  ipcMain.handle("parallel:run", async (_e, rawPayload: unknown) => {
+    const parsed = parallelSchema.safeParse(rawPayload);
+    if (!parsed.success) return { ok: false, error: "invalid tasks" };
+    const workspacePath = workspace.current();
+    if (!workspacePath) return { ok: false, error: "workspace no activo" };
+    const stamp = Date.now();
+    const tasks: ParallelTask[] = parsed.data.tasks.map((task, index) => ({ id: `p-${stamp}-${index}`, sessionId: `parallel-${stamp}-${index}`, message: task.message, workspacePath }));
+    const runs = await executeParallel(tasks, {
+      maxConcurrency: parsed.data.maxConcurrency ?? 2,
+      run: async (task) => {
+        await chatService.run({ message: task.message, sessionId: task.sessionId, workspacePath }, (event) => {
+          getMainWindow()?.webContents.send("harness:chat", event);
+        });
+      },
+    });
+    return { ok: true, runs };
+  });
+
   ipcMain.handle("harness:ping", async () => pingResponse);
 
   ipcMain.handle("harness:cancel", async (_event, sessionId: unknown) => {

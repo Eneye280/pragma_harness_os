@@ -108,6 +108,10 @@ export interface GraphBridge {
   onUpdated: (cb: (delta: GraphDelta) => void) => () => void;
 }
 
+export interface ParallelBridge {
+  run: (payload: { tasks: Array<{ message: string }>; maxConcurrency?: number }) => Promise<{ ok: boolean; error?: string; runs?: Array<{ id: string; sessionId: string; status: string }> }>;
+}
+
 export interface IntegrationsBridge {
   get: () => Promise<{ supabase: { url: string; enabled: boolean; hasKey: boolean }; mcpServers: Array<{ name: string; url: string; enabled: boolean }> }>;
   test: (provider: "supabase") => Promise<{ ok: boolean; status: number; detail: string }>;
@@ -238,6 +242,7 @@ export interface HarnessBridge {
   learning: LearningBridge;
   qa: QaBridge;
   integrations: IntegrationsBridge;
+  parallel: ParallelBridge;
   agents: AgentsBridge;
   bundles: BundlesBridge;
   sessions: SessionsBridge;
@@ -390,6 +395,10 @@ const diagnostics: DiagnosticsBridge = {
   paths: () => ipcRenderer.invoke("diagnostics:paths"),
 };
 
+const parallel: ParallelBridge = {
+  run: (payload) => ipcRenderer.invoke("parallel:run", payload),
+};
+
 const integrations: IntegrationsBridge = {
   get: () => ipcRenderer.invoke("integrations:get"),
   test: (provider) => ipcRenderer.invoke("integrations:test", { provider }),
@@ -494,6 +503,7 @@ const harness: HarnessBridge = {
   learning,
   qa,
   integrations,
+  parallel,
   agents,
   bundles,
   sessions,
