@@ -61,6 +61,8 @@ export interface ChatServiceDeps {
   }) => { verdict: "pass" | "block"; blockedBy?: string; userResponse?: string; reason?: string };
   pluginRunner?: import("../plugins").PluginRunner;
   pollSteer?: (sessionId: string) => string | null;
+  resolveToolPermission?: (tool: import("../tools").ToolName) => import("../tools").PermissionMode;
+  requestToolApproval?: (request: import("../tools").ToolApprovalRequest) => Promise<import("../tools").ToolApprovalDecision>;
 }
 
 export function buildAgentPrompt(request: ChatSendRequest, needs: string[], approvedPlan?: string): string {
@@ -293,6 +295,15 @@ export class ChatService {
         });
         const toolWorkspacePath =
           typeof this.deps.toolWorkspacePath === "function" ? this.deps.toolWorkspacePath() : this.deps.toolWorkspacePath;
+        if (this.deps.resolveToolPermission) {
+          this.deps.toolRunner.configure({
+            permissionFor: this.deps.resolveToolPermission,
+            approveTool: async (request) => {
+              emit({ kind: "tool-approval", sessionId, callId: request.callId, tool: request.tool, summary: request.summary });
+              return this.deps.requestToolApproval ? this.deps.requestToolApproval(request) : { approved: false };
+            },
+          });
+        }
         const observation = await this.deps.toolRunner.execute({
           tool: pendingToolCall.tool,
           args: pendingToolCall.args,

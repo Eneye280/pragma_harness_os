@@ -47,6 +47,12 @@ export const SettingsSchema = z.object({
   agent: z.string().default(""),
   sandbox: z.object({ enabled: z.boolean(), image: z.string() }),
   workspace: z.object({ active: z.string().default(""), recents: z.array(z.string()).default([]) }).default({ active: "", recents: [] }),
+  tools: z
+    .object({
+      askBeforeTools: z.boolean().default(true),
+      perTool: z.record(z.enum(["allow", "ask", "deny"])).default({}),
+    })
+    .default({ askBeforeTools: true, perTool: {} }),
 });
 
 export function resolveSettingsPath(): string {
@@ -72,6 +78,7 @@ export function sanitizeIncoming(current: HarnessSettings, incoming: HarnessSett
     agent: incoming.agent ?? current.agent,
     sandbox: incoming.sandbox,
     workspace: incoming.workspace ?? current.workspace,
+    tools: incoming.tools ?? current.tools,
   };
 }
 
@@ -140,6 +147,12 @@ export class SettingsStore {
 
   updatePlugins(plugins: Record<string, boolean>): HarnessSettings {
     this.settings = { ...this.settings, plugins: { ...plugins } };
+    this.persist();
+    return this.get();
+  }
+
+  updateTools(tools: HarnessSettings["tools"]): HarnessSettings {
+    this.settings = { ...this.settings, tools: { ...tools, perTool: { ...tools.perTool } } };
     this.persist();
     return this.get();
   }

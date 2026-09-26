@@ -35,4 +35,10 @@ export const ProjectProfileSchema = z.object({
   agent: z.string().optional(),
   sandbox: z.object({ enabled: z.boolean().optional(), image: z.string().optional() }).optional(),
   rag: z.object({ excludes: z.array(z.string()).optional() }).optional(),
+  tools: z
+    .object({
+      askBeforeTools: z.boolean().optional(),
+      perTool: z.record(z.enum(["allow", "ask", "deny"])).optional(),
+    })
+    .optional(),
 });

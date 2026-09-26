@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import {
   KNOWN_PLUGINS,
   KNOWN_PROVIDERS,
+  KNOWN_TOOLS,
+  TOOL_PERMISSION_PRESETS,
   type HarnessSettings,
   type ProviderName,
 } from "@shared/settings";
@@ -509,6 +511,56 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
                 className="w-40 rounded-control border border-hairline bg-surface px-2 py-1.5 font-mono text-[12px] text-zinc-200 outline-none focus:border-harness/60"
               />
             </Field>
+          </Section>
+
+          <Section title="Herramientas del agente">
+            <Toggle
+              label={draft.tools.askBeforeTools ? "preguntar antes de ejecutar tools" : "el harness continúa solo"}
+              checked={draft.tools.askBeforeTools}
+              onChange={(value) => setDraft({ ...draft, tools: { ...draft.tools, askBeforeTools: value } })}
+            />
+            <div className="grid grid-cols-4 gap-2">
+              {KNOWN_TOOLS.map((tool) => (
+                <label key={tool} className="block text-[10px] uppercase tracking-widest text-zinc-500">
+                  {tool}
+                  <select
+                    aria-label={`Permiso ${tool}`}
+                    value={draft.tools.perTool[tool] ?? ""}
+                    onChange={(event) =>
+                      setDraft({
+                        ...draft,
+                        tools: {
+                          ...draft.tools,
+                          perTool: { ...draft.tools.perTool, [tool]: (event.target.value || undefined) as import("@shared/settings").ToolPermissionMode | undefined },
+                        },
+                      })
+                    }
+                    className="mt-1 w-full rounded-control border border-hairline bg-surface px-2 py-1 text-[11px] text-zinc-300 outline-none"
+                  >
+                    <option value="">auto</option>
+                    <option value="allow">allow</option>
+                    <option value="ask">ask</option>
+                    <option value="deny">deny</option>
+                  </select>
+                </label>
+              ))}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setDraft({ ...draft, tools: TOOL_PERMISSION_PRESETS.seguro })}
+                className="rounded-control border border-hairline px-2 py-1 text-[11px] text-zinc-300 hover:bg-zinc-800"
+              >
+                preset seguro
+              </button>
+              <button
+                type="button"
+                onClick={() => setDraft({ ...draft, tools: TOOL_PERMISSION_PRESETS.autonomo })}
+                className="rounded-control border border-hairline px-2 py-1 text-[11px] text-zinc-300 hover:bg-zinc-800"
+              >
+                preset autónomo
+              </button>
+            </div>
           </Section>
 
           <Section title="Actualizaciones">

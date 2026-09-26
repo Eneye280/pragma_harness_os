@@ -49,6 +49,7 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
   const [revealedCount, setRevealedCount] = useState(0);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
+  const [rememberTool, setRememberTool] = useState(false);
   const [attachmentAnnouncement, setAttachmentAnnouncement] = useState("");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -246,6 +247,33 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
                   </div>
                 ),
               )}
+
+              {state.pendingApproval ? (
+                <div className="rounded-panel border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-[12px] text-amber-200" role="alertdialog" aria-label="Permiso de herramienta">
+                  <p className="font-medium">El agente quiere ejecutar {state.pendingApproval.tool}</p>
+                  <p className="mt-0.5 font-mono text-[11px] text-amber-300/80">{state.pendingApproval.summary}</p>
+                  <div className="mt-2 flex items-center gap-2">
+                    <label className="flex items-center gap-1 text-[11px] text-amber-300/90">
+                      <input type="checkbox" checked={rememberTool} onChange={(event) => setRememberTool(event.target.checked)} />
+                      recordar
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => chat.approveTool(state.pendingApproval!.callId, state.pendingApproval!.tool, "approve", rememberTool)}
+                      className="ml-auto rounded-control bg-harness px-3 py-1 text-[11px] font-medium text-white hover:bg-harness-strong"
+                    >
+                      Aprobar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => chat.approveTool(state.pendingApproval!.callId, state.pendingApproval!.tool, "reject", rememberTool)}
+                      className="rounded-control border border-red-500/40 px-3 py-1 text-[11px] text-red-300 hover:bg-red-500/10"
+                    >
+                      Rechazar
+                    </button>
+                  </div>
+                </div>
+              ) : null}
 
               {state.toolCalls.map((call) => (
                 <ToolCallCard key={call.callId} call={call} />

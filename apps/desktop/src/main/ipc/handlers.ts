@@ -6,6 +6,8 @@ import { MemoryEventLog } from "../db/memory-event-log";
 import { createChatService } from "../chat";
 import { PlanController } from "../plan";
 import { CustomPluginHost } from "../plugins/custom";
+import { ToolApprovalBroker } from "../tools/approval-broker";
+import { effectiveToolPermission } from "../../shared/settings";
 import { DreamingScheduler } from "../dreaming";
 import { vault } from "../memory/vault";
 import { AgentGateway } from "../llm/gateway";
@@ -80,6 +82,7 @@ export function registerIpcHandlers(
 ): void {
   const planController = new PlanController();
   const customPluginHost = new CustomPluginHost(() => workspace.current());
+  const toolApprovalBroker = new ToolApprovalBroker();
   const chatService = createChatService(
     settingsController,
     costTracker,
@@ -90,8 +93,40 @@ export function registerIpcHandlers(
     },
     () => workspace.current(),
     pollSteer,
-    () => customPluginHost.load()
+    () => customPluginHost.load(),
+    {
+      resolvePermission: (tool) => effectiveToolPermission(tool, settingsController.store.get().tools),
+      requestApproval: (request) => toolApprovalBroker.register(request.callId, request.tool),
+    }
   );
+
+  ipcMain.handle("harness:approveTool", async (_event, rawPayload: unknown) => {
+    const payload = z
+      .object({
+        callId: z.string().min(1),
+        tool: z.enum(["fileRead", "fileEdit", "terminal", "mcp_call"]),
+        decision: z.enum(["approve", "reject"]),
+        remember: z.boolean().optional(),
+      })
+      .safeParse(rawPayload);
+    if (!payload.success) return { ok: false, error: "invalid tool approval" };
+    const resolved = toolApprovalBroker.resolve(payload.data.callId, { approved: payload.data.decision === "approve" });
+    if (!resolved) return { ok: false, error: "no pending approval" };
+    if (payload.data.remember) {
+      const tools = settingsController.store.get().tools;
+      settingsController.store.updateTools({
+        ...tools,
+        perTool: { ...tools.perTool, [payload.data.tool]: payload.data.decision === "approve" ? "allow" : "deny" },
+      });
+    }
+    memoryLog.append({
+      type: "agent:tool-approval",
+      payload: { tool: payload.data.tool, decision: payload.data.decision, remember: payload.data.remember ?? false },
+      sessionId: "tool-approval",
+      workspaceHash: workspace.current() ?? "unknown",
+    });
+    return { ok: true };
+  });
 
   ipcMain.handle("cost:get", async () => {
     const settings = settingsController.store.get();

@@ -38,6 +38,27 @@ export interface WorkspaceSettings {
   recents: string[];
 }
 
+export type ToolPermissionMode = "allow" | "ask" | "deny";
+export type ToolNameKey = "fileRead" | "fileEdit" | "terminal" | "mcp_call";
+export const KNOWN_TOOLS: ToolNameKey[] = ["fileRead", "fileEdit", "terminal", "mcp_call"];
+
+export interface ToolPermissionSettings {
+  askBeforeTools: boolean;
+  perTool: Partial<Record<ToolNameKey, ToolPermissionMode>>;
+}
+
+export function effectiveToolPermission(tool: ToolNameKey, settings: ToolPermissionSettings): ToolPermissionMode {
+  const explicit = settings.perTool[tool];
+  if (explicit) return explicit;
+  if (!settings.askBeforeTools) return "allow";
+  return tool === "fileRead" ? "allow" : "ask";
+}
+
+export const TOOL_PERMISSION_PRESETS: Record<"seguro" | "autonomo", ToolPermissionSettings> = {
+  seguro: { askBeforeTools: true, perTool: { fileRead: "allow", fileEdit: "ask", terminal: "ask", mcp_call: "ask" } },
+  autonomo: { askBeforeTools: false, perTool: {} },
+};
+
 export interface ProviderSettings {
   provider: ProviderName;
   apiKey: string;
@@ -57,6 +78,7 @@ export interface HarnessSettings {
   agent: string;
   sandbox: SandboxFlags;
   workspace: WorkspaceSettings;
+  tools: ToolPermissionSettings;
 }
 
 export const DEFAULT_SETTINGS: HarnessSettings = {
@@ -76,6 +98,7 @@ export const DEFAULT_SETTINGS: HarnessSettings = {
   agent: "",
   sandbox: { enabled: false, image: "node:22" },
   workspace: { active: "", recents: [] },
+  tools: { askBeforeTools: true, perTool: {} },
 };
 
 export function maskSecret(secret: string): string {

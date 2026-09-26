@@ -1,4 +1,4 @@
-import type { ChatStreamEvent, HarnessPhase, HarnessStepStatus } from "@shared/chat-events";
+import type { ChatStreamEvent, HarnessPhase, HarnessStepStatus, ToolApprovalEvent } from "@shared/chat-events";
 import type { HarnessContextSnapshot } from "@shared/context-snapshot";
 import type { PlanProposal } from "@shared/plan";
 import { markRunState, parseTasks, syncTaskStatuses, type MessageTask } from "@shared/task-list";
@@ -39,6 +39,7 @@ export interface ChatState {
   planStatus: "idle" | "proposed" | "approved" | "discarded";
   context: HarnessContextSnapshot | null;
   error: string | null;
+  pendingApproval: ToolApprovalEvent | null;
 }
 
 export const INITIAL_CHAT_STATE: ChatState = {
@@ -50,6 +51,7 @@ export const INITIAL_CHAT_STATE: ChatState = {
   planStatus: "idle",
   context: null,
   error: null,
+  pendingApproval: null,
 };
 
 export type ChatAction =
@@ -152,12 +154,15 @@ function applyStreamEvent(state: ChatState, event: ChatStreamEvent): ChatState {
     case "tool-observation":
       return {
         ...state,
+        pendingApproval: state.pendingApproval?.callId === event.callId ? null : state.pendingApproval,
         toolCalls: state.toolCalls.map((call) =>
           call.callId === event.callId
             ? { ...call, status: event.ok ? "done" : "error", ok: event.ok, output: event.output, diff: event.diff ?? call.diff }
             : call
         ),
       };
+    case "tool-approval":
+      return { ...state, pendingApproval: event };
     case "error":
       return {
         ...state,
@@ -203,6 +208,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         planStatus: "idle",
         context: null,
         error: null,
+        pendingApproval: null,
       };
     case "stream":
       return applyStreamEvent(state, action.event);
@@ -211,6 +217,11 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       return {
         ...INITIAL_CHAT_STATE,
         ...partial,
+        plan: null,
+        planStatus: "idle",
+        pendingApproval: null,
+        agentPhase: "idle",
+        error: null,
         messages: Array.isArray(partial.messages) ? partial.messages.map((message) => ({ ...message, streaming: false })) : [],
         steps: Array.isArray(partial.steps) ? partial.steps : [],
         toolCalls: Array.isArray(partial.toolCalls) ? partial.toolCalls : [],

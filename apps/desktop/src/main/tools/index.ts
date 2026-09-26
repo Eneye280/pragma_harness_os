@@ -5,4 +5,4 @@ export { runTerminal } from "./terminal";
 export type { TerminalRequest, TerminalResult } from "./terminal";
 export { loadMcpConfig, redactMcpEnv, routeMcpTool, healthCheckMcp } from "./mcp";
 export { redactSecrets } from "./types";
-export type { ToolName, ToolCallInput, ToolCallRecord, ToolObservation, PermissionMode, ConfirmHook, PendingEditPreview } from "./types";
+export type { ToolName, ToolCallInput, ToolCallRecord, ToolObservation, PermissionMode, ConfirmHook, PendingEditPreview, ToolApprovalRequest, ToolApprovalDecision, ApproveHook } from "./types";

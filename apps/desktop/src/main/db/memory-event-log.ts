@@ -9,6 +9,7 @@ export type HarnessEventType =
   | "agent:llm-call"
   | "agent:tool-call"
   | "agent:observation"
+  | "agent:tool-approval"
   | "harness:gate"
   | "harness:memory-write"
   | "plan:decision";
