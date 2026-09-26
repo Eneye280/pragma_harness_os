@@ -50,6 +50,11 @@ function resolveCommand(phase: PostGatePhase, context: VerificationContext, sett
   return context.domain === "engine" ? commands.engine : commands.root;
 }
 
+export function resolvePostGateCommand(phase: PostGatePhase, domain = "general"): string | null {
+  if (phase === "visual") return null;
+  return resolveCommand(phase, { workspacePath: "", domain } as VerificationContext, {});
+}
+
 class CommandPhase implements PostGatePhaseRunner {
   constructor(
     readonly phase: PostGatePhase,

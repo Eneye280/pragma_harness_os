@@ -39,8 +39,9 @@ export interface WorkspaceSettings {
 }
 
 export type ToolPermissionMode = "allow" | "ask" | "deny";
-export type ToolNameKey = "fileRead" | "fileEdit" | "terminal" | "mcp_call";
-export const KNOWN_TOOLS: ToolNameKey[] = ["fileRead", "fileEdit", "terminal", "mcp_call"];
+export type ToolNameKey = "fileRead" | "fileEdit" | "terminal" | "mcp_call" | "runTests" | "runBuild" | "runLint";
+export const KNOWN_TOOLS: ToolNameKey[] = ["fileRead", "fileEdit", "terminal", "mcp_call", "runTests", "runBuild", "runLint"];
+const READ_ONLY_TOOLS: ToolNameKey[] = ["fileRead", "runTests", "runBuild", "runLint"];
 
 export interface ToolPermissionSettings {
   askBeforeTools: boolean;
@@ -51,7 +52,7 @@ export function effectiveToolPermission(tool: ToolNameKey, settings: ToolPermiss
   const explicit = settings.perTool[tool];
   if (explicit) return explicit;
   if (!settings.askBeforeTools) return "allow";
-  return tool === "fileRead" ? "allow" : "ask";
+  return READ_ONLY_TOOLS.includes(tool) ? "allow" : "ask";
 }
 
 export const TOOL_PERMISSION_PRESETS: Record<"seguro" | "autonomo", ToolPermissionSettings> = {

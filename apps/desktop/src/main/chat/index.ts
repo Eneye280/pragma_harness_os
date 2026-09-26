@@ -7,14 +7,17 @@ import type { PlanGate } from "../plan";
 import { compileHarnessContext } from "../context";
 import { PreAgentGates } from "../gates";
 import { createPluginRunner } from "../plugins";
+import { SandboxRunner } from "../sandbox";
+import { runTerminal } from "../tools";
 import type { CostTracker } from "../cost";
 import { ChatService, type ChatGateway } from "./chat-service";
 
 const TOOL_INTENT_PATTERN = /(archivo|file|crea|create|write|escribe|guarda|save)/i;
 const CONSOLE_INTENT_PATTERN = /(console\.log|console|debug|consola)/i;
+const TEST_INTENT_PATTERN = /(tests?|pruebas|corre los test|verifica|run tests)/i;
+const TERMINAL_INTENT_PATTERN = /(inspecciona|git status|estado del repo|revisa el repo)/i;
 
 async function* mockResponder(prompt: string): AsyncGenerator<string> {
-  const wantsFile = TOOL_INTENT_PATTERN.test(prompt);
   const answerParts = [
     "## Harness-first listo\n\n",
     "El harness compiló **reglas**, **skills** y **contexto** antes de despertar al agente.\n\n",
@@ -26,7 +29,18 @@ async function* mockResponder(prompt: string): AsyncGenerator<string> {
     await new Promise((resolve) => setTimeout(resolve, 120));
     yield part;
   }
-  if (wantsFile) {
+  const wantsTests = TEST_INTENT_PATTERN.test(prompt);
+  const wantsTerminal = !wantsTests && TERMINAL_INTENT_PATTERN.test(prompt);
+  const wantsFile = !wantsTests && !wantsTerminal && TOOL_INTENT_PATTERN.test(prompt);
+  if (wantsTests) {
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    const verifyBlock = { tool: "runTests", args: {}, sessionId: "mock", workspaceHash: "mock", workspacePath: "." };
+    yield `\nCorro los tests:\n\n\`\`\`tool\n${JSON.stringify(verifyBlock, null, 2)}\n\`\`\`\n`;
+  } else if (wantsTerminal) {
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    const terminalBlock = { tool: "terminal", args: { command: "git", args: ["status"] }, sessionId: "mock", workspaceHash: "mock", workspacePath: "." };
+    yield `\nInspecciono el repo:\n\n\`\`\`tool\n${JSON.stringify(terminalBlock, null, 2)}\n\`\`\`\n`;
+  } else if (wantsFile) {
     await new Promise((resolve) => setTimeout(resolve, 150));
     const wantsConsoleLog = CONSOLE_INTENT_PATTERN.test(prompt);
     const fileContent = wantsConsoleLog
@@ -69,6 +83,17 @@ export function createChatService(
   const gateway = new SettingsGateway(() => settingsController.store.get(), createGatewayForConfig);
   const toolWorkspacePath = getWorkspace ?? resolveHarnessWorkspace;
   const toolRunner = new ToolRunner({ permission: "allow" });
+  toolRunner.configure({
+    sandboxExecutor: async (request) => {
+      const sandbox = settingsController.store.get().sandbox;
+      if (!sandbox.enabled) {
+        const plain = await runTerminal(request);
+        return { stdout: plain.stdout, stderr: plain.stderr, exitCode: plain.exitCode, durationMs: plain.durationMs, timedOut: plain.timedOut };
+      }
+      const sandboxed = await new SandboxRunner({ settings: sandbox }).execute(request);
+      return { stdout: sandboxed.stdout, stderr: sandboxed.stderr, exitCode: sandboxed.exitCode, durationMs: sandboxed.durationMs, timedOut: sandboxed.timedOut };
+    },
+  });
 
   const currentBudget = () => {
     const settings = settingsController.store.get();
