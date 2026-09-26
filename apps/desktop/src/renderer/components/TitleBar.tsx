@@ -15,6 +15,7 @@ interface TitleBarProps {
   onToggleTerminal: () => void;
   onOpenSettings: () => void;
   onOpenSessions: () => void;
+  onOpenGraph: () => void;
 }
 
 export function TitleBar({
@@ -27,6 +28,7 @@ export function TitleBar({
   onToggleTerminal,
   onOpenSettings,
   onOpenSessions,
+  onOpenGraph,
 }: TitleBarProps): React.ReactElement {
   const [isMaximized, setIsMaximized] = useState(false);
 
@@ -108,6 +110,9 @@ export function TitleBar({
         </TitleBarButton>
         <TitleBarButton label="Sesiones (Ctrl/Cmd+Shift+H)" onClick={onOpenSessions}>
           <span className="text-[11px]">Sessions</span>
+        </TitleBarButton>
+        <TitleBarButton label="Grafo de dependencias" onClick={onOpenGraph}>
+          <span className="text-[11px]">Graph</span>
         </TitleBarButton>
         <TitleBarButton label="Settings (Ctrl/Cmd+,)" onClick={onOpenSettings}>
           <span className="text-[11px]">Settings</span>

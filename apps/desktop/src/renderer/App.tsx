@@ -3,6 +3,7 @@ import type { ExplorerFile } from "@shared/explorer";
 import { CommandPalette } from "./components/CommandPalette";
 import { OnboardingCard } from "./components/OnboardingCard";
 import { SessionsPanel } from "./components/SessionsPanel";
+import { GraphPanel } from "./components/GraphPanel";
 import { StackWizard } from "./components/StackWizard";
 import { SettingsModal } from "./components/SettingsModal";
 import { ShellLayout } from "./components/ShellLayout";
@@ -34,6 +35,7 @@ export function App(): React.ReactElement {
     }
   });
   const [stackWizardOpen, setStackWizardOpen] = useState(false);
+  const [graphOpen, setGraphOpen] = useState(false);
   const explorer = useExplorer();
   const cost = useCost();
   const dreamLearned = useDream();
@@ -194,6 +196,7 @@ export function App(): React.ReactElement {
         onToggleTerminal={toggleTerminal}
         onOpenSettings={openSettings}
         onOpenSessions={openSessions}
+        onOpenGraph={() => setGraphOpen(true)}
       />
       <ShellLayout
         explorerOpen={panels.explorerOpen}
@@ -256,6 +259,8 @@ export function App(): React.ReactElement {
         onCancel={(id) => chat.cancel(id)}
         onRefresh={sessionsState.refresh}
       />
+
+      <GraphPanel open={graphOpen} onClose={() => setGraphOpen(false)} />
 
       {dreamLearned.length > 0 ? (
         <div className="pointer-events-none fixed right-4 top-12 z-40 flex w-[320px] flex-col gap-2">
