@@ -10,6 +10,7 @@ import { UsageDashboard } from "./components/UsageDashboard";
 import { DiagnosticsPanel } from "./components/DiagnosticsPanel";
 import { NotificationCenter } from "./components/NotificationCenter";
 import { useNotifications } from "./notifications/use-notifications";
+import { useTheme } from "./theme/use-theme";
 import { INITIAL_TOUR_STATE, TOUR_STEPS, loadTourState, saveTourState, startTour, type TourState } from "./shell/tour";
 import { StackWizard } from "./components/StackWizard";
 import { SettingsModal } from "./components/SettingsModal";
@@ -48,6 +49,7 @@ export function App(): React.ReactElement {
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const notifications = useNotifications();
+  const theme = useTheme();
   const [tour, setTour] = useState<TourState>(() => {
     try {
       const loaded = loadTourState(window.localStorage);
@@ -268,6 +270,8 @@ export function App(): React.ReactElement {
         updater={updater}
         skillsState={skillsState}
         agentsState={agentsState}
+        themeMode={theme.mode}
+        onThemeChange={theme.setMode}
       />
 
       {showOnboarding ? <OnboardingCard onDismiss={dismissOnboarding} /> : null}

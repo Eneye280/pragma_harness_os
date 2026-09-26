@@ -42,6 +42,17 @@ export const PALETTE = {
   danger: "#ef4444",
 } as const;
 
+export const LIGHT_PALETTE = {
+  surface: "#f4f4f5",
+  surfaceRaised: "#ffffff",
+  textPrimary: "#18181b",
+  textMuted: "#52525b",
+  harness: "#7c3aed",
+  success: "#15803d",
+  warning: "#b45309",
+  danger: "#b91c1c",
+} as const;
+
 export interface ContrastCheck {
   pair: string;
   ratio: number;
@@ -59,6 +70,22 @@ export function auditPalette(): ContrastCheck[] {
     { pair: "success/surface", foreground: PALETTE.success, background: PALETTE.surface, min: 4.5 },
     { pair: "warning/surface", foreground: PALETTE.warning, background: PALETTE.surface, min: 4.5 },
     { pair: "danger/surface", foreground: PALETTE.danger, background: PALETTE.surface, min: 4.5 },
+  ];
+  return pairs.map(({ pair, foreground, background, min }) => {
+    const ratio = contrastRatio(foreground, background);
+    return { pair, ratio, min, passesAA: ratio >= min, passesAAA: ratio >= 7 };
+  });
+}
+
+export function auditLightPalette(): ContrastCheck[] {
+  const pairs: Array<{ pair: string; foreground: string; background: string; min: number }> = [
+    { pair: "textPrimary/surface", foreground: LIGHT_PALETTE.textPrimary, background: LIGHT_PALETTE.surface, min: 4.5 },
+    { pair: "textPrimary/surfaceRaised", foreground: LIGHT_PALETTE.textPrimary, background: LIGHT_PALETTE.surfaceRaised, min: 4.5 },
+    { pair: "textMuted/surface", foreground: LIGHT_PALETTE.textMuted, background: LIGHT_PALETTE.surface, min: 4.5 },
+    { pair: "harness/surface", foreground: LIGHT_PALETTE.harness, background: LIGHT_PALETTE.surface, min: 4.5 },
+    { pair: "success/surface", foreground: LIGHT_PALETTE.success, background: LIGHT_PALETTE.surface, min: 4.5 },
+    { pair: "warning/surface", foreground: LIGHT_PALETTE.warning, background: LIGHT_PALETTE.surface, min: 4.5 },
+    { pair: "danger/surface", foreground: LIGHT_PALETTE.danger, background: LIGHT_PALETTE.surface, min: 4.5 },
   ];
   return pairs.map(({ pair, foreground, background, min }) => {
     const ratio = contrastRatio(foreground, background);
