@@ -59,6 +59,7 @@ export interface ChatServiceDeps {
     budget?: { tokensUsed: number; tokensLimit: number; costUsedUsd: number; costLimitUsd: number };
   }) => { verdict: "pass" | "block"; blockedBy?: string; userResponse?: string; reason?: string };
   pluginRunner?: import("../plugins").PluginRunner;
+  pollSteer?: (sessionId: string) => string | null;
 }
 
 export function buildAgentPrompt(request: ChatSendRequest, needs: string[], approvedPlan?: string): string {
@@ -75,8 +76,9 @@ export function buildAgentPrompt(request: ChatSendRequest, needs: string[], appr
 export class ChatService {
   constructor(private readonly deps: ChatServiceDeps) {}
 
-  async run(request: ChatSendRequest, emit: (event: ChatStreamEvent) => void): Promise<void> {
+  async run(request: ChatSendRequest, emit: (event: ChatStreamEvent) => void, options: { signal?: AbortSignal } = {}): Promise<void> {
     const sessionId = request.sessionId;
+    const signal = options.signal;
 
     try {
       const intent = classify(request.message, request.workspacePath);
@@ -194,6 +196,7 @@ export class ChatService {
         : assembledPrompt || buildAgentPrompt(request, intent.needs);
       let fullText = "";
       for await (const chunk of this.deps.gateway.stream(prompt)) {
+        if (signal?.aborted) break;
         if (chunk.isDone) break;
         if (!chunk.textDelta) continue;
         fullText += chunk.textDelta;
@@ -205,6 +208,59 @@ export class ChatService {
         inputTokens: approximateTokens(prompt),
         outputTokens: approximateTokens(fullText),
       });
+
+      let steerRound = 0;
+      let combinedMessage = request.message;
+      while (!signal?.aborted && steerRound < 3) {
+        const steerText = this.deps.pollSteer?.(sessionId);
+        if (!steerText) break;
+        steerRound += 1;
+        combinedMessage = `${combinedMessage}\n${steerText}`;
+        emit({ kind: "user-message", sessionId, text: steerText, steer: true });
+        emit({ kind: "harness-step", sessionId, phase: "classify", status: "running", label: "re-evaluando mensaje añadido…" });
+        const reIntent = classify(combinedMessage, request.workspacePath);
+        emit({
+          kind: "harness-step",
+          sessionId,
+          phase: "classify",
+          status: "done",
+          label: `${reIntent.domain}/${reIntent.type}/${reIntent.effort}`,
+          detail: "steering",
+        });
+        let steerPrompt = "";
+        if (!request.bypassHarness && this.deps.contextCompiler) {
+          try {
+            const compiled = await this.deps.contextCompiler({
+              message: combinedMessage,
+              intent: reIntent,
+              sessionId,
+              workspacePath: request.workspacePath,
+              tokenLimit: this.deps.tokenLimit ?? 8000,
+              model: this.deps.model?.() ?? "executor",
+            });
+            steerPrompt = compiled.finalPrompt;
+            emit({ kind: "context-assembled", sessionId, snapshot: compiled.snapshot });
+          } catch {
+            steerPrompt = "";
+          }
+        }
+        emit({ kind: "harness-step", sessionId, phase: "agent", status: "running", label: "agente continúa…" });
+        const continuationPrompt =
+          steerPrompt || buildAgentPrompt({ ...request, message: combinedMessage }, reIntent.needs, approvedPlanMarkdown);
+        for await (const chunk of this.deps.gateway.stream(continuationPrompt)) {
+          if (signal?.aborted) break;
+          if (chunk.isDone) break;
+          if (!chunk.textDelta) continue;
+          fullText += chunk.textDelta;
+          emit({ kind: "assistant-delta", sessionId, text: chunk.textDelta });
+        }
+        emit({ kind: "assistant-done", sessionId });
+      }
+
+      if (signal?.aborted) {
+        emit({ kind: "harness-step", sessionId, phase: "agent", status: "done", label: "cancelado por el usuario" });
+        return;
+      }
 
       let lastDiff: string | undefined;
 

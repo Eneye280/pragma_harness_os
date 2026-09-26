@@ -114,6 +114,8 @@ export interface HarnessBridge {
   health: () => Promise<{ status: string; ts: number }>;
   onEvent: (cb: (event: unknown) => void) => () => void;
   onChatEvent: (cb: (event: ChatStreamEvent) => void) => () => void;
+  cancel: (sessionId: string) => Promise<{ ok: boolean }>;
+  steer: (sessionId: string, text: string) => Promise<{ ok: boolean }>;
   explorer: ExplorerBridge;
   terminal: TerminalBridge;
   settings: SettingsBridge;
@@ -263,6 +265,8 @@ const harness: HarnessBridge = {
     ipcRenderer.on("harness:chat", handler as never);
     return () => ipcRenderer.removeListener("harness:chat", handler as never);
   },
+  cancel: (sessionId: string) => ipcRenderer.invoke("harness:cancel", sessionId),
+  steer: (sessionId: string, text: string) => ipcRenderer.invoke("harness:steer", { sessionId, text }),
   explorer,
   terminal,
   settings,

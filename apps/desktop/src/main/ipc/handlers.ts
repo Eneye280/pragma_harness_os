@@ -43,6 +43,19 @@ const pingResponse = { status: "harness:ready" as const, version: "0.1.0" };
 
 const memoryLog = new MemoryEventLog();
 
+interface ActiveRun {
+  controller: AbortController;
+  steer: string[];
+}
+
+const activeRuns = new Map<string, ActiveRun>();
+
+function pollSteer(sessionId: string): string | null {
+  const run = activeRuns.get(sessionId);
+  if (!run) return null;
+  return run.steer.shift() ?? null;
+}
+
 export function registerIpcHandlers(
   getMainWindow: () => BrowserWindow | null,
   settingsController: SettingsController,
@@ -58,7 +71,8 @@ export function registerIpcHandlers(
       const win = getMainWindow();
       if (win) win.webContents.send("cost:updated", snapshot);
     },
-    () => workspace.current()
+    () => workspace.current(),
+    pollSteer
   );
 
   ipcMain.handle("cost:get", async () => {
@@ -97,6 +111,27 @@ export function registerIpcHandlers(
     return { ok: planController.revise(payload.data.sessionId, payload.data.markdown) };
   });
   ipcMain.handle("harness:ping", async () => pingResponse);
+
+  ipcMain.handle("harness:cancel", async (_event, sessionId: unknown) => {
+    if (typeof sessionId !== "string") return { ok: false };
+    const run = activeRuns.get(sessionId);
+    if (!run) return { ok: false };
+    run.controller.abort();
+    return { ok: true };
+  });
+
+  ipcMain.handle("harness:steer", async (_event, rawPayload: unknown) => {
+    const payload = rawPayload && typeof rawPayload === "object" ? (rawPayload as Record<string, unknown>) : null;
+    if (!payload || typeof payload.sessionId !== "string" || typeof payload.text !== "string") {
+      return { ok: false };
+    }
+    const run = activeRuns.get(payload.sessionId);
+    if (!run) return { ok: false };
+    const text = payload.text.trim();
+    if (!text) return { ok: false };
+    run.steer.push(text);
+    return { ok: true };
+  });
 
   ipcMain.handle("harness:sendMessage", async (_e, rawMessage: unknown) => {
     const parsed = sendMessageSchema.safeParse(
@@ -141,18 +176,27 @@ export function registerIpcHandlers(
     const win = getMainWindow();
     if (win) win.webContents.send("harness:event", harnessEvent);
 
-    void chatService.run(
-      {
-        message: context.normalized,
-        sessionId: context.sessionId,
-        workspacePath: context.workspacePath,
-        bypassHarness: parsed.data.bypassHarness,
-      },
-      (chatEvent) => {
-        const targetWindow = getMainWindow();
-        if (targetWindow) targetWindow.webContents.send("harness:chat", chatEvent);
-      }
-    ).finally(() => dreamingScheduler.schedule());
+    const controller = new AbortController();
+    activeRuns.set(context.sessionId, { controller, steer: [] });
+
+    void chatService
+      .run(
+        {
+          message: context.normalized,
+          sessionId: context.sessionId,
+          workspacePath: context.workspacePath,
+          bypassHarness: parsed.data.bypassHarness,
+        },
+        (chatEvent) => {
+          const targetWindow = getMainWindow();
+          if (targetWindow) targetWindow.webContents.send("harness:chat", chatEvent);
+        },
+        { signal: controller.signal }
+      )
+      .finally(() => {
+        activeRuns.delete(context.sessionId);
+        dreamingScheduler.schedule();
+      });
 
     return {
       received: context.normalized,

@@ -7,6 +7,7 @@ export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   streaming: boolean;
+  steer?: boolean;
 }
 
 export interface HarnessStepState {
@@ -101,6 +102,20 @@ function applyStreamEvent(state: ChatState, event: ChatStreamEvent): ChatState {
         ...state,
         agentPhase: "done",
         messages: updateLastAssistant(state.messages, (message) => ({ ...message, streaming: false })),
+      };
+    case "user-message":
+      return {
+        ...state,
+        messages: [
+          ...state.messages,
+          {
+            id: `steer-${state.messages.length}-${Date.now().toString(36)}`,
+            role: "user",
+            content: event.text,
+            streaming: false,
+            steer: event.steer ?? true,
+          },
+        ],
       };
     case "tool-call": {
       const existing = state.toolCalls.find((call) => call.callId === event.callId);
