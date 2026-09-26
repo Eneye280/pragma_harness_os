@@ -50,9 +50,9 @@ export interface WorkspaceSettings {
 }
 
 export type ToolPermissionMode = "allow" | "ask" | "deny";
-export type ToolNameKey = "fileRead" | "fileEdit" | "terminal" | "mcp_call" | "runTests" | "runBuild" | "runLint";
-export const KNOWN_TOOLS: ToolNameKey[] = ["fileRead", "fileEdit", "terminal", "mcp_call", "runTests", "runBuild", "runLint"];
-const READ_ONLY_TOOLS: ToolNameKey[] = ["fileRead", "runTests", "runBuild", "runLint"];
+export type ToolNameKey = "fileRead" | "fileEdit" | "terminal" | "mcp_call" | "runTests" | "runBuild" | "runLint" | "webFetch";
+export const KNOWN_TOOLS: ToolNameKey[] = ["fileRead", "fileEdit", "terminal", "mcp_call", "runTests", "runBuild", "runLint", "webFetch"];
+const READ_ONLY_TOOLS: ToolNameKey[] = ["fileRead", "runTests", "runBuild", "runLint", "webFetch"];
 
 export interface ToolPermissionSettings {
   askBeforeTools: boolean;

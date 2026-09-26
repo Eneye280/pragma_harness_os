@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const ToolNameSchema = z.enum(["fileRead", "fileEdit", "terminal", "mcp_call", "runTests", "runBuild", "runLint"]);
+export const ToolNameSchema = z.enum(["fileRead", "fileEdit", "terminal", "mcp_call", "runTests", "runBuild", "runLint", "webFetch"]);
 export type ToolName = z.infer<typeof ToolNameSchema>;
 
 export type PermissionMode = "allow" | "ask" | "deny";

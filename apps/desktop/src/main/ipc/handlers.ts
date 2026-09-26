@@ -121,7 +121,7 @@ export function registerIpcHandlers(
     const payload = z
       .object({
         callId: z.string().min(1),
-        tool: z.enum(["fileRead", "fileEdit", "terminal", "mcp_call", "runTests", "runBuild", "runLint"]),
+        tool: z.enum(["fileRead", "fileEdit", "terminal", "mcp_call", "runTests", "runBuild", "runLint", "webFetch"]),
         decision: z.enum(["approve", "reject"]),
         remember: z.boolean().optional(),
       })
