@@ -1,4 +1,5 @@
 import { SECRET_PATTERNS } from "../tools/types";
+import { blocksOnSecurity, reviewTextForRisks } from "../../shared/security-review";
 import { shellTokens } from "./command-runner";
 import type { CommandRunner, PhaseResult, PostGatePhase, PostGatePhaseRunner, PostGateSettings, VerificationContext } from "./types";
 
@@ -101,6 +102,10 @@ class SecurityPhase implements PostGatePhaseRunner {
     const secretLines = findSecretLines(context.diff);
     if (secretLines.length > 0) {
       return { phase: this.phase, verdict: "fail", reason: "diff contains what looks like a secret", detail: { samples: secretLines.length, paths: context.filesChanged ?? [] } };
+    }
+    const risky = reviewTextForRisks(context.diff ?? "", true).filter(blocksOnSecurity);
+    if (risky.length > 0) {
+      return { phase: this.phase, verdict: "fail", reason: `patrón inseguro en el diff: ${risky[0].rule} (${risky[0].advice})`, detail: { findings: risky.length } };
     }
     const rawCommand = resolveCommand("security", context, settings);
     if (!rawCommand) return { phase: this.phase, verdict: "pass", reason: "secret scan clean" };
