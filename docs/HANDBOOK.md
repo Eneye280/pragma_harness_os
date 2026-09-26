@@ -173,3 +173,27 @@ Settings → **Actualizaciones** muestra el estado y permite **Buscar**,
 ---
 
 ¿Nuevo en el código? Lee primero **[ARCHITECTURE.md](./ARCHITECTURE.md)**.
+
+---
+
+## v1.0.1 — qué cambió
+
+Nueve frentes cerrados sobre el freeze v1.0.0:
+
+- **Workspace y perfiles** — folder picker nativo, recientes, `.pragma-harness/profile.json` con provider/gates/plugins/skills/agent/rag/tools/sandbox por proyecto.
+- **Sesiones** — persistentes por workspace (JSON en `userData/pragma-harness/sessions`), panel `Sessions`, sesiones concurrentes, stop + *steering* mid-run y **reanudar** tras reiniciar.
+- **Adjuntos** — imágenes (thumbnail + descripción), PDF (extractor propio con `zlib`) y texto plano; bandeja con tokens estimados, límites, drag&drop y pegar.
+- **Plan** — canvas editable con pasos (incluir/reordenar/añadir/quitar) y **aprobación parcial**; decisión auditada en el event log.
+- **Tareas del mensaje** — cada respuesta deriva `Task[]` con estado (pending/in-progress/done/blocked) y panel por mensaje.
+- **Autoría** — skills (`SKILL.md` con `needs` para disparo por intención) y plugins declarativos (`stage`/`match`/`action`) desde la UI, sin reiniciar; tareas del proyecto en `.pragma-harness/tasks.json`.
+- **RAG** — inspector con documentos, consulta por score, exclusión de rutas persistida en el perfil y reindex full/incremental con progreso.
+- **Grafo de dependencias** — imports TS/JS/C#, ciclos y deltas en vivo (chokidar); panel flotante que recuerda posición/colapso por proyecto.
+- **Permisos y sandbox** — `askBeforeTools` + política `allow|ask|deny` por tool con presets seguro/autónomo y tarjeta Aprobar/Rechazar/Recordar; sandbox Docker (red off, worktree `:ro`, límites de cpu/memoria) con negativa explícita si el daemon no está.
+- **Tools del agente** — `runTests`/`runBuild`/`runLint` reutilizando post-gates y `terminal` con **allowlist**.
+- **Gate visual** — diff de PNG contra baseline por umbral (`visual:evaluate`).
+- **Routing/fallback de providers**, **dashboard de uso** (por día/sesión/proyecto, harness vs bypass, CSV), **diagnóstico/health** (checks reales + reporte sin secretos) y **feed privado de auto-update** (token/canal/notas, tolerante a 401/404/offline).
+- **UX** — design system flotante (tokens de elevación/blur/radio), **docking persistente**, **centro de ayuda con búsqueda + tour contextual**, y migración de config v1.0.0→v1.0.1 idempotente.
+
+### Migración v1.0.0 → v1.0.1
+
+Al arrancar, `SettingsStore` ejecuta `migrateSettingsV1_0_1`: agrega `tools`, `routing`, `updater` y los campos nuevos de `sandbox` **preservando** provider/budget/gates/plugins/skills/agent/workspace, y sella `configVersion: 2`. Es idempotente (una segunda pasada no cambia nada) y nunca pierde valores.

@@ -11,6 +11,7 @@ import {
 } from "../../shared/settings";
 import type { ProjectProfile } from "../../shared/profile";
 import { resolveEffectiveSettings } from "../profile/effective";
+import { migrateSettingsV1_0_1, withConfigVersion } from "../migrations/v1_0_1";
 
 const ProviderSchema = z.object({
   provider: z.enum(["mock", "deepseek", "anthropic", "openai", "ollama"]),
@@ -128,10 +129,18 @@ export class SettingsStore {
   private load(): HarnessSettings {
     if (!existsSync(this.filePath)) return structuredClone(DEFAULT_SETTINGS);
     try {
-      const parsedJson: unknown = JSON.parse(readFileSync(this.filePath, "utf8"));
-      const result = SettingsSchema.safeParse(parsedJson);
-      if (!result.success) return structuredClone(DEFAULT_SETTINGS);
-      return result.data as HarnessSettings;
+      const parsedJson = JSON.parse(readFileSync(this.filePath, "utf8")) as Record<string, unknown>;
+      const rawVersion = typeof parsedJson["configVersion"] === "number" ? (parsedJson["configVersion"] as number) : undefined;
+      const migration = migrateSettingsV1_0_1({ ...(parsedJson as object), configVersion: rawVersion } as never);
+      const validated = SettingsSchema.safeParse(migration.settings);
+      if (!validated.success) return structuredClone(DEFAULT_SETTINGS);
+      const settings = validated.data as HarnessSettings;
+      const changed = migration.changed || rawVersion !== migration.to;
+      if (changed) {
+        this.settings = settings;
+        this.persist();
+      }
+      return settings;
     } catch {
       return structuredClone(DEFAULT_SETTINGS);
     }
@@ -196,7 +205,7 @@ export class SettingsStore {
 
   private persist(): void {
     mkdirSync(dirname(this.filePath), { recursive: true });
-    writeFileSync(this.filePath, JSON.stringify(this.settings, null, 2), "utf8");
+    writeFileSync(this.filePath, JSON.stringify(withConfigVersion(this.settings), null, 2), "utf8");
   }
 
   get file(): string {

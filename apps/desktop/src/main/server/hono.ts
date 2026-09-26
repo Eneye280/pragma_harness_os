@@ -8,12 +8,12 @@ export function createHarnessServer(): Hono {
 
   app.use("*", cors({ origin: ["http://localhost:*"], allowMethods: ["GET", "POST", "OPTIONS"] }));
 
-  app.get("/health", (c) => c.json({ status: "harness:ready", version: "0.1.0", ts: Date.now() }));
+  app.get("/health", (c) => c.json({ status: "harness:ready", version: "1.0.1", ts: Date.now() }));
 
   app.get("/doc", (c) =>
     c.json({
       openapi: "3.1.0",
-      info: { title: "Pragma Harness OS", version: "0.1.0" },
+      info: { title: "Pragma Harness OS", version: "1.0.1" },
       paths: {
         "/health": { get: { summary: "Health check" } },
         "/events": { get: { summary: "SSE event stream" } },
