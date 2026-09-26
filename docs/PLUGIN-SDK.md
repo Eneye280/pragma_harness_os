@@ -139,3 +139,10 @@ Las **skills** se editan en la misma sección: frontmatter `name/description/tri
   "message": "quita el TODO antes de seguir"
 }
 ```
+
+## 10. Hot-reload (v1.0.2)
+
+Los plugins declarativos, las skills y los agentes se recargan en caliente: el harness observa
+`<ws>/skills`, `<ws>/.pragma-harness/plugins` y `<ws>/.pragma-harness/agents` (debounce 250ms),
+invalida cachés y emite `hotreload:changed`; la UI refresca sin reiniciar. También se puede forzar
+con `window.harness.hotreload.reload()`.

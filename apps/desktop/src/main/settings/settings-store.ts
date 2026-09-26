@@ -13,6 +13,7 @@ import type { ProjectProfile } from "../../shared/profile";
 import { resolveEffectiveSettings } from "../profile/effective";
 import { migrateSettingsV1_0_1, withConfigVersion } from "../migrations/v1_0_1";
 import { resolveSecretBox } from "../security/key";
+import { migrateSettingsV1_0_2, withConfigVersionV2 } from "../migrations/v1_0_2";
 import type { SecretBox } from "../security/crypto";
 
 const ProviderSchema = z.object({
@@ -149,12 +150,13 @@ export class SettingsStore {
       if (settings.provider.apiKey) {
         settings.provider.apiKey = this.secretBox.decrypt(settings.provider.apiKey);
       }
-      const changed = migration.changed || rawVersion !== migration.to;
+      const migrationV2 = migrateSettingsV1_0_2({ ...(settings as object), configVersion: migration.to } as never);
+      const changed = migration.changed || migrationV2.changed || rawVersion !== migrationV2.to;
       if (changed) {
-        this.settings = settings;
+        this.settings = migrationV2.settings;
         this.persist();
       }
-      return settings;
+      return migrationV2.settings;
     } catch {
       return structuredClone(DEFAULT_SETTINGS);
     }
@@ -219,7 +221,7 @@ export class SettingsStore {
 
   private persist(): void {
     mkdirSync(dirname(this.filePath), { recursive: true });
-    const toPersist = withConfigVersion(this.settings);
+    const toPersist = withConfigVersionV2(this.settings);
     const apiKey = toPersist.provider.apiKey;
     const payload = {
       ...toPersist,

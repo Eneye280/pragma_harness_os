@@ -184,3 +184,28 @@ Principios sostenidos: **determinista antes que LLM**, contratos `shared` tipado
 ## 13. Freeze v1.0.1
 
 SPEC **v1.0.1**. Cambios de arquitectura → nuevo ADR + bump de versión.
+
+## 14. v1.0.2 — módulos de la expansión
+
+| Área | Módulo (main/renderer) | Contrato (shared) | IPC |
+| --- | --- | --- | --- |
+| Hot-reload | `hotreload` | — | `hotreload:reload`, evento `hotreload:changed` |
+| Notificaciones | `renderer/notifications` | `notifications` | — (deriva de chat/cost) |
+| Código en chat | `renderer/chat/CodeBlock` | — | — |
+| Theme | `renderer/theme` | — | — |
+| Web + citas | `tools/web` | `citations` | tool `webFetch` |
+| Cuelgue | — | `stuck` (StuckMonitor) | — |
+| Seguridad | `security/crypto`, `security/key` | `security-review` | (fase `security` del post-gate) |
+| Licencias | `licenses/inventory` | `licenses` | `licenses:*` |
+| Evidencia | `evidence/evidence-store` | — | `evidence:save` |
+| Auto-mejora | `learning/learning-store` | `learning` | `learning:get` |
+| QA runner | `ipc/qa-handlers` | `qa` | `qa:run`, `qa:scenarios` |
+| QA perfiles | — | `qa-profiles` | — |
+| Terceros | `integrations/supabase` | `settings.integrations` | `integrations:get|test` |
+| Paralelo | `shared/parallel` (scheduler) | `parallel` | `parallel:run` |
+| Telemetría | `renderer/telemetry` | — | (usa `usage:*`) |
+| Migración | `migrations/v1_0_2` | `settings` | — |
+
+## 15. Freeze v1.0.2
+
+SPEC **v1.0.2** (`configVersion: 3`). Cambios de arquitectura → nuevo ADR + bump.

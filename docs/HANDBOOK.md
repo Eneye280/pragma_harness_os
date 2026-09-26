@@ -197,3 +197,21 @@ Nueve frentes cerrados sobre el freeze v1.0.0:
 ### Migración v1.0.0 → v1.0.1
 
 Al arrancar, `SettingsStore` ejecuta `migrateSettingsV1_0_1`: agrega `tools`, `routing`, `updater` y los campos nuevos de `sandbox` **preservando** provider/budget/gates/plugins/skills/agent/workspace, y sella `configVersion: 2`. Es idempotente (una segunda pasada no cambia nada) y nunca pierde valores.
+
+---
+
+## v1.0.2 — expansión de v1.0.1 (22 tasks)
+
+Cierra la lista de mejoras pedida. Lo visible:
+
+- **Diseño**: tokens v2 (glass + neumorfismo sutil), **header reagrupado** con menú `⋯`, **sidebars flotantes**, **chat** con tarjetas glass y bloque de código resaltado con copiar, **settings por categorías** con búsqueda y descripciones, **light/dark**, sombras al 50%.
+- **Notificaciones in-app** (toasts + centro + badge) para runs, errores, gates y presupuesto.
+- **Código en el chat**: resaltado por lenguaje (TS/JS, C#, GLSL, Lua, SQL, JSON/YAML), diffs `+/-` y botón copiar.
+- **Hot-reload** de skills, agentes y plugins (chokidar + invalidación) — sin reiniciar.
+- **Reglas**: búsqueda web con **allowlist de docs y citas obligatorias** (aviso "sin fuentes"), **guardrail de cuelgue >10 min**, **seguridad primero + cifrado AES-256-GCM** de la API key en reposo, **licencias** (bloquea copyleft incompatible + `THIRD-PARTY.md`), **evidencia visual** en `.pragma-harness/evidence/` (gitignored), **auto-mejora** (postmortems + propuestas sin auto-aplicar).
+- **QA interno**: runner de escenarios (request/expectText/click/type/wait) + **perfiles por stack** (Unity: uxml, uGUI, PlayMode, movimiento; web: DOM y a11y).
+- **Terceros** (MCP/Supabase) activables en Settings con prueba de credenciales; **multi-agente en paralelo** (waves con límite de concurrencia); **telemetría** con gráficas (barras, sparkline, donut).
+
+### Migración v1.0.1 → v1.0.2
+
+`migrateSettingsV1_0_2` agrega `integrations` con defaults, preserva todo lo demás y sella `configVersion: 3`. Idempotente. El arranque encadena v1.0.0→v1.0.1→v1.0.2.
