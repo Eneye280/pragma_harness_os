@@ -7,6 +7,7 @@ import { ToolCallCard } from "../chat/ToolCallCard";
 import { MessageTasks } from "./MessageTasks";
 import { CHAT_WINDOW_SIZE, selectVisibleMessages } from "../chat/visible-messages";
 import { describeAttachment, estimateAttachmentTokens, totalAttachmentTokens, type Attachment } from "@shared/attachments";
+import { veracityReview } from "@shared/citations";
 import type { UseChatResult } from "../chat/use-chat";
 
 const SCROLL_THRESHOLD = 80;
@@ -252,6 +253,11 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
                         </button>
                       </div>
                       <MarkdownView text={message.content} />
+                      {!message.streaming && !veracityReview(message.content).ok ? (
+                        <p className="mt-1 rounded-control border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-[10px] text-amber-300" role="note">
+                          Afirma versiones o APIs sin citar una fuente verificable. Pide la referencia antes de confiar.
+                        </p>
+                      ) : null}
                       {message.streaming ? <span className="mt-1 inline-block h-3.5 w-1.5 animate-pulse bg-harness align-text-bottom" /> : null}
                       {message.tasks && message.tasks.length > 0 ? <MessageTasks tasks={message.tasks} /> : null}
                     </div>

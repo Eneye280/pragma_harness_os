@@ -8,7 +8,7 @@ import type { ChatSendRequest, ChatStreamEvent } from "../../shared/chat-events"
 import { buildAttachmentNote } from "../../shared/attachments";
 
 const ToolRequestSchema = z.object({
-  tool: z.enum(["fileRead", "fileEdit", "terminal", "mcp_call", "runTests", "runBuild", "runLint"]),
+  tool: z.enum(["fileRead", "fileEdit", "terminal", "mcp_call", "runTests", "runBuild", "runLint", "webFetch"]),
   args: z.record(z.unknown()),
 });
 

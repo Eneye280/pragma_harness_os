@@ -5,6 +5,7 @@ import { loadMcpConfig, redactMcpEnv, routeMcpTool } from "./mcp";
 import { runTerminal } from "./terminal";
 import { runVerifyTool } from "./verify-tools";
 import { checkTerminalCommand } from "./allowlist";
+import { webFetch } from "./web";
 import { redactSecrets, type ApproveHook, type ConfirmHook, type PermissionMode, type ToolApprovalRequest, type ToolCallInput, type ToolCallRecord, type ToolName, type ToolObservation } from "./types";
 
 export const FileReadArgsSchema = z.object({ path: z.string().min(1) });
@@ -18,6 +19,7 @@ export const McpCallArgsSchema = z.object({
   qualifiedTool: z.string().min(1),
   params: z.record(z.unknown()).default({}),
 });
+export const WebFetchArgsSchema = z.object({ url: z.string().url() });
 export const VerifyArgsSchema = z.object({
   timeoutMs: z.number().int().positive().max(180000).optional(),
   domain: z.string().optional(),
@@ -57,7 +59,7 @@ export function parseToolCallFromText(llmText: string): ToolCallInput | null {
   try {
     const parsed: unknown = JSON.parse(match[1].trim());
     const schema = z.object({
-      tool: z.enum(["fileRead", "fileEdit", "terminal", "mcp_call", "runTests", "runBuild", "runLint"]),
+      tool: z.enum(["fileRead", "fileEdit", "terminal", "mcp_call", "runTests", "runBuild", "runLint", "webFetch"]),
       args: z.record(z.unknown()),
       sessionId: z.string(),
       workspaceHash: z.string(),
@@ -271,8 +273,7 @@ export class ToolRunner {
       }
       case "runBuild":
       case "runTests":
-      case "runLint": {
-        const parsedArgs = VerifyArgsSchema.parse(input.args ?? {});
+      case "runLint": {        const parsedArgs = VerifyArgsSchema.parse(input.args ?? {});
         const result = await runVerifyTool(input.tool, input.workspacePath, { timeoutMs: parsedArgs.timeoutMs, domain: parsedArgs.domain });
         return {
           callId,
@@ -281,6 +282,18 @@ export class ToolRunner {
           output: `${result.command}\n${result.output}`,
           exitCode: result.exitCode,
           durationMs: result.durationMs,
+          ts: Date.now(),
+        };
+      }
+      case "webFetch": {
+        const parsedArgs = WebFetchArgsSchema.parse(input.args);
+        const result = await webFetch(parsedArgs.url);
+        return {
+          callId,
+          tool: input.tool,
+          ok: result.ok,
+          output: result.ok ? `${result.title}\n${result.excerpt}` : result.error ?? "web fetch failed",
+          durationMs: Date.now() - startedAt,
           ts: Date.now(),
         };
       }
