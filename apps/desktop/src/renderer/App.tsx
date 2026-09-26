@@ -242,6 +242,7 @@ export function App(): React.ReactElement {
         sessions={sessionsState.sessions}
         currentSessionId={chat.sessionId}
         loading={sessionsState.loading}
+        runningSessions={chat.runningSessions}
         onOpen={(id) => {
           void chat.openSession(id);
           closeSessions();
@@ -252,6 +253,8 @@ export function App(): React.ReactElement {
         }}
         onRename={(id, title) => void sessionsState.rename(id, title)}
         onDelete={(id) => void sessionsState.remove(id)}
+        onCancel={(id) => chat.cancel(id)}
+        onRefresh={sessionsState.refresh}
       />
 
       {dreamLearned.length > 0 ? (
