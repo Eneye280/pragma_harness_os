@@ -225,7 +225,7 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
                         )}
                       </div>
                     ) : null}
-                    <div className="rounded-sheet rounded-br-md border border-harness/30 bg-harness/15 px-3.5 py-2 text-[13px] text-zinc-100 shadow-[0_6px_18px_rgba(0,0,0,0.25)]">
+                    <div className="rounded-sheet rounded-br-md border border-harness/30 bg-harness/15 px-3.5 py-2 text-[13px] text-zinc-100 shadow-[0_4px_12px_rgba(0,0,0,0.12)]">
                       {message.content}
                     </div>
                     {message.attachments && message.attachments.length > 0 ? (
