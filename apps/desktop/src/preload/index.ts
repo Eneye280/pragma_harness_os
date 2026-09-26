@@ -108,6 +108,11 @@ export interface GraphBridge {
   onUpdated: (cb: (delta: GraphDelta) => void) => () => void;
 }
 
+export interface QaBridge {
+  scenarios: () => Promise<{ scenarios: Array<{ id: string; name: string }> }>;
+  run: (scenarioId?: string) => Promise<{ ok: boolean; errors?: string[]; result: { scenarioId: string; ok: boolean; passed: number; failed: number; skipped: number } | null }>;
+}
+
 export interface LearningBridge {
   get: () => Promise<{ postmortems: Array<{ sessionId: string; goal: string; outcome: string }>; summary: { total: number; failed: number; blocked: number; done: number }; proposals: Array<{ trigger: string; content: string; confidence: number }> }>;
 }
@@ -226,6 +231,7 @@ export interface HarnessBridge {
   licenses: LicensesBridge;
   evidence: EvidenceBridge;
   learning: LearningBridge;
+  qa: QaBridge;
   agents: AgentsBridge;
   bundles: BundlesBridge;
   sessions: SessionsBridge;
@@ -378,6 +384,11 @@ const diagnostics: DiagnosticsBridge = {
   paths: () => ipcRenderer.invoke("diagnostics:paths"),
 };
 
+const qa: QaBridge = {
+  scenarios: () => ipcRenderer.invoke("qa:scenarios"),
+  run: () => ipcRenderer.invoke("qa:run", undefined),
+};
+
 const learning: LearningBridge = {
   get: () => ipcRenderer.invoke("learning:get"),
 };
@@ -470,6 +481,7 @@ const harness: HarnessBridge = {
   licenses,
   evidence,
   learning,
+  qa,
   agents,
   bundles,
   sessions,
