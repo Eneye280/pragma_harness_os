@@ -11,6 +11,7 @@ describe("Panel layout state", () => {
       terminalOpen: false,
       terminalHeight: 220,
       settingsOpen: false,
+      sessionsOpen: false,
     });
   });
 

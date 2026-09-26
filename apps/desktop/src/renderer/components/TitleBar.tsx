@@ -14,6 +14,7 @@ interface TitleBarProps {
   onToggleContext: () => void;
   onToggleTerminal: () => void;
   onOpenSettings: () => void;
+  onOpenSessions: () => void;
 }
 
 export function TitleBar({
@@ -25,6 +26,7 @@ export function TitleBar({
   onToggleContext,
   onToggleTerminal,
   onOpenSettings,
+  onOpenSessions,
 }: TitleBarProps): React.ReactElement {
   const [isMaximized, setIsMaximized] = useState(false);
 
@@ -103,6 +105,9 @@ export function TitleBar({
         <TitleBarButton label="Command palette (Ctrl/Cmd+K)" onClick={onOpenPalette}>
           <IconCommand width={14} height={14} />
           <span className="text-[11px]">Command</span>
+        </TitleBarButton>
+        <TitleBarButton label="Sesiones (Ctrl/Cmd+Shift+H)" onClick={onOpenSessions}>
+          <span className="text-[11px]">Sessions</span>
         </TitleBarButton>
         <TitleBarButton label="Settings (Ctrl/Cmd+,)" onClick={onOpenSettings}>
           <span className="text-[11px]">Settings</span>

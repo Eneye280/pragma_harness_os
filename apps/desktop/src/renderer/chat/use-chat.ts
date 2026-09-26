@@ -16,14 +16,22 @@ export interface UseChatResult {
   approvePlan: (markdown: string) => void;
   discardPlan: () => void;
   revisePlan: (markdown: string) => void;
+  openSession: (id: string) => Promise<void>;
+  startNewSession: () => void;
   reset: () => void;
 }
 
 export function useChat(workspacePath = ""): UseChatResult {
   const [state, dispatch] = useReducer(chatReducer, INITIAL_CHAT_STATE);
   const sessionRef = useRef<string>(createId());
+  const [sessionId, setSessionId] = useState<string>(() => sessionRef.current);
   const [isRunning, setIsRunning] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+
+  const adoptSession = useCallback((id: string) => {
+    sessionRef.current = id;
+    setSessionId(id);
+  }, []);
 
   useEffect(() => {
     const bridge = window.harness;
@@ -39,7 +47,7 @@ export function useChat(workspacePath = ""): UseChatResult {
     let cancelled = false;
     setHydrated(false);
     if (!workspacePath) {
-      sessionRef.current = createId();
+      adoptSession(createId());
       setHydrated(true);
       return;
     }
@@ -53,10 +61,10 @@ export function useChat(workspacePath = ""): UseChatResult {
       .then((result) => {
         if (cancelled) return;
         if (result.session) {
-          sessionRef.current = result.session.summary.id;
+          adoptSession(result.session.summary.id);
           dispatch({ type: "restore", state: result.session.state });
         } else {
-          sessionRef.current = createId();
+          adoptSession(createId());
         }
       })
       .catch(() => undefined)
@@ -66,7 +74,7 @@ export function useChat(workspacePath = ""): UseChatResult {
     return () => {
       cancelled = true;
     };
-  }, [workspacePath]);
+  }, [workspacePath, adoptSession]);
 
   useEffect(() => {
     if (!hydrated || !workspacePath) return;
@@ -99,6 +107,25 @@ export function useChat(workspacePath = ""): UseChatResult {
       });
   }, []);
 
+  const openSession = useCallback(
+    async (id: string) => {
+      const bridge = window.harness?.sessions;
+      if (!bridge) return;
+      const result = await bridge.get(id);
+      if (!result.session) return;
+      adoptSession(id);
+      dispatch({ type: "restore", state: result.session.state });
+      setIsRunning(false);
+    },
+    [adoptSession]
+  );
+
+  const startNewSession = useCallback(() => {
+    adoptSession(createId());
+    dispatch({ type: "reset" });
+    setIsRunning(false);
+  }, [adoptSession]);
+
   const reset = useCallback(() => {
     dispatch({ type: "reset" });
     setIsRunning(false);
@@ -122,5 +149,5 @@ export function useChat(workspacePath = ""): UseChatResult {
     [],
   );
 
-  return { state, sessionId: sessionRef.current, isRunning, send, approvePlan, discardPlan, revisePlan, reset };
+  return { state, sessionId, isRunning, send, approvePlan, discardPlan, revisePlan, openSession, startNewSession, reset };
 }

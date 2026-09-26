@@ -8,6 +8,7 @@ export interface PanelState {
   terminalOpen: boolean;
   terminalHeight: number;
   settingsOpen: boolean;
+  sessionsOpen: boolean;
 }
 
 export type PanelAction =
@@ -20,7 +21,9 @@ export type PanelAction =
   | { type: "toggle-terminal" }
   | { type: "set-terminal-height"; height: number }
   | { type: "open-settings" }
-  | { type: "close-settings" };
+  | { type: "close-settings" }
+  | { type: "toggle-sessions" }
+  | { type: "close-sessions" };
 
 export const INITIAL_PANEL_STATE: PanelState = {
   explorerOpen: true,
@@ -30,6 +33,7 @@ export const INITIAL_PANEL_STATE: PanelState = {
   terminalOpen: false,
   terminalHeight: 220,
   settingsOpen: false,
+  sessionsOpen: false,
 };
 
 export const PANEL_WIDTHS = { explorer: 260, context: 320 } as const;
@@ -61,6 +65,10 @@ export function panelReducer(state: PanelState, action: PanelAction): PanelState
       return { ...state, settingsOpen: true, paletteOpen: false };
     case "close-settings":
       return { ...state, settingsOpen: false };
+    case "toggle-sessions":
+      return { ...state, sessionsOpen: !state.sessionsOpen, paletteOpen: false };
+    case "close-sessions":
+      return { ...state, sessionsOpen: false };
   }
 }
 
@@ -77,5 +85,7 @@ export function actionForShortcut(shortcut: ShellShortcut): PanelAction {
     case "command-palette":
     case "search-files":
       return { type: "toggle-palette" };
+    case "session-history":
+      return { type: "toggle-sessions" };
   }
 }
