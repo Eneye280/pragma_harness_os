@@ -27,6 +27,7 @@ export interface WindowControlsBridge {
 export interface ExplorerBridge {
   getTree: () => Promise<ExplorerTreeResult>;
   readFile: (path: string) => Promise<ExplorerFile | { error: string }>;
+  writeFile: (path: string, content: string, encoding?: "utf8" | "base64") => Promise<{ error: string | null; path?: string }>;
   onChanged: (cb: (payload: { paths: string[]; ts: number }) => void) => () => void;
 }
 
@@ -34,6 +35,17 @@ export interface TerminalBridge {
   start: () => Promise<{ cwd: string; banner: string }>;
   write: (line: string) => Promise<{ ok?: boolean; error?: string }>;
   onData: (cb: (payload: { data: string }) => void) => () => void;
+}
+
+export interface RulesBridge {
+  list: () => Promise<{ rules: Array<{ id: string; text: string }> }>;
+  add: (text: string) => Promise<{ error: string | null; rules: Array<{ id: string; text: string }> }>;
+  remove: (id: string) => Promise<{ error: string | null; rules: Array<{ id: string; text: string }> }>;
+}
+
+export interface ShellBridge {
+  openPath: (relativePath: string) => Promise<{ error: string | null }>;
+  openExternal: (url: string) => Promise<{ error: string | null }>;
 }
 
 export interface SettingsBridge {
@@ -185,6 +197,7 @@ export interface BundlesBridge {
 
 export interface SessionsBridge {
   list: (workspacePath: string) => Promise<{ sessions: SessionSummary[] }>;
+  listAll: () => Promise<{ sessions: SessionSummary[] }>;
   latest: (workspacePath: string) => Promise<{ session: SessionRecord | null }>;
   get: (id: string) => Promise<{ session: SessionRecord | null }>;
   save: (input: { id: string; workspacePath: string; title?: string; messageCount?: number; state: unknown }) => Promise<{ error: string | null; session: SessionSummary }>;
@@ -248,6 +261,8 @@ export interface HarnessBridge {
   sessions: SessionsBridge;
   attachments: AttachmentsBridge;
   rag: RagBridge;
+  rules: RulesBridge;
+  shell: ShellBridge;
   windowControls: WindowControlsBridge;
 }
 
@@ -261,6 +276,7 @@ const windowControls: WindowControlsBridge = {
 const explorer: ExplorerBridge = {
   getTree: () => ipcRenderer.invoke("explorer:getTree"),
   readFile: (path: string) => ipcRenderer.invoke("explorer:readFile", path),
+  writeFile: (path: string, content: string, encoding: "utf8" | "base64" = "utf8") => ipcRenderer.invoke("explorer:writeFile", { path, content, encoding }),
   onChanged: (cb) => {
     const handler = (_e: unknown, payload: { paths: string[]; ts: number }) => cb(payload);
     ipcRenderer.on("explorer:changed", handler as never);
@@ -439,6 +455,7 @@ const bundles: BundlesBridge = {
 
 const sessions: SessionsBridge = {
   list: (workspacePath: string) => ipcRenderer.invoke("sessions:list", workspacePath),
+  listAll: () => ipcRenderer.invoke("sessions:listAll"),
   latest: (workspacePath: string) => ipcRenderer.invoke("sessions:latest", workspacePath),
   get: (id: string) => ipcRenderer.invoke("sessions:get", id),
   save: (input) => ipcRenderer.invoke("sessions:save", input),
@@ -460,6 +477,17 @@ const rag: RagBridge = {
     ipcRenderer.on("rag:progress", handler as never);
     return () => ipcRenderer.removeListener("rag:progress", handler as never);
   },
+};
+
+const rules: RulesBridge = {
+  list: () => ipcRenderer.invoke("rules:list"),
+  add: (text: string) => ipcRenderer.invoke("rules:add", text),
+  remove: (id: string) => ipcRenderer.invoke("rules:remove", id),
+};
+
+const shell: ShellBridge = {
+  openPath: (relativePath: string) => ipcRenderer.invoke("shell:openPath", relativePath),
+  openExternal: (url: string) => ipcRenderer.invoke("shell:openExternal", url),
 };
 
 const harness: HarnessBridge = {
@@ -509,6 +537,8 @@ const harness: HarnessBridge = {
   sessions,
   attachments,
   rag,
+  rules,
+  shell,
   windowControls
 };
 

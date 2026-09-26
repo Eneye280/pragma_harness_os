@@ -1,15 +1,8 @@
 import type { ExplorerFile } from "@shared/explorer";
 import { cn } from "../lib/cn";
-import { tokenizeCode, type CodeTokenKind } from "./code-tokens";
+import { tokenizeCode } from "./code-tokens";
+import { TOKEN_CLASS } from "../chat/code-block";
 import { IconClose } from "../components/icons";
-
-const TOKEN_COLOR: Record<CodeTokenKind, string> = {
-  plain: "text-zinc-300",
-  comment: "text-zinc-600 italic",
-  string: "text-emerald-400",
-  keyword: "text-harness-soft",
-  number: "text-amber-400",
-};
 
 interface CodePreviewProps {
   file: ExplorerFile | null;
@@ -34,9 +27,18 @@ export function CodePreview({ file, onClose }: CodePreviewProps): React.ReactEle
         {file.truncated ? <span className="text-[12px] text-amber-400">truncado</span> : null}
         <button
           type="button"
+          onClick={() => void window.harness?.shell.openPath(file.path)}
+          aria-label="Abrir con la app del sistema"
+          title="Abrir con la app del sistema (HTML → navegador)"
+          className="ml-auto rounded-control border border-hairline px-2 py-1 text-[12px] text-zinc-400 transition-colors hover:bg-surface-raised hover:text-zinc-100"
+        >
+          Abrir
+        </button>
+        <button
+          type="button"
           onClick={onClose}
           aria-label="Cerrar preview"
-          className="ml-auto rounded-control p-1 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
+          className="rounded-control p-1 text-zinc-500 transition-colors hover:bg-surface-raised hover:text-zinc-200"
         >
           <IconClose width={13} height={13} />
         </button>
@@ -55,7 +57,7 @@ export function CodePreview({ file, onClose }: CodePreviewProps): React.ReactEle
                   </span>
                   <span className="flex-1 whitespace-pre pr-4">
                     {tokens.map((token, tokenIndex) => (
-                      <span key={tokenIndex} className={TOKEN_COLOR[token.kind]}>
+                      <span key={tokenIndex} className={TOKEN_CLASS[token.kind]}>
                         {token.text}
                       </span>
                     ))}

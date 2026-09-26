@@ -13,6 +13,10 @@ export function configureRagExcludes(provider: () => string[]): void {
   ragExcludesProvider = provider;
 }
 
+export function configureProjectRules(provider: () => Array<{ id: string; text: string }>): void {
+  ruleEngine.setProjectRulesProvider(provider);
+}
+
 function ensureRagIndexed(): Promise<number> {
   if (!indexPromise) {
     const excludes = ragExcludesProvider?.() ?? [];

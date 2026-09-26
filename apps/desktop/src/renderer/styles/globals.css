@@ -446,3 +446,58 @@ textarea.bg-transparent:focus {
     transition: none;
   }
 }
+
+/* Resaltado de código por lenguaje (paleta tipo editor, no un bloque de color) */
+.tok-plain { color: #d4d4d8; }
+.tok-comment { color: #6a9955; font-style: italic; }
+.tok-string { color: #ce9178; }
+.tok-keyword { color: #569cd6; }
+.tok-number { color: #b5cea8; }
+.tok-type { color: #4ec9b0; }
+.tok-tag { color: #569cd6; }
+.tok-attr { color: #9cdcfe; }
+.tok-property { color: #9cdcfe; }
+.tok-function { color: #dcdcaa; }
+.tok-operator { color: #c8c8cf; }
+.tok-literal { color: #569cd6; }
+.tok-meta { color: #569cd6; }
+
+:root[data-theme="light"] .tok-plain { color: #24292f; }
+:root[data-theme="light"] .tok-comment { color: #6a737d; }
+:root[data-theme="light"] .tok-string { color: #0a3069; }
+:root[data-theme="light"] .tok-keyword { color: #cf222e; }
+:root[data-theme="light"] .tok-number { color: #0550ae; }
+:root[data-theme="light"] .tok-type { color: #953800; }
+:root[data-theme="light"] .tok-tag { color: #116329; }
+:root[data-theme="light"] .tok-attr { color: #0550ae; }
+:root[data-theme="light"] .tok-property { color: #0550ae; }
+:root[data-theme="light"] .tok-function { color: #8250df; }
+:root[data-theme="light"] .tok-operator { color: #24292f; }
+:root[data-theme="light"] .tok-literal { color: #cf222e; }
+
+/* Diff discreto: barra lateral + tinte leve, sin pintar todo el bloque */
+.diff-add { background: color-mix(in srgb, #10b981 9%, transparent); }
+.diff-remove { background: color-mix(in srgb, #ef4444 9%, transparent); }
+
+/* Acentos del tema (10). Se aplican con data-accent en :root. */
+:root[data-accent="blue"] { --color-harness: #3b82f6; --color-harness-strong: #2563eb; --color-harness-soft: #93c5fd; }
+:root[data-accent="cyan"] { --color-harness: #06b6d4; --color-harness-strong: #0891b2; --color-harness-soft: #67e8f9; }
+:root[data-accent="teal"] { --color-harness: #14b8a6; --color-harness-strong: #0d9488; --color-harness-soft: #5eead4; }
+:root[data-accent="emerald"] { --color-harness: #10b981; --color-harness-strong: #059669; --color-harness-soft: #6ee7b7; }
+:root[data-accent="lime"] { --color-harness: #84cc16; --color-harness-strong: #65a30d; --color-harness-soft: #bef264; }
+:root[data-accent="amber"] { --color-harness: #f59e0b; --color-harness-strong: #d97706; --color-harness-soft: #fcd34d; }
+:root[data-accent="orange"] { --color-harness: #f97316; --color-harness-strong: #ea580c; --color-harness-soft: #fdba74; }
+:root[data-accent="rose"] { --color-harness: #f43f5e; --color-harness-strong: #e11d48; --color-harness-soft: #fda4af; }
+:root[data-accent="pink"] { --color-harness: #ec4899; --color-harness-strong: #db2777; --color-harness-soft: #f9a8d4; }
+:root[data-accent="violet"] { --color-harness: #8b5cf6; --color-harness-strong: #7c3aed; --color-harness-soft: #a78bfa; }
+
+:root[data-theme="light"][data-accent="blue"] { --color-harness-soft: #2563eb; }
+:root[data-theme="light"][data-accent="cyan"] { --color-harness-soft: #0e7490; }
+:root[data-theme="light"][data-accent="teal"] { --color-harness-soft: #0f766e; }
+:root[data-theme="light"][data-accent="emerald"] { --color-harness-soft: #047857; }
+:root[data-theme="light"][data-accent="lime"] { --color-harness-soft: #4d7c0f; }
+:root[data-theme="light"][data-accent="amber"] { --color-harness-soft: #b45309; }
+:root[data-theme="light"][data-accent="orange"] { --color-harness-soft: #c2410c; }
+:root[data-theme="light"][data-accent="rose"] { --color-harness-soft: #be123c; }
+:root[data-theme="light"][data-accent="pink"] { --color-harness-soft: #be185d; }
+:root[data-theme="light"][data-accent="violet"] { --color-harness-soft: #6d28d9; }

@@ -47,6 +47,10 @@ export class SessionStore {
     return this.repo.list(workspaceHash, limit);
   }
 
+  listAll(limit = 200): SessionSummary[] {
+    return this.repo.listAll(limit);
+  }
+
   get(id: string): SessionRecord | null {
     return this.repo.get(id);
   }

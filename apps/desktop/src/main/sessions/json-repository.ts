@@ -63,6 +63,13 @@ export class JsonSessionRepository implements SessionRepository {
       .slice(0, limit);
   }
 
+  listAll(limit: number): SessionSummary[] {
+    return [...this.ensureCache().values()]
+      .map((row) => row.summary)
+      .sort((left, right) => right.updatedAt - left.updatedAt)
+      .slice(0, limit);
+  }
+
   get(id: string): SessionRecord | null {
     const row = this.ensureCache().get(id);
     return row ? { summary: row.summary, state: row.state } : null;

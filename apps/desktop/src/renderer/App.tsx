@@ -300,6 +300,8 @@ export function App(): React.ReactElement {
         agentsState={agentsState}
         themeMode={theme.mode}
         onThemeChange={theme.setMode}
+        accent={theme.accent}
+        onAccentChange={theme.setAccent}
       />
 
       {showOnboarding ? <OnboardingCard onDismiss={dismissOnboarding} /> : null}

@@ -1,5 +1,5 @@
 import { ipcMain, BrowserWindow } from "electron";
-import { ExplorerController, ReadFileSchema } from "../explorer";
+import { ExplorerController, ReadFileSchema, WriteFileSchema } from "../explorer";
 import { WorkspaceWatcher } from "../explorer/watcher";
 import type { WorkspaceFolderController } from "../workspace-folder";
 
@@ -31,6 +31,16 @@ export function registerExplorerHandlers(
       return controller.readFile(parsed.data.path);
     } catch (readError) {
       return { error: readError instanceof Error ? readError.message : "read failed" };
+    }
+  });
+
+  ipcMain.handle("explorer:writeFile", async (_event, rawPayload: unknown) => {
+    const parsed = WriteFileSchema.safeParse(rawPayload);
+    if (!parsed.success) return { error: "invalid payload" };
+    try {
+      return { error: null, ...controller.writeFile(parsed.data.path, parsed.data.content, parsed.data.encoding) };
+    } catch (writeError) {
+      return { error: writeError instanceof Error ? writeError.message : "write failed" };
     }
   });
 

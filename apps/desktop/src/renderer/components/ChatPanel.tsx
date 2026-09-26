@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "../lib/cn";
 import { IconSend, IconSparkles } from "./icons";
 import { PipelineTimeline } from "../chat/PipelineTimeline";
+import { PipelineRail } from "../chat/PipelineRail";
+import { PlanChatCard } from "./PlanChatCard";
 import { MarkdownView } from "../chat/MarkdownView";
 import { ToolCallCard } from "../chat/ToolCallCard";
 import { MessageTasks } from "./MessageTasks";
@@ -296,6 +298,15 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
                 <ToolCallCard key={call.callId} call={call} />
               ))}
 
+              {state.planStatus === "proposed" && state.plan ? (
+                <PlanChatCard
+                  plan={state.plan}
+                  onApprove={(markdown) => chat.approvePlan(markdown)}
+                  onRevise={(markdown) => chat.revisePlan(markdown)}
+                  onDiscard={() => chat.discardPlan()}
+                />
+              ) : null}
+
               {state.error ? (
                 <div className="rounded-panel border border-red-500/40 bg-red-500/10 px-3 py-2 text-[12px] text-red-300">
                   harness error: {state.error}
@@ -318,6 +329,7 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
       ) : null}
 
       <div className="shrink-0 border-t border-hairline bg-surface px-6 py-4">
+        <PipelineRail steps={state.steps} running={isRunning} />
         {attachments.length > 0 ? (
           <div className="mx-auto mb-2 w-full max-w-[780px]">
             <p className="mb-1 text-[12px] text-zinc-500">
@@ -407,11 +419,21 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
             </button>
           )}
         </div>
-        <p className="mx-auto mt-2 w-full max-w-[780px] text-[12px] text-zinc-600">
-          {isRunning
-            ? "Enter añade al run en curso (se re-evalúa y continúa) · ■ detiene"
-            : "Enter envía · Shift+Enter salto de línea · Ctrl/Cmd+Enter fuerza sin harness"}
-        </p>
+        <div className="mx-auto mt-2 flex w-full max-w-[780px] items-center gap-2">
+          <button
+            type="button"
+            disabled={isRunning || !hasConversation}
+            onClick={() => send("Verifica lo que acabas de crear: ejecuta los tests/build con las tools, revisa que la funcionalidad pedida funcione y reporta o corrige los errores.", { bypassHarness: false })}
+            className="rounded-control border border-harness/40 bg-harness/10 px-2.5 py-1 text-[12px] text-harness-soft transition-colors hover:bg-harness/20 disabled:opacity-40"
+          >
+            Verificar (QA)
+          </button>
+          <p className="text-[12px] text-zinc-600">
+            {isRunning
+              ? "Enter añade al run en curso (se re-evalúa y continúa) · ■ detiene"
+              : "Enter envía · Shift+Enter salto · Ctrl/Cmd+Enter fuerza sin harness"}
+          </p>
+        </div>
       </div>
     </div>
   );

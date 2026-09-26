@@ -8,6 +8,7 @@ export interface StoredSession {
 export interface SessionRepository {
   upsert(row: SessionSummary & { state: unknown }): SessionSummary;
   list(workspaceHash: string, limit: number): SessionSummary[];
+  listAll(limit: number): SessionSummary[];
   get(id: string): SessionRecord | null;
   latest(workspaceHash: string): SessionRecord | null;
   rename(id: string, title: string): SessionSummary | null;
@@ -30,6 +31,13 @@ export class MemorySessionRepository implements SessionRepository {
     return [...this.rows.values()]
       .map((row) => row.summary)
       .filter((summary) => summary.workspaceHash === workspaceHash)
+      .sort((left, right) => right.updatedAt - left.updatedAt)
+      .slice(0, limit);
+  }
+
+  listAll(limit: number): SessionSummary[] {
+    return [...this.rows.values()]
+      .map((row) => row.summary)
       .sort((left, right) => right.updatedAt - left.updatedAt)
       .slice(0, limit);
   }

@@ -5,7 +5,6 @@ import { ChatPanel } from "./ChatPanel";
 import { ContextPanel } from "./ContextPanel";
 import { ExplorerPanel } from "./ExplorerPanel";
 import { CodePreview } from "../explorer/CodePreview";
-import { PlanCanvas } from "./PlanCanvas";
 import type { UseChatResult } from "../chat/use-chat";
 import type { UseExplorerResult } from "../explorer/use-explorer";
 import { PANEL_WIDTHS } from "../shell/panel-state";
@@ -64,8 +63,6 @@ export function ShellLayout({
   onNewSession,
   onOpenSettings,
 }: ShellLayoutProps): React.ReactElement {
-  const pendingPlan = chat.state.planStatus === "proposed" ? chat.state.plan : null;
-
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="relative flex min-h-0 flex-1 gap-2 p-2">
@@ -103,14 +100,7 @@ export function ShellLayout({
           tabIndex={-1}
           className="min-w-0 flex-1 overflow-hidden rounded-sheet border border-hairline bg-surface/70 outline-none"
         >
-          {pendingPlan ? (
-            <PlanCanvas
-              plan={pendingPlan}
-              onApprove={chat.approvePlan}
-              onRevise={chat.revisePlan}
-              onDiscard={chat.discardPlan}
-            />
-          ) : previewOpen ? (
+          {previewOpen ? (
             <CodePreview file={previewFile} onClose={onClosePreview} />
           ) : (
             <ChatPanel chat={chat} />
