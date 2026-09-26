@@ -30,6 +30,11 @@ export interface SandboxDockerClient {
 export interface DockerBackendOptions {
   image?: string;
   containerWorkdir?: string;
+  network?: boolean;
+  cpus?: number;
+  memoryMb?: number;
+  readOnlyWorkspace?: boolean;
+  onLog?: (entry: { sessionId?: string; command: string; exitCode: number; durationMs: number; containerId: string }) => void;
 }
 
 const MAX_OUTPUT_CHARS = 20000;
@@ -62,6 +67,15 @@ export class DockerBackend {
     const hostWorkspace = resolve(request.workspacePath);
     const execCommand = [request.command, ...(request.args ?? [])];
     const displayCommand = execCommand.join(" ");
+    const bindMode = this.backendOptions.readOnlyWorkspace === false ? "" : ":ro";
+    const hostConfig: Record<string, unknown> = {
+      Binds: [`${hostWorkspace}:${containerWorkdir}${bindMode}`],
+      AutoRemove: false,
+      NetworkMode: this.backendOptions.network ? "bridge" : "none",
+      SecurityOpt: ["no-new-privileges"],
+    };
+    if (this.backendOptions.cpus && this.backendOptions.cpus > 0) hostConfig.NanoCpus = Math.round(this.backendOptions.cpus * 1_000_000_000);
+    if (this.backendOptions.memoryMb && this.backendOptions.memoryMb > 0) hostConfig.Memory = Math.round(this.backendOptions.memoryMb * 1024 * 1024);
 
     let container: SandboxContainerHandle | null = null;
     try {
@@ -70,7 +84,7 @@ export class DockerBackend {
         Cmd: ["sleep", "infinity"],
         WorkingDir: containerWorkdir,
         Env: ["NODE_ENV=production"],
-        HostConfig: { Binds: [`${hostWorkspace}:${containerWorkdir}`], AutoRemove: false },
+        HostConfig: hostConfig,
       });
       await container.start();
 
@@ -97,6 +111,7 @@ export class DockerBackend {
 
       if (timeoutReached) {
         await container.stop().catch(() => undefined);
+        this.backendOptions.onLog?.({ sessionId: request.sessionId, command: displayCommand, exitCode: 124, durationMs: Date.now() - startedAt, containerId: container.id });
         return {
           stdout: truncateSandboxOutput(stdoutBuffer),
           stderr: truncateSandboxOutput(stderrBuffer || `sandbox: timeout after ${timeoutMs}ms`),
@@ -110,6 +125,7 @@ export class DockerBackend {
       }
 
       const inspectResult = await execHandle.inspect();
+      this.backendOptions.onLog?.({ sessionId: request.sessionId, command: displayCommand, exitCode: inspectResult.ExitCode ?? 1, durationMs: Date.now() - startedAt, containerId: container.id });
       return {
         stdout: truncateSandboxOutput(stdoutBuffer),
         stderr: truncateSandboxOutput(stderrBuffer),

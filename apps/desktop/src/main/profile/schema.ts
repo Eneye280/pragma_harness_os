@@ -33,7 +33,16 @@ export const ProjectProfileSchema = z.object({
   plugins: z.record(z.boolean()).optional(),
   skills: z.record(z.boolean()).optional(),
   agent: z.string().optional(),
-  sandbox: z.object({ enabled: z.boolean().optional(), image: z.string().optional() }).optional(),
+  sandbox: z
+    .object({
+      enabled: z.boolean().optional(),
+      image: z.string().optional(),
+      network: z.boolean().optional(),
+      cpus: z.number().positive().optional(),
+      memoryMb: z.number().int().positive().optional(),
+      readOnlyWorkspace: z.boolean().optional(),
+    })
+    .optional(),
   rag: z.object({ excludes: z.array(z.string()).optional() }).optional(),
   tools: z
     .object({

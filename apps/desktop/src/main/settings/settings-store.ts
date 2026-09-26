@@ -45,7 +45,14 @@ export const SettingsSchema = z.object({
   plugins: z.record(z.boolean()),
   skills: z.record(z.boolean()).default({}),
   agent: z.string().default(""),
-  sandbox: z.object({ enabled: z.boolean(), image: z.string() }),
+  sandbox: z.object({
+    enabled: z.boolean(),
+    image: z.string(),
+    network: z.boolean().default(false),
+    cpus: z.number().positive().default(1),
+    memoryMb: z.number().int().positive().default(1024),
+    readOnlyWorkspace: z.boolean().default(true),
+  }),
   workspace: z.object({ active: z.string().default(""), recents: z.array(z.string()).default([]) }).default({ active: "", recents: [] }),
   tools: z
     .object({
