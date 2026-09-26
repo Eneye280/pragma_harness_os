@@ -30,5 +30,6 @@ export function resolveEffectiveSettings(global: HarnessSettings, profile: Proje
       askBeforeTools: profile.tools?.askBeforeTools ?? global.tools.askBeforeTools,
       perTool: { ...global.tools.perTool, ...profile.tools?.perTool },
     },
+    routing: global.routing,
   };
 }

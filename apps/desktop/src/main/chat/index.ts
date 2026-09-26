@@ -1,7 +1,9 @@
 import { AgentGateway } from "../llm/gateway";
 import { ToolRunner } from "../tools";
 import { resolveHarnessWorkspace } from "../workspace-path";
-import { SettingsGateway, resolveGatewayConfig, type ResolvedGatewayConfig } from "../settings";
+import { resolveGatewayConfig, type ResolvedGatewayConfig } from "../settings";
+import { ModelFallbackGateway } from "../llm/fallback";
+import { fallbackChain } from "../../shared/routing";
 import type { SettingsController } from "../settings";
 import type { PlanGate } from "../plan";
 import { compileHarnessContext } from "../context";
@@ -80,7 +82,22 @@ export function createChatService(
     requestApproval: (request: import("../tools").ToolApprovalRequest) => Promise<import("../tools").ToolApprovalDecision>;
   }
 ): ChatService {
-  const gateway = new SettingsGateway(() => settingsController.store.get(), createGatewayForConfig);
+  let lastFallback: import("../llm/fallback").FallbackAttempt | null = null;
+  const gateway: ChatGateway = {
+    async *stream(prompt: string) {
+      const settings = settingsController.store.get();
+      const base = resolveGatewayConfig(settings);
+      const models = fallbackChain(base.model, settings.routing.fallbackModels, settings.routing.maxRetries);
+      const chained = new ModelFallbackGateway({
+        models,
+        create: (model) => createGatewayForConfig({ ...base, model: model || base.model }),
+        onFallback: (attempt) => {
+          lastFallback = attempt;
+        },
+      });
+      for await (const chunk of chained.stream(prompt)) yield chunk;
+    },
+  };
   const toolWorkspacePath = getWorkspace ?? resolveHarnessWorkspace;
   const toolRunner = new ToolRunner({ permission: "allow" });
   toolRunner.configure({
@@ -139,6 +156,11 @@ export function createChatService(
     pollSteer,
     resolveToolPermission: toolApproval?.resolvePermission,
     requestToolApproval: toolApproval?.requestApproval,
+    consumeFallback: () => {
+      const attempt = lastFallback;
+      lastFallback = null;
+      return attempt;
+    },
   });
 }
 

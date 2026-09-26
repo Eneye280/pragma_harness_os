@@ -60,6 +60,21 @@ export const SettingsSchema = z.object({
       perTool: z.record(z.enum(["allow", "ask", "deny"])).default({}),
     })
     .default({ askBeforeTools: true, perTool: {} }),
+  routing: z
+    .object({
+      rules: z
+        .array(
+          z.object({
+            id: z.string(),
+            when: z.object({ domain: z.string().optional(), type: z.string().optional(), effort: z.string().optional() }),
+            model: z.string(),
+          })
+        )
+        .default([]),
+      fallbackModels: z.array(z.string()).default([]),
+      maxRetries: z.number().int().min(0).max(5).default(2),
+    })
+    .default({ rules: [], fallbackModels: [], maxRetries: 2 }),
 });
 
 export function resolveSettingsPath(): string {
@@ -86,6 +101,7 @@ export function sanitizeIncoming(current: HarnessSettings, incoming: HarnessSett
     sandbox: incoming.sandbox,
     workspace: incoming.workspace ?? current.workspace,
     tools: incoming.tools ?? current.tools,
+    routing: incoming.routing ?? current.routing,
   };
 }
 

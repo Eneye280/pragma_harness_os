@@ -63,6 +63,7 @@ export interface ChatServiceDeps {
   pollSteer?: (sessionId: string) => string | null;
   resolveToolPermission?: (tool: import("../tools").ToolName) => import("../tools").PermissionMode;
   requestToolApproval?: (request: import("../tools").ToolApprovalRequest) => Promise<import("../tools").ToolApprovalDecision>;
+  consumeFallback?: () => import("../llm/fallback").FallbackAttempt | null;
 }
 
 export function buildAgentPrompt(request: ChatSendRequest, needs: string[], approvedPlan?: string): string {
@@ -219,6 +220,10 @@ export class ChatService {
         emit({ kind: "assistant-delta", sessionId, text: chunk.textDelta });
       }
       emit({ kind: "assistant-done", sessionId });
+      const fallback = this.deps.consumeFallback?.();
+      if (fallback) {
+        emit({ kind: "harness-step", sessionId, phase: "agent", status: "running", label: `provider fallback → ${fallback.model}` });
+      }
       this.deps.onUsage?.({
         domain: intent.domain,
         inputTokens: approximateTokens(finalPrompt),
