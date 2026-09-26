@@ -61,7 +61,7 @@ const sendMessageSchema = z.object({
     .max(10)
     .optional(),
 });
-const pingResponse = { status: "harness:ready" as const, version: "1.0.1" };
+const pingResponse = { status: "harness:ready" as const, version: "1.0.2" };
 
 const memoryLog = new MemoryEventLog();
 
