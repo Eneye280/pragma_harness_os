@@ -1,6 +1,7 @@
 import type { ChatStreamEvent, HarnessPhase, HarnessStepStatus } from "@shared/chat-events";
 import type { HarnessContextSnapshot } from "@shared/context-snapshot";
 import type { PlanProposal } from "@shared/plan";
+import { markRunState, parseTasks, syncTaskStatuses, type MessageTask } from "@shared/task-list";
 
 export interface ChatMessage {
   id: string;
@@ -9,6 +10,7 @@ export interface ChatMessage {
   streaming: boolean;
   steer?: boolean;
   attachments?: import("@shared/attachments").Attachment[];
+  tasks?: MessageTask[];
 }
 
 export interface HarnessStepState {
@@ -89,20 +91,39 @@ function applyStreamEvent(state: ChatState, event: ChatStreamEvent): ChatState {
           label: event.label,
           detail: event.detail,
         }),
+        messages:
+          event.phase === "agent" && event.status === "running"
+            ? updateLastAssistant(state.messages, (message) =>
+                message.tasks ? { ...message, tasks: markRunState(message.tasks, "running") } : message
+              )
+            : state.messages,
       };
-    case "assistant-delta":
+    case "assistant-delta": {
+      const derived = parseTasks(
+        (() => {
+          const last = [...state.messages].reverse().find((message) => message.role === "assistant");
+          return `${last?.content ?? ""}${event.text}`;
+        })()
+      );
       return {
         ...state,
-        messages: updateLastAssistant(state.messages, (message) => ({
-          ...message,
-          content: message.content + event.text,
-        })),
+        messages: updateLastAssistant(state.messages, (message) => {
+          const content = message.content + event.text;
+          if (derived.length === 0) return { ...message, content };
+          const tasks = message.tasks ? syncTaskStatuses(message.tasks, derived) : derived;
+          return { ...message, content, tasks };
+        }),
       };
+    }
     case "assistant-done":
       return {
         ...state,
         agentPhase: "done",
-        messages: updateLastAssistant(state.messages, (message) => ({ ...message, streaming: false })),
+        messages: updateLastAssistant(state.messages, (message) => ({
+          ...message,
+          streaming: false,
+          tasks: message.tasks ? markRunState(message.tasks, "done") : message.tasks,
+        })),
       };
     case "user-message":
       return {
@@ -142,10 +163,22 @@ function applyStreamEvent(state: ChatState, event: ChatStreamEvent): ChatState {
         ...state,
         error: event.message,
         agentPhase: "done",
-        messages: updateLastAssistant(state.messages, (message) => ({ ...message, streaming: false })),
+        messages: updateLastAssistant(state.messages, (message) => ({
+          ...message,
+          streaming: false,
+          tasks: message.tasks ? markRunState(message.tasks, "error") : message.tasks,
+        })),
       };
     case "plan-proposed":
-      return { ...state, plan: event.plan, planStatus: "proposed" };
+      return {
+        ...state,
+        plan: event.plan,
+        planStatus: "proposed",
+        messages: updateLastAssistant(state.messages, (message) => {
+          const derived = parseTasks(event.plan.markdown);
+          return derived.length > 0 ? { ...message, tasks: derived } : message;
+        }),
+      };
     case "plan-resolved":
       return { ...state, plan: null, planStatus: event.action === "approve" ? "approved" : "discarded" };
     case "context-assembled":

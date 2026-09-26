@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { buildPlan, buildPlanMarkdown, extractFilesFromMarkdown, extractPlanFiles, recompilePlan, shouldProposePlan } from "../plan-builder";
+import { parseTasks } from "../../../shared/task-list";
 import type { PlanIntent } from "../../../shared/plan";
 
 const featureIntent = (effort: string): PlanIntent => ({ domain: "backend", type: "feature", effort, needs: ["tdd-workflow", "api-design"] });
@@ -11,6 +12,11 @@ describe("plan builder", () => {
     expect(shouldProposePlan(featureIntent("low"), "crea un archivo de nota")).toBe(false);
     expect(shouldProposePlan(featureIntent("low"), "agrega un módulo de reportes")).toBe(true);
     expect(shouldProposePlan({ ...featureIntent("high"), type: "fix" }, "arregla algo")).toBe(false);
+  });
+
+  it("produces markdown whose plan steps parse as message tasks", () => {
+    const markdown = buildPlanMarkdown("agrega un modulo de usuarios con endpoints y permisos", featureIntent("medium"), ["src/modules/usuarios/index.ts"]);
+    expect(parseTasks(markdown).length).toBeGreaterThan(0);
   });
 
   it("extracts mentioned files and derives module paths", () => {

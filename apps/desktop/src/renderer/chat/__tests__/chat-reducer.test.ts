@@ -88,6 +88,35 @@ describe("Chat reducer", () => {
     expect(state.plan).toBeNull();
   });
 
+  it("derives per-message tasks from a proposed plan and advances them", () => {
+    const plan = {
+      sessionId: SESSION,
+      title: "Plan — agrega módulo",
+      markdown: "# Plan\n## Pasos\n1. Crear controlador\n2. Añadir tests",
+      files: [],
+      intent: { domain: "backend", type: "feature", effort: "medium", needs: [] },
+      revised: false,
+      createdAt: 1,
+    };
+    let state = chatReducer(INITIAL_CHAT_STATE, { type: "send", id: "m1", text: "agrega módulo" });
+    state = chatReducer(state, { type: "stream", event: { kind: "plan-proposed", sessionId: SESSION, plan } });
+    expect(state.messages[1].tasks).toHaveLength(2);
+    state = chatReducer(state, {
+      type: "stream",
+      event: { kind: "harness-step", sessionId: SESSION, phase: "agent", status: "running", label: "trabajando" },
+    });
+    expect(state.messages[1].tasks?.[0].status).toBe("in-progress");
+    state = chatReducer(state, { type: "stream", event: { kind: "assistant-done", sessionId: SESSION } });
+    expect(state.messages[1].tasks?.every((task) => task.status === "done")).toBe(true);
+  });
+
+  it("derives tasks from streamed assistant checkboxes", () => {
+    let state = chatReducer(INITIAL_CHAT_STATE, { type: "send", id: "m1", text: "hazlo" });
+    state = chatReducer(state, { type: "stream", event: { kind: "assistant-delta", sessionId: SESSION, text: "- [ ] paso uno\n" } });
+    state = chatReducer(state, { type: "stream", event: { kind: "assistant-delta", sessionId: SESSION, text: "- [x] paso uno\n" } });
+    expect(state.messages[1].tasks?.[0]).toMatchObject({ label: "paso uno", status: "done" });
+  });
+
   it("stores the live context snapshot emitted by the harness", () => {
     const snapshot = {
       sessionId: SESSION,

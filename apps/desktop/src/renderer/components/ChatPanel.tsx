@@ -4,6 +4,7 @@ import { IconSend, IconSparkles } from "./icons";
 import { HarnessStrip } from "../chat/HarnessStrip";
 import { MarkdownView } from "../chat/MarkdownView";
 import { ToolCallCard } from "../chat/ToolCallCard";
+import { MessageTasks } from "./MessageTasks";
 import { CHAT_WINDOW_SIZE, selectVisibleMessages } from "../chat/visible-messages";
 import { describeAttachment, estimateAttachmentTokens, totalAttachmentTokens, type Attachment } from "@shared/attachments";
 import type { UseChatResult } from "../chat/use-chat";
@@ -240,6 +241,7 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
                     <div className="min-w-0 flex-1">
                       <MarkdownView text={message.content} />
                       {message.streaming ? <span className="mt-1 inline-block h-3.5 w-1.5 animate-pulse bg-harness align-text-bottom" /> : null}
+                      {message.tasks && message.tasks.length > 0 ? <MessageTasks tasks={message.tasks} /> : null}
                     </div>
                   </div>
                 ),
