@@ -1,21 +1,68 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { DependencyGraph, GraphDelta } from "@shared/graph";
 import { cn } from "../lib/cn";
+import { useFocusTrap } from "../shell/use-focus-trap";
+import {
+  bringToFront,
+  clampRect,
+  defaultRect,
+  loadLayout,
+  movePanel,
+  resizePanel,
+  saveLayout,
+  toggleCollapsed,
+  type FloatingLayout,
+  type StorageLike,
+} from "../shell/floating-layout";
 
 interface GraphPanelProps {
   open: boolean;
   onClose: () => void;
+  storageKey?: string;
 }
 
 const MAX_NODES = 160;
+const PANEL_ID = "graph";
 
-export function GraphPanel({ open, onClose }: GraphPanelProps): React.ReactElement | null {
+function browserStorage(): StorageLike | null {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+export function GraphPanel({ open, onClose, storageKey = "" }: GraphPanelProps): React.ReactElement | null {
   const [graph, setGraph] = useState<DependencyGraph | null>(null);
   const [delta, setDelta] = useState<GraphDelta | null>(null);
   const [focus, setFocus] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [layout, setLayout] = useState<FloatingLayout>(() => (browserStorage() ? loadLayout(browserStorage()!, storageKey) : {}));
   const dragRef = useRef<{ x: number; y: number } | null>(null);
+  const resizeRef = useRef<{ x: number; y: number } | null>(null);
+  const containerRef = useFocusTrap(open, onClose);
+
+  useEffect(() => {
+    const storage = browserStorage();
+    if (!storage) return;
+    setLayout(loadLayout(storage, storageKey));
+  }, [storageKey]);
+
+  useEffect(() => {
+    if (!open) return;
+    const viewport = { width: window.innerWidth, height: window.innerHeight };
+    setLayout((current) => {
+      const base = current[PANEL_ID] ? current : { ...current, [PANEL_ID]: { ...defaultRect(viewport), open: true } };
+      return { ...base, [PANEL_ID]: clampRect({ ...base[PANEL_ID], open: true }, viewport) };
+    });
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const storage = browserStorage();
+    if (storage) saveLayout(storage, storageKey, layout);
+  }, [layout, open, storageKey]);
 
   useEffect(() => {
     if (!open) return;
@@ -27,7 +74,7 @@ export function GraphPanel({ open, onClose }: GraphPanelProps): React.ReactEleme
     return () => off?.();
   }, [open]);
 
-  const layout = useMemo(() => {
+  const graphLayout = useMemo(() => {
     if (!graph) return { positions: new Map<string, { x: number; y: number }>(), nodes: [], edges: [] };
     const connected = new Set(graph.edges.flatMap((edge) => [edge.from, edge.to]));
     const nodes = graph.nodes.filter((node) => connected.has(node.id)).slice(0, MAX_NODES);
@@ -43,14 +90,63 @@ export function GraphPanel({ open, onClose }: GraphPanelProps): React.ReactEleme
 
   if (!open) return null;
 
+  const viewport = { width: window.innerWidth, height: window.innerHeight };
+  const rect = layout[PANEL_ID] ?? { ...defaultRect(viewport), open: true };
+
+  function beginDrag(event: React.MouseEvent): void {
+    event.preventDefault();
+    let last = { x: event.clientX, y: event.clientY };
+    const onMove = (moveEvent: MouseEvent): void => {
+      const dx = moveEvent.clientX - last.x;
+      const dy = moveEvent.clientY - last.y;
+      last = { x: moveEvent.clientX, y: moveEvent.clientY };
+      setLayout((current) => movePanel(current, PANEL_ID, dx, dy, viewport));
+    };
+    const onUp = (): void => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }
+
+  function beginResize(event: React.MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    let last = { x: event.clientX, y: event.clientY };
+    const onMove = (moveEvent: MouseEvent): void => {
+      const dw = moveEvent.clientX - last.x;
+      const dh = moveEvent.clientY - last.y;
+      last = { x: moveEvent.clientX, y: moveEvent.clientY };
+      setLayout((current) => resizePanel(current, PANEL_ID, dw, dh, viewport));
+    };
+    const onUp = (): void => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }
+
   const cycleIds = new Set((graph?.cycles ?? []).flat());
   const cycleEdgeKeys = new Set((graph?.cycles ?? []).flatMap((cycle) => cycle.map((id, index) => `${id}->${cycle[(index + 1) % cycle.length]}`)));
-  const neighbors = new Set(focus ? layout.edges.filter((edge) => edge.from === focus || edge.to === focus).flatMap((edge) => [edge.from, edge.to]) : []);
+  const neighbors = new Set(focus ? graphLayout.edges.filter((edge) => edge.from === focus || edge.to === focus).flatMap((edge) => [edge.from, edge.to]) : []);
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-6" role="dialog" aria-modal="true" aria-label="Grafo de dependencias">
-      <div className="flex h-[82vh] w-full max-w-5xl flex-col sheet">
-        <div className="flex items-center gap-3 border-b border-hairline px-3 py-2">
+    <div className="fixed inset-0 z-40 bg-black/40" onMouseDown={onClose}>
+      <div
+        ref={containerRef}
+        className="sheet absolute flex flex-col overflow-hidden"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Grafo de dependencias"
+        style={{ left: rect.x, top: rect.y, width: rect.width, height: rect.collapsed ? 42 : rect.height, zIndex: rect.z }}
+        onMouseDown={(event) => {
+          event.stopPropagation();
+          setLayout((current) => bringToFront(current, PANEL_ID));
+        }}
+      >
+        <div className="flex cursor-grab items-center gap-3 border-b border-hairline px-3 py-2" onMouseDown={beginDrag}>
           <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-harness-soft">Dependency graph</span>
           <span className="text-[11px] text-zinc-500">{graph ? `${graph.nodes.length} nodos · ${graph.edges.length} aristas · ${graph.cycles.length} ciclos` : "—"}</span>
           {delta ? (
@@ -58,7 +154,10 @@ export function GraphPanel({ open, onClose }: GraphPanelProps): React.ReactEleme
               +{delta.added.length} −{delta.removed.length} ~{delta.changed.length}
             </span>
           ) : null}
-          <button type="button" onClick={() => void window.harness?.graph.refresh().then((next) => setGraph(next ?? null))} className="ml-auto rounded-control border border-hairline px-2 py-1 text-[11px] text-zinc-300 hover:bg-zinc-800">
+          <button type="button" aria-label="Colapsar grafo" onClick={() => setLayout((current) => toggleCollapsed(current, PANEL_ID))} className="ml-auto rounded-control border border-hairline px-2 py-1 text-[11px] text-zinc-300 hover:bg-zinc-800">
+            {rect.collapsed ? "▸" : "▾"}
+          </button>
+          <button type="button" onClick={() => void window.harness?.graph.refresh().then((next) => setGraph(next ?? null))} className="rounded-control border border-hairline px-2 py-1 text-[11px] text-zinc-300 hover:bg-zinc-800">
             Recalcular
           </button>
           <button type="button" onClick={onClose} className="rounded-control border border-hairline px-2 py-1 text-[11px] text-zinc-400 hover:bg-zinc-800">
@@ -66,6 +165,8 @@ export function GraphPanel({ open, onClose }: GraphPanelProps): React.ReactEleme
           </button>
         </div>
 
+        {rect.collapsed ? null : (
+          <>
         <div
           className="relative min-h-0 flex-1 overflow-hidden bg-surface"
           onWheel={(event) => {
@@ -85,9 +186,9 @@ export function GraphPanel({ open, onClose }: GraphPanelProps): React.ReactEleme
         >
           <svg width="100%" height="100%" role="img" aria-label="Grafo de dependencias">
             <g transform={`translate(50%,50%) scale(${zoom}) translate(${pan.x},${pan.y})`}>
-              {layout.edges.map((edge) => {
-                const from = layout.positions.get(edge.from)!;
-                const to = layout.positions.get(edge.to)!;
+              {graphLayout.edges.map((edge) => {
+                const from = graphLayout.positions.get(edge.from)!;
+                const to = graphLayout.positions.get(edge.to)!;
                 const isCycle = cycleEdgeKeys.has(`${edge.from}->${edge.to}`);
                 const dim = focus && !(edge.from === focus || edge.to === focus);
                 return (
@@ -102,8 +203,8 @@ export function GraphPanel({ open, onClose }: GraphPanelProps): React.ReactEleme
                   />
                 );
               })}
-              {layout.nodes.map((node) => {
-                const position = layout.positions.get(node.id)!;
+              {graphLayout.nodes.map((node) => {
+                const position = graphLayout.positions.get(node.id)!;
                 const isFocus = focus === node.id;
                 const isNeighbor = neighbors.has(node.id);
                 const inCycle = cycleIds.has(node.id);
@@ -131,6 +232,14 @@ export function GraphPanel({ open, onClose }: GraphPanelProps): React.ReactEleme
             </ul>
           </div>
         ) : null}
+          </>
+        )}
+        <div
+          role="separator"
+          aria-label="Redimensionar grafo"
+          onMouseDown={beginResize}
+          className="absolute bottom-0 right-0 h-3.5 w-3.5 cursor-nwse-resize rounded-tl bg-hairline-strong/60"
+        />
       </div>
     </div>
   );

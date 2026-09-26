@@ -260,7 +260,7 @@ export function App(): React.ReactElement {
         onRefresh={sessionsState.refresh}
       />
 
-      <GraphPanel open={graphOpen} onClose={() => setGraphOpen(false)} />
+      <GraphPanel open={graphOpen} onClose={() => setGraphOpen(false)} storageKey={workspace.active} />
 
       {dreamLearned.length > 0 ? (
         <div className="pointer-events-none fixed right-4 top-12 z-40 flex w-[320px] flex-col gap-2">
