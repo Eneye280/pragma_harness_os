@@ -106,6 +106,15 @@ export interface GraphBridge {
   onUpdated: (cb: (delta: GraphDelta) => void) => () => void;
 }
 
+export interface VisualBridge {
+  evaluate: (payload: { name: string; dataUrl: string; threshold?: number; updateBaseline?: boolean }) => Promise<{
+    ok: boolean;
+    error?: string;
+    result?: { name: string; changed: boolean; changedRatio: number; threshold: number; dimensionMismatch: boolean; baselineMissing: boolean; reason: string };
+  }>;
+  status: (name: string) => Promise<{ hasBaseline: boolean; path: string }>;
+}
+
 export interface PluginsBridge {
   list: () => Promise<{ custom: import("../shared/plugin-authoring").CustomPluginDef[] }>;
   save: (def: import("../shared/plugin-authoring").CustomPluginDef) => Promise<{ ok: boolean; errors: string[]; custom: import("../shared/plugin-authoring").CustomPluginDef[] }>;
@@ -179,6 +188,7 @@ export interface HarnessBridge {
   plugins: PluginsBridge;
   tasks: TasksBridge;
   graph: GraphBridge;
+  visual: VisualBridge;
   agents: AgentsBridge;
   bundles: BundlesBridge;
   sessions: SessionsBridge;
@@ -313,6 +323,11 @@ const graph: GraphBridge = {
     return () => ipcRenderer.removeListener("graph:updated", handler as never);
   },
 };
+
+const visual: VisualBridge = {
+  evaluate: (payload) => ipcRenderer.invoke("visual:evaluate", payload),
+  status: (name: string) => ipcRenderer.invoke("visual:status", name),
+};
 const bundles: BundlesBridge = {
   list: () => ipcRenderer.invoke("bundles:list"),
   apply: (stack: string) => ipcRenderer.invoke("bundles:apply", stack),
@@ -377,6 +392,7 @@ const harness: HarnessBridge = {
   plugins,
   tasks,
   graph,
+  visual,
   agents,
   bundles,
   sessions,
