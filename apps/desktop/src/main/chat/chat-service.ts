@@ -6,6 +6,7 @@ import type { PlanGate } from "../plan";
 import type { ToolRunner } from "../tools";
 import type { ChatSendRequest, ChatStreamEvent } from "../../shared/chat-events";
 import { buildAttachmentNote } from "../../shared/attachments";
+import { DEFAULT_STUCK_TIMEOUT_MS, diagnoseStuck, StuckMonitor } from "../../shared/stuck";
 
 const ToolRequestSchema = z.object({
   tool: z.enum(["fileRead", "fileEdit", "terminal", "mcp_call", "runTests", "runBuild", "runLint", "webFetch"]),
@@ -64,6 +65,7 @@ export interface ChatServiceDeps {
   resolveToolPermission?: (tool: import("../tools").ToolName) => import("../tools").PermissionMode;
   requestToolApproval?: (request: import("../tools").ToolApprovalRequest) => Promise<import("../tools").ToolApprovalDecision>;
   consumeFallback?: () => import("../llm/fallback").FallbackAttempt | null;
+  stuckTimeoutMs?: number;
 }
 
 export function buildAgentPrompt(request: ChatSendRequest, needs: string[], approvedPlan?: string): string {
@@ -84,6 +86,28 @@ export class ChatService {
     const sessionId = request.sessionId;
     const signal = options.signal;
     const runStartedAt = Date.now();
+    const stuck = new StuckMonitor(this.deps.stuckTimeoutMs ?? DEFAULT_STUCK_TIMEOUT_MS);
+    let stuckReported = false;
+    const stuckTimer = setInterval(() => {
+      if (stuckReported || !stuck.isStuck()) return;
+      stuckReported = true;
+      emit({
+        kind: "harness-step",
+        sessionId,
+        phase: "agent",
+        status: "blocked",
+        label: "sin progreso > 10 min — refresca contexto/reintenta o cancela",
+        detail: diagnoseStuck({ lastEvent: "agent", retries: 0, externalWait: true }),
+      });
+    }, Math.max(5000, Math.min(30000, Math.floor((this.deps.stuckTimeoutMs ?? DEFAULT_STUCK_TIMEOUT_MS) / 4))));
+    const trackProgress = (event: ChatStreamEvent): void => {
+      if (event.kind !== "harness-step" || event.status !== "running") stuck.note();
+    };
+    const originalEmit = emit;
+    emit = (event: ChatStreamEvent) => {
+      trackProgress(event);
+      originalEmit(event);
+    };
     const attachmentNote = buildAttachmentNote(request.attachments);
 
     try {
@@ -363,6 +387,8 @@ export class ChatService {
         sessionId,
         message: error instanceof Error ? error.message : "error inesperado del harness",
       });
+    } finally {
+      clearInterval(stuckTimer);
     }
   }
 }
