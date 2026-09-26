@@ -221,6 +221,7 @@ export function App(): React.ReactElement {
         status={status}
         cost={cost}
         git={git.status}
+        workspaceName={workspace.active ? (workspace.active.split(/[\\/]/).filter(Boolean).pop() ?? "workspace") : "Pragma Harness OS"}
         onOpenPalette={openPalette}
         onToggleExplorer={toggleExplorer}
         onToggleContext={toggleContext}

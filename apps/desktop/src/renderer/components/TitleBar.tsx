@@ -3,12 +3,14 @@ import { layout } from "ui-tokens";
 import type { CostSnapshot } from "@shared/cost";
 import type { GitStatus } from "@shared/git";
 import { cn } from "../lib/cn";
+import { Menu } from "../ui/Menu";
 import { IconCommand, IconClose, IconMaximize, IconMinimize } from "./icons";
 
 interface TitleBarProps {
   status: string;
   cost: CostSnapshot | null;
   git: GitStatus | null;
+  workspaceName: string;
   onOpenPalette: () => void;
   onToggleExplorer: () => void;
   onToggleContext: () => void;
@@ -27,6 +29,7 @@ export function TitleBar({
   status,
   cost,
   git,
+  workspaceName,
   onOpenPalette,
   onToggleExplorer,
   onToggleContext,
@@ -41,8 +44,8 @@ export function TitleBar({
   onOpenNotifications,
 }: TitleBarProps): React.ReactElement {
   const [isMaximized, setIsMaximized] = useState(false);
-
   const controls = window.harness?.windowControls;
+  const healthy = status.includes("ready") || status.includes("ok");
 
   async function handleMaximize(): Promise<void> {
     if (!controls) return;
@@ -51,100 +54,94 @@ export function TitleBar({
 
   return (
     <header
-      className="draggable flex shrink-0 items-center gap-3 border-b border-hairline bg-surface-raised/80 px-3 backdrop-blur"
+      className="draggable floating-toolbar flex shrink-0 items-center gap-2 px-3"
       style={{ height: layout.titleBarHeight }}
     >
-      <div className="flex items-center gap-2">
-        <span className="h-2.5 w-2.5 rounded-full bg-harness shadow-[0_0_12px_rgba(139,92,246,0.8)]" />
-        <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-100">Pragma Harness OS</span>
+      <div className="flex min-w-0 items-center gap-2">
+        <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-harness shadow-[0_0_12px_rgba(139,92,246,0.8)]" />
+        <span className="truncate text-title tracking-tight text-zinc-100" title={workspaceName}>
+          {workspaceName || "Pragma Harness OS"}
+        </span>
+        <span className="hidden shrink-0 text-[10px] tracking-label text-zinc-500 sm:inline">PRAGMA HARNESS OS</span>
       </div>
-
-      <span className="rounded-full border border-harness/40 bg-harness/10 px-2 py-[3px] text-[10px] font-medium text-harness-soft">
-        <span aria-hidden="true">● </span>
-        {status}
-      </span>
-
-      <nav className="no-drag ml-2 flex items-center gap-1">
-        <TitleBarButton label="Explorer (Ctrl/Cmd+B)" onClick={onToggleExplorer}>
-          <span className="text-[11px]">Explorer</span>
-        </TitleBarButton>
-        <TitleBarButton label="Context (Ctrl/Cmd+Shift+C)" onClick={onToggleContext}>
-          <span className="text-[11px]">Context</span>
-        </TitleBarButton>
-        <TitleBarButton label="Terminal (Ctrl/Cmd+`)" onClick={onToggleTerminal}>
-          <span className="text-[11px]">Terminal</span>
-        </TitleBarButton>
-      </nav>
-
-      <span className="ml-auto flex items-center gap-2 text-[10px] uppercase tracking-widest text-zinc-500">
-        harness-first · ts
-      </span>
 
       {git?.isRepo ? (
         <span
           aria-label={`Rama ${git.detached ? "detached" : git.branch}${git.dirty ? `, ${git.changedCount} cambios sin commitear` : ", limpia"}`}
           title={`${git.branch ?? "HEAD"}${git.dirty ? ` · ${git.changedCount} cambios` : ""}`}
           className={cn(
-            "flex items-center gap-1.5 rounded-full border px-2 py-[3px] font-mono text-[10px]",
-            git.dirty ? "border-amber-500/40 bg-amber-500/10 text-amber-300" : "border-hairline bg-surface-raised text-zinc-400",
+            "flex shrink-0 items-center gap-1.5 rounded-pill border px-2 py-[3px] font-mono text-[10px]",
+            git.dirty ? "border-amber-500/40 bg-amber-500/10 text-amber-300" : "border-hairline bg-surface-raised/70 text-zinc-400",
           )}
         >
           <span aria-hidden="true">⑂</span>
-          {git.detached ? "detached" : git.branch}
-          {git.dirty ? <span className="h-1.5 w-1.5 rounded-full bg-amber-400" aria-hidden="true" /> : null}
+          <span className="max-w-[140px] truncate">{git.detached ? "detached" : git.branch}</span>
+          {git.dirty ? <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-amber-400" /> : null}
           {git.ahead > 0 ? <span aria-hidden="true">↑{git.ahead}</span> : null}
           {git.behind > 0 ? <span aria-hidden="true">↓{git.behind}</span> : null}
         </span>
       ) : null}
 
-      {cost ? (
+      <div className="no-drag ml-auto flex items-center gap-1.5">
         <span
-          title={`${cost.today.tokens.toLocaleString()} tokens hoy · ${cost.today.calls} llamadas\npor dominio: ${
-            cost.perDomain.map((domain) => `${domain.domain}:${domain.tokens}`).join(", ") || "—"
-          }`}
           className={cn(
-            "rounded-full border px-2 py-[3px] font-mono text-[10px]",
-            cost.today.usd >= cost.budget.usdPerDay
-              ? "border-red-500/40 bg-red-500/10 text-red-300"
-              : "border-hairline bg-surface-raised text-zinc-400",
+            "hidden items-center gap-1.5 rounded-pill border px-2 py-[3px] text-[10px] font-medium md:flex",
+            healthy ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300" : "border-amber-500/40 bg-amber-500/10 text-amber-300",
           )}
+          title={status}
         >
-          ${cost.today.usd.toFixed(2)} / ${cost.budget.usdPerDay.toFixed(2)}
+          <span aria-hidden="true" className={cn("h-1.5 w-1.5 rounded-full", healthy ? "bg-emerald-400" : "bg-amber-400")} />
+          {healthy ? "conectado" : status}
         </span>
-      ) : null}
 
-      <nav className="no-drag flex items-center gap-1">
-        <TitleBarButton label="Command palette (Ctrl/Cmd+K)" onClick={onOpenPalette}>
+        {cost ? (
+          <span
+            title={`${cost.today.tokens.toLocaleString()} tokens hoy · ${cost.today.calls} llamadas`}
+            className={cn(
+              "hidden rounded-pill border px-2 py-[3px] font-mono text-[10px] md:inline",
+              cost.today.usd >= cost.budget.usdPerDay ? "border-red-500/40 bg-red-500/10 text-red-300" : "border-hairline bg-surface-raised/70 text-zinc-400",
+            )}
+          >
+            ${cost.today.usd.toFixed(2)} / ${cost.budget.usdPerDay.toFixed(2)}
+          </span>
+        ) : null}
+
+        <div className="hidden items-center gap-0.5 rounded-pill border border-hairline bg-surface-raised/50 p-0.5 sm:flex" role="group" aria-label="Paneles">
+          <IconToggle label="Explorer (Ctrl/Cmd+B)" onClick={onToggleExplorer}>▤</IconToggle>
+          <IconToggle label="Context (Ctrl/Cmd+Shift+C)" onClick={onToggleContext}>◫</IconToggle>
+          <IconToggle label="Terminal (Ctrl/Cmd+`)" onClick={onToggleTerminal}>▭</IconToggle>
+        </div>
+
+        <IconButton label="Command palette (Ctrl/Cmd+K)" onClick={onOpenPalette}>
           <IconCommand width={14} height={14} />
-          <span className="text-[11px]">Command</span>
-        </TitleBarButton>
-        <TitleBarButton label="Sesiones (Ctrl/Cmd+Shift+H)" onClick={onOpenSessions}>
-          <span className="text-[11px]">Sessions</span>
-        </TitleBarButton>
-        <TitleBarButton label="Grafo de dependencias" onClick={onOpenGraph}>
-          <span className="text-[11px]">Graph</span>
-        </TitleBarButton>
-        <TitleBarButton label="Settings (Ctrl/Cmd+,)" onClick={onOpenSettings}>
-          <span className="text-[11px]">Settings</span>
-        </TitleBarButton>
-        <TitleBarButton label="Ayuda" onClick={onOpenHelp}>
-          <span className="text-[11px]">Ayuda</span>
-        </TitleBarButton>
-        <TitleBarButton label="Uso" onClick={onOpenUsage}>
-          <span className="text-[11px]">Uso</span>
-        </TitleBarButton>
-        <TitleBarButton label="Diagnóstico" onClick={onOpenDiagnostics}>
-          <span className="text-[11px]">Health</span>
-        </TitleBarButton>
-        <TitleBarButton label={`Notificaciones (${unreadNotifications})`} onClick={onOpenNotifications}>
-          <span className="relative text-[11px]">
-            Avisos
+        </IconButton>
+
+        <Menu
+          label="Más"
+          trigger={<span aria-hidden="true">⋯</span>}
+          items={[
+            { id: "sessions", label: "Sesiones", hint: "⇧⌘H", onSelect: onOpenSessions },
+            { id: "graph", label: "Grafo de dependencias", onSelect: onOpenGraph },
+            { id: "usage", label: "Uso y coste", onSelect: onOpenUsage },
+            { id: "health", label: "Diagnóstico / health", onSelect: onOpenDiagnostics },
+            { id: "help", label: "Centro de ayuda", onSelect: onOpenHelp },
+          ]}
+        />
+
+        <IconButton label={`Notificaciones (${unreadNotifications})`} onClick={onOpenNotifications}>
+          <span className="relative">
+            ◔
             {unreadNotifications > 0 ? (
-              <span className="absolute -right-3 -top-1.5 rounded-pill bg-harness px-1 text-[9px] font-semibold text-white">{unreadNotifications > 9 ? "9+" : unreadNotifications}</span>
+              <span className="absolute -right-2 -top-1.5 rounded-pill bg-harness px-1 text-[9px] font-semibold text-white">{unreadNotifications > 9 ? "9+" : unreadNotifications}</span>
             ) : null}
           </span>
-        </TitleBarButton>
-        <div className="mx-1 h-4 w-px bg-hairline" />
+        </IconButton>
+
+        <IconButton label="Settings (Ctrl/Cmd+,)" onClick={onOpenSettings}>
+          <span aria-hidden="true">⚙</span>
+        </IconButton>
+
+        <div className="mx-0.5 h-4 w-px bg-hairline" />
         <WindowButton label="Minimize" onClick={() => controls?.minimize()}>
           <IconMinimize width={14} height={14} />
         </WindowButton>
@@ -154,27 +151,33 @@ export function TitleBar({
         <WindowButton label="Close" danger onClick={() => controls?.close()}>
           <IconClose width={14} height={14} />
         </WindowButton>
-      </nav>
+      </div>
     </header>
   );
 }
 
-function TitleBarButton({
-  label,
-  onClick,
-  children,
-}: {
-  label: string;
-  onClick: () => void;
-  children: React.ReactNode;
-}): React.ReactElement {
+function IconButton({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }): React.ReactElement {
   return (
     <button
       type="button"
       aria-label={label}
       title={label}
       onClick={onClick}
-      className="flex items-center gap-1.5 rounded-control px-2 py-1 text-zinc-400 outline-none transition-colors hover:bg-zinc-800 hover:text-zinc-100 focus-visible:ring-1 focus-visible:ring-harness"
+      className="flex h-7 w-8 items-center justify-center rounded-control text-zinc-400 outline-none transition-colors hover:bg-zinc-800 hover:text-zinc-100 focus-visible:ring-1 focus-visible:ring-harness"
+    >
+      {children}
+    </button>
+  );
+}
+
+function IconToggle({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }): React.ReactElement {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+      className="flex h-6 w-7 items-center justify-center rounded-pill text-[11px] text-zinc-400 outline-none transition-colors hover:bg-zinc-800 hover:text-zinc-100 focus-visible:ring-1 focus-visible:ring-harness"
     >
       {children}
     </button>
