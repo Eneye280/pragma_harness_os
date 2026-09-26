@@ -186,3 +186,39 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       return INITIAL_CHAT_STATE;
   }
 }
+
+export type SessionStates = Record<string, ChatState>;
+
+export type SessionsAction =
+  | { type: "send"; sessionId: string; id: string; text: string }
+  | { type: "stream"; event: ChatStreamEvent }
+  | { type: "restore"; sessionId: string; state: unknown }
+  | { type: "reset"; sessionId: string }
+  | { type: "drop"; sessionId: string };
+
+export function sessionStatesReducer(map: SessionStates, action: SessionsAction): SessionStates {
+  switch (action.type) {
+    case "send":
+      return {
+        ...map,
+        [action.sessionId]: chatReducer(map[action.sessionId] ?? INITIAL_CHAT_STATE, {
+          type: "send",
+          id: action.id,
+          text: action.text,
+        }),
+      };
+    case "stream": {
+      const sessionId = action.event.sessionId;
+      return { ...map, [sessionId]: applyStreamEvent(map[sessionId] ?? INITIAL_CHAT_STATE, action.event) };
+    }
+    case "restore":
+      return { ...map, [action.sessionId]: chatReducer(INITIAL_CHAT_STATE, { type: "restore", state: action.state }) };
+    case "reset":
+      return { ...map, [action.sessionId]: INITIAL_CHAT_STATE };
+    case "drop": {
+      const next = { ...map };
+      delete next[action.sessionId];
+      return next;
+    }
+  }
+}

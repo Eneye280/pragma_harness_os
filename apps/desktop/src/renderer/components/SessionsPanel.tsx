@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { SessionSummary } from "@shared/session";
 import { cn } from "../lib/cn";
 import { useFocusTrap } from "../shell/use-focus-trap";
@@ -11,10 +11,13 @@ interface SessionsPanelProps {
   sessions: SessionSummary[];
   currentSessionId: string;
   loading: boolean;
+  runningSessions: string[];
   onOpen: (id: string) => void;
   onNew: () => void;
   onRename: (id: string, title: string) => void;
   onDelete: (id: string) => void;
+  onCancel: (id: string) => void;
+  onRefresh: () => void;
 }
 
 export function SessionsPanel({
@@ -23,15 +26,22 @@ export function SessionsPanel({
   sessions,
   currentSessionId,
   loading,
+  runningSessions,
   onOpen,
   onNew,
   onRename,
   onDelete,
+  onCancel,
+  onRefresh,
 }: SessionsPanelProps): React.ReactElement | null {
   const [query, setQuery] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const containerRef = useFocusTrap(open, onClose);
+
+  useEffect(() => {
+    if (open) onRefresh();
+  }, [open, onRefresh]);
 
   if (!open) return null;
   const visible = filterSessions(sessions, query);
@@ -92,6 +102,7 @@ export function SessionsPanel({
             visible.map((session) => {
               const isCurrent = session.id === currentSessionId;
               const isEditing = editingId === session.id;
+              const isRunning = runningSessions.includes(session.id);
               return (
                 <li
                   key={session.id}
@@ -116,8 +127,10 @@ export function SessionsPanel({
                   ) : (
                     <button type="button" onClick={() => onOpen(session.id)} className="block w-full text-left">
                       <span className="flex items-center gap-1.5">
+                        {isRunning ? <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-harness" aria-hidden="true" /> : null}
                         <span className="truncate text-[12px] text-zinc-200">{session.title}</span>
                         {isCurrent ? <span className="shrink-0 text-[10px] text-harness-soft">activa</span> : null}
+                        {isRunning ? <span className="shrink-0 text-[10px] text-harness-soft">corriendo</span> : null}
                       </span>
                       <span className="mt-0.5 block font-mono text-[10px] text-zinc-500">
                         {session.messageCount} msgs · {formatRelativeTime(session.updatedAt)}
@@ -142,6 +155,15 @@ export function SessionsPanel({
                     >
                       borrar
                     </button>
+                    {isRunning ? (
+                      <button
+                        type="button"
+                        onClick={() => onCancel(session.id)}
+                        className="rounded-control px-1.5 py-0.5 text-[10px] text-red-400 transition-colors hover:text-red-200"
+                      >
+                        detener
+                      </button>
+                    ) : null}
                   </div>
                 </li>
               );

@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import type { ChatStreamEvent } from "@shared/chat-events";
-import { INITIAL_CHAT_STATE, chatReducer, type ChatState } from "./chat-reducer";
+import {
+  INITIAL_CHAT_STATE,
+  sessionStatesReducer,
+  type ChatState,
+  type SessionStates,
+} from "./chat-reducer";
 
 function createId(): string {
   const cryptoObject = globalThis.crypto;
@@ -12,6 +17,7 @@ export interface UseChatResult {
   state: ChatState;
   sessionId: string;
   isRunning: boolean;
+  runningSessions: string[];
   send: (text: string, options?: { bypassHarness?: boolean }) => void;
   approvePlan: (markdown: string) => void;
   discardPlan: () => void;
@@ -19,15 +25,14 @@ export interface UseChatResult {
   openSession: (id: string) => Promise<void>;
   startNewSession: () => void;
   steer: (text: string) => void;
-  cancel: () => void;
+  cancel: (sessionId?: string) => void;
   reset: () => void;
 }
 
 export function useChat(workspacePath = ""): UseChatResult {
-  const [state, dispatch] = useReducer(chatReducer, INITIAL_CHAT_STATE);
+  const [states, dispatch] = useReducer(sessionStatesReducer, {} as SessionStates);
   const sessionRef = useRef<string>(createId());
   const [sessionId, setSessionId] = useState<string>(() => sessionRef.current);
-  const [isRunning, setIsRunning] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
   const adoptSession = useCallback((id: string) => {
@@ -40,8 +45,6 @@ export function useChat(workspacePath = ""): UseChatResult {
     if (!bridge) return;
     return bridge.onChatEvent((event: ChatStreamEvent) => {
       dispatch({ type: "stream", event });
-      if (event.kind === "error") setIsRunning(false);
-      if (event.kind === "harness-step" && event.phase === "agent" && event.status === "done") setIsRunning(false);
     });
   }, []);
 
@@ -64,7 +67,7 @@ export function useChat(workspacePath = ""): UseChatResult {
         if (cancelled) return;
         if (result.session) {
           adoptSession(result.session.summary.id);
-          dispatch({ type: "restore", state: result.session.state });
+          dispatch({ type: "restore", sessionId: result.session.summary.id, state: result.session.state });
         } else {
           adoptSession(createId());
         }
@@ -83,21 +86,19 @@ export function useChat(workspacePath = ""): UseChatResult {
     const bridge = window.harness?.sessions;
     if (!bridge) return;
     const handle = setTimeout(() => {
-      void bridge.save({
-        id: sessionRef.current,
-        workspacePath,
-        messageCount: state.messages.length,
-        state,
-      });
-    }, 600);
+      for (const [id, state] of Object.entries(states)) {
+        if (state.messages.length === 0) continue;
+        void bridge.save({ id, workspacePath, messageCount: state.messages.length, state });
+      }
+    }, 800);
     return () => clearTimeout(handle);
-  }, [state, hydrated, workspacePath]);
+  }, [states, hydrated, workspacePath]);
 
   const send = useCallback((text: string, options?: { bypassHarness?: boolean }) => {
     const trimmed = text.trim();
     if (!trimmed) return;
-    dispatch({ type: "send", id: createId(), text: trimmed });
-    setIsRunning(true);
+    const id = createId();
+    dispatch({ type: "send", sessionId: sessionRef.current, id, text: trimmed });
     window.harness
       ?.sendMessage(trimmed, { sessionId: sessionRef.current, bypassHarness: options?.bypassHarness })
       .catch(() => {
@@ -105,7 +106,6 @@ export function useChat(workspacePath = ""): UseChatResult {
           type: "stream",
           event: { kind: "error", sessionId: sessionRef.current, message: "no se pudo contactar al harness" },
         });
-        setIsRunning(false);
       });
   }, []);
 
@@ -116,16 +116,15 @@ export function useChat(workspacePath = ""): UseChatResult {
       const result = await bridge.get(id);
       if (!result.session) return;
       adoptSession(id);
-      dispatch({ type: "restore", state: result.session.state });
-      setIsRunning(false);
+      dispatch({ type: "restore", sessionId: id, state: result.session.state });
     },
     [adoptSession]
   );
 
   const startNewSession = useCallback(() => {
-    adoptSession(createId());
-    dispatch({ type: "reset" });
-    setIsRunning(false);
+    const id = createId();
+    adoptSession(id);
+    dispatch({ type: "reset", sessionId: id });
   }, [adoptSession]);
 
   const steer = useCallback((text: string) => {
@@ -134,33 +133,44 @@ export function useChat(workspacePath = ""): UseChatResult {
     void window.harness?.steer(sessionRef.current, trimmed);
   }, []);
 
-  const cancel = useCallback(() => {
-    void window.harness?.cancel(sessionRef.current);
-    setIsRunning(false);
+  const cancel = useCallback((targetSessionId?: string) => {
+    void window.harness?.cancel(targetSessionId ?? sessionRef.current);
   }, []);
 
   const reset = useCallback(() => {
-    dispatch({ type: "reset" });
-    setIsRunning(false);
+    dispatch({ type: "reset", sessionId: sessionRef.current });
   }, []);
 
-  const approvePlan = useCallback(
-    (markdown: string) => {
-      void window.harness?.plan.approve(sessionRef.current, markdown);
-    },
-    [],
-  );
+  const approvePlan = useCallback((markdown: string) => {
+    void window.harness?.plan.approve(sessionRef.current, markdown);
+  }, []);
 
   const discardPlan = useCallback(() => {
     void window.harness?.plan.discard(sessionRef.current);
   }, []);
 
-  const revisePlan = useCallback(
-    (markdown: string) => {
-      void window.harness?.plan.revise(sessionRef.current, markdown);
-    },
-    [],
-  );
+  const revisePlan = useCallback((markdown: string) => {
+    void window.harness?.plan.revise(sessionRef.current, markdown);
+  }, []);
 
-  return { state, sessionId, isRunning, send, approvePlan, discardPlan, revisePlan, openSession, startNewSession, steer, cancel, reset };
+  const state = states[sessionId] ?? INITIAL_CHAT_STATE;
+  const runningSessions = Object.entries(states)
+    .filter(([, sessionState]) => sessionState.agentPhase === "running")
+    .map(([id]) => id);
+
+  return {
+    state,
+    sessionId,
+    isRunning: state.agentPhase === "running",
+    runningSessions,
+    send,
+    approvePlan,
+    discardPlan,
+    revisePlan,
+    openSession,
+    startNewSession,
+    steer,
+    cancel,
+    reset,
+  };
 }

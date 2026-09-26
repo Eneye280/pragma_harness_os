@@ -162,7 +162,7 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
           {isRunning ? (
             <button
               type="button"
-              onClick={cancel}
+              onClick={() => cancel()}
               aria-label="Detener el run"
               title="Detener"
               className="flex h-8 w-8 items-center justify-center rounded-control border border-red-500/40 bg-red-500/10 text-red-300 transition-colors hover:bg-red-500/20"
