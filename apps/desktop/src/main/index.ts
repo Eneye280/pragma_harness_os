@@ -15,6 +15,7 @@ import { registerSkillsHandlers } from "./ipc/skills-handlers";
 import { registerAgentsHandlers } from "./ipc/agents-handlers";
 import { registerBundlesHandlers } from "./ipc/bundles-handlers";
 import { registerSessionsHandlers } from "./ipc/sessions-handlers";
+import { registerAttachmentsHandlers } from "./ipc/attachments-handlers";
 import { JsonSessionRepository, SessionStore } from "./sessions";
 import { skillCompiler } from "./harness/skills/skill-compiler";
 import { AgentCatalog } from "./agents";
@@ -92,6 +93,7 @@ app.whenReady().then(() => {
   registerBundlesHandlers(workspace, profileStore, agentCatalog);
   const sessionStore = new SessionStore(new JsonSessionRepository(join(app.getPath("userData"), "pragma-harness", "sessions")));
   registerSessionsHandlers(() => sessionStore);
+  registerAttachmentsHandlers();
   updater.init();
 
   app.on("activate", () => {

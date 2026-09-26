@@ -103,6 +103,10 @@ export interface SessionsBridge {
   delete: (id: string) => Promise<{ error: string | null }>;
 }
 
+export interface AttachmentsBridge {
+  extractText: (dataUrl: string) => Promise<{ error: string | null; text: string }>;
+}
+
 export interface SendMessageOptions {
   sessionId?: string;
   bypassHarness?: boolean;
@@ -131,6 +135,7 @@ export interface HarnessBridge {
   agents: AgentsBridge;
   bundles: BundlesBridge;
   sessions: SessionsBridge;
+  attachments: AttachmentsBridge;
   windowControls: WindowControlsBridge;
 }
 
@@ -251,6 +256,10 @@ const sessions: SessionsBridge = {
   delete: (id: string) => ipcRenderer.invoke("sessions:delete", id)
 };
 
+const attachments: AttachmentsBridge = {
+  extractText: (dataUrl: string) => ipcRenderer.invoke("attachments:extractText", dataUrl)
+};
+
 const harness: HarnessBridge = {
   ping: () => ipcRenderer.invoke("harness:ping"),
   sendMessage: (message: string, options?: SendMessageOptions) =>
@@ -282,6 +291,7 @@ const harness: HarnessBridge = {
   agents,
   bundles,
   sessions,
+  attachments,
   windowControls
 };
 
