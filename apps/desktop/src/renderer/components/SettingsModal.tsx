@@ -59,6 +59,7 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
   const [pluginEditor, setPluginEditor] = useState<{ def: CustomPluginDef | null } | null>(null);
   const [tasks, setTasks] = useState<ProjectTask[]>([]);
   const [newTask, setNewTask] = useState("");
+  const [feedResult, setFeedResult] = useState<{ ok: boolean; available: boolean; reason: string; release: { version: string; notes: string; channel: string } | null } | null>(null);
   const containerRef = useFocusTrap(open, onClose);
 
   useEffect(() => {
@@ -642,6 +643,47 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
               ) : null}
             </div>
             <p className="text-[10px] text-zinc-600">feed: GitHub Releases · autoDownload on</p>
+
+            <Field label="Feed privado (URL firmada / S3)">
+              <input
+                aria-label="Feed URL"
+                value={draft.updater.feedUrl}
+                onChange={(event) => setDraft({ ...draft, updater: { ...draft.updater, feedUrl: event.target.value } })}
+                className="w-full rounded-control border border-hairline bg-surface px-2 py-1.5 font-mono text-[11px] text-zinc-200 outline-none focus:border-harness/60"
+              />
+            </Field>
+            <div className="flex items-center gap-2">
+              <select
+                aria-label="Canal de actualización"
+                value={draft.updater.channel}
+                onChange={(event) => setDraft({ ...draft, updater: { ...draft.updater, channel: event.target.value === "beta" ? "beta" : "stable" } })}
+                className="rounded-control border border-hairline bg-surface px-2 py-1.5 text-[11px] text-zinc-300 outline-none"
+              >
+                <option value="stable">stable</option>
+                <option value="beta">beta</option>
+              </select>
+              <input
+                aria-label="Token del feed"
+                type="password"
+                placeholder="token (opcional)"
+                value={draft.updater.token}
+                onChange={(event) => setDraft({ ...draft, updater: { ...draft.updater, token: event.target.value } })}
+                className="min-w-0 flex-1 rounded-control border border-hairline bg-surface px-2 py-1.5 font-mono text-[11px] text-zinc-200 outline-none focus:border-harness/60"
+              />
+              <button
+                type="button"
+                onClick={() => void window.harness?.updater.feed().then(setFeedResult)}
+                className="rounded-control border border-harness/40 px-3 py-1.5 text-[11px] text-harness-soft hover:bg-harness/10"
+              >
+                Comprobar feed
+              </button>
+            </div>
+            {feedResult ? (
+              <div className="rounded-control border border-hairline bg-surface p-2">
+                <p className="text-[11px] text-zinc-300">{feedResult.available ? "disponible" : feedResult.ok ? "al día" : "error"} · {feedResult.reason}</p>
+                {feedResult.release?.notes ? <p className="mt-1 whitespace-pre-wrap text-[10px] text-zinc-500">{feedResult.release.notes}</p> : null}
+              </div>
+            ) : null}
           </Section>
 
           <Section title="Perfil del proyecto">

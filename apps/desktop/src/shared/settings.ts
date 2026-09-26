@@ -92,6 +92,13 @@ export interface HarnessSettings {
   workspace: WorkspaceSettings;
   tools: ToolPermissionSettings;
   routing: RoutingSettings;
+  updater: UpdaterFeedSettings;
+}
+
+export interface UpdaterFeedSettings {
+  feedUrl: string;
+  token: string;
+  channel: "stable" | "beta";
 }
 
 export const DEFAULT_SETTINGS: HarnessSettings = {
@@ -113,6 +120,7 @@ export const DEFAULT_SETTINGS: HarnessSettings = {
   workspace: { active: "", recents: [] },
   tools: { askBeforeTools: true, perTool: {} },
   routing: { rules: DEFAULT_ROUTING_RULES, fallbackModels: [], maxRetries: 2 },
+  updater: { feedUrl: "", token: "", channel: "stable" },
 };
 
 export function maskSecret(secret: string): string {
