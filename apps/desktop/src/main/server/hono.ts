@@ -1,3 +1,4 @@
+import { APP_VERSION } from "../../shared/version";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { serve } from "@hono/node-server";
@@ -13,7 +14,7 @@ export function createHarnessServer(): Hono {
   app.get("/doc", (c) =>
     c.json({
       openapi: "3.1.0",
-      info: { title: "Pragma Harness OS", version: "1.0.2" },
+      info: { title: "Pragma Harness OS", version: APP_VERSION },
       paths: {
         "/health": { get: { summary: "Health check" } },
         "/events": { get: { summary: "SSE event stream" } },

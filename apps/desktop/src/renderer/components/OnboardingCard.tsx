@@ -31,7 +31,7 @@ export function OnboardingCard({ onDismiss }: OnboardingCardProps): React.ReactE
             <h2 id="onboarding-title" className="text-[13px] font-semibold text-zinc-100">
               Cómo funciona Pragma Harness OS
             </h2>
-            <p className="text-[11px] text-zinc-500">3 pasos, 30 segundos</p>
+            <p className="text-[12px] text-zinc-500">3 pasos, 30 segundos</p>
           </div>
         </div>
 
@@ -52,7 +52,7 @@ export function OnboardingCard({ onDismiss }: OnboardingCardProps): React.ReactE
           <button
             type="button"
             onClick={onDismiss}
-            className="ml-auto rounded-control px-2 py-1.5 text-[11px] text-zinc-500 transition-colors hover:text-zinc-300"
+            className="ml-auto rounded-control px-2 py-1.5 text-[12px] text-zinc-500 transition-colors hover:text-zinc-300"
           >
             Saltar
           </button>
@@ -60,7 +60,7 @@ export function OnboardingCard({ onDismiss }: OnboardingCardProps): React.ReactE
             <button
               type="button"
               onClick={onDismiss}
-              className="rounded-control bg-harness px-3 py-1.5 text-[11px] font-medium text-white transition-colors hover:bg-harness-strong"
+              className="rounded-control bg-harness px-3 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-harness-strong"
             >
               Entendido
             </button>
@@ -68,7 +68,7 @@ export function OnboardingCard({ onDismiss }: OnboardingCardProps): React.ReactE
             <button
               type="button"
               onClick={() => setStep((value) => value + 1)}
-              className="rounded-control bg-harness px-3 py-1.5 text-[11px] font-medium text-white transition-colors hover:bg-harness-strong"
+              className="rounded-control bg-harness px-3 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-harness-strong"
             >
               Siguiente
             </button>

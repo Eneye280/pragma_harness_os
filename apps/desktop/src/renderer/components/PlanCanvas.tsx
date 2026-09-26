@@ -26,18 +26,18 @@ export function PlanCanvas({ plan, onApprove, onRevise, onDiscard }: PlanCanvasP
   return (
     <div className="flex h-full flex-col bg-surface">
       <div className="flex items-center gap-2 border-b border-hairline px-3 py-2">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-harness-soft">Plan Canvas</span>
-        <span className="text-[11px] text-zinc-500">{plan.intent.domain}/{plan.intent.effort}</span>
-        {plan.revised ? <span className="rounded-full bg-amber-500/15 px-2 py-[1px] text-[10px] text-amber-400">recompilado</span> : null}
-        {edited ? <span className="rounded-full bg-harness/15 px-2 py-[1px] text-[10px] text-harness-soft">editado</span> : null}
-        {steps.length > 0 ? <span className="text-[10px] text-zinc-500">{included} de {steps.length} pasos</span> : null}
+        <span className="text-[12px] font-semibold uppercase tracking-[0.16em] text-harness-soft">Plan Canvas</span>
+        <span className="text-[12px] text-zinc-500">{plan.intent.domain}/{plan.intent.effort}</span>
+        {plan.revised ? <span className="rounded-full bg-amber-500/15 px-2 py-[1px] text-[12px] text-amber-400">recompilado</span> : null}
+        {edited ? <span className="rounded-full bg-harness/15 px-2 py-[1px] text-[12px] text-harness-soft">editado</span> : null}
+        {steps.length > 0 ? <span className="text-[12px] text-zinc-500">{included} de {steps.length} pasos</span> : null}
       </div>
 
       {steps.length > 0 ? (
         <div className="max-h-40 overflow-y-auto border-b border-hairline px-3 py-2" aria-label="Pasos del plan">
           <ul role="list" className="space-y-1">
             {steps.map((step, index) => (
-              <li key={step.id} className="flex items-center gap-2 text-[11px]">
+              <li key={step.id} className="flex items-center gap-2 text-[12px]">
                 <input
                   type="checkbox"
                   checked={step.included}
@@ -59,7 +59,7 @@ export function PlanCanvas({ plan, onApprove, onRevise, onDiscard }: PlanCanvasP
               onChange={(event) => setNewStep(event.target.value)}
               placeholder="Nuevo paso…"
               aria-label="Nuevo paso"
-              className="min-w-0 flex-1 rounded-control border border-hairline bg-surface px-2 py-1 text-[11px] text-zinc-300 outline-none"
+              className="min-w-0 flex-1 rounded-control border border-hairline bg-surface px-2 py-1 text-[12px] text-zinc-300 outline-none"
             />
             <button
               type="button"
@@ -67,7 +67,7 @@ export function PlanCanvas({ plan, onApprove, onRevise, onDiscard }: PlanCanvasP
                 setDraft((current) => addStep(current, newStep));
                 setNewStep("");
               }}
-              className="rounded-control border border-hairline px-2 py-1 text-[11px] text-zinc-400 transition-colors hover:bg-zinc-800"
+              className="rounded-control border border-hairline px-2 py-1 text-[12px] text-zinc-400 transition-colors hover:bg-zinc-800"
             >
               Añadir paso
             </button>
@@ -77,7 +77,7 @@ export function PlanCanvas({ plan, onApprove, onRevise, onDiscard }: PlanCanvasP
 
       <div className="grid min-h-0 flex-1 grid-cols-2 divide-x divide-hairline">
         <div className="flex min-h-0 flex-col">
-          <p className="border-b border-hairline px-3 py-1.5 text-[10px] uppercase tracking-widest text-zinc-600">Markdown (editable)</p>
+          <p className="border-b border-hairline px-3 py-1.5 text-[12px] uppercase tracking-widest text-zinc-600">Markdown (editable)</p>
           <textarea
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
@@ -87,14 +87,14 @@ export function PlanCanvas({ plan, onApprove, onRevise, onDiscard }: PlanCanvasP
         </div>
 
         <div className="flex min-h-0 flex-col">
-          <p className="border-b border-hairline px-3 py-1.5 text-[10px] uppercase tracking-widest text-zinc-600">Preview</p>
+          <p className="border-b border-hairline px-3 py-1.5 text-[12px] uppercase tracking-widest text-zinc-600">Preview</p>
           <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
             <MarkdownView text={draft} />
             <div className="mt-4 rounded-panel border border-hairline bg-surface-raised p-3">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">Archivos a tocar</p>
+              <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-zinc-500">Archivos a tocar</p>
               <ul className="mt-2 space-y-1">
                 {plan.files.map((file) => (
-                  <li key={file} className="flex items-center gap-1.5 font-mono text-[11px] text-zinc-400">
+                  <li key={file} className="flex items-center gap-1.5 font-mono text-[12px] text-zinc-400">
                     <IconFile width={12} height={12} className="text-zinc-600" />
                     {file}
                   </li>
@@ -106,32 +106,32 @@ export function PlanCanvas({ plan, onApprove, onRevise, onDiscard }: PlanCanvasP
       </div>
 
       <div className="flex items-center gap-2 border-t border-hairline px-4 py-3">
-        <p className="text-[11px] text-zinc-600">El agente no ejecuta hasta que apruebes el plan.</p>
+        <p className="text-[12px] text-zinc-600">El agente no ejecuta hasta que apruebes el plan.</p>
         <button
           type="button"
           onClick={() => onRevise(draft)}
-          className="ml-auto rounded-control border border-hairline px-3 py-1.5 text-[11px] text-zinc-400 transition-colors hover:bg-zinc-800"
+          className="ml-auto rounded-control border border-hairline px-3 py-1.5 text-[12px] text-zinc-400 transition-colors hover:bg-zinc-800"
         >
           Recompilar
         </button>
         <button
           type="button"
           onClick={onDiscard}
-          className="rounded-control border border-red-500/40 px-3 py-1.5 text-[11px] text-red-400 transition-colors hover:bg-red-500/10"
+          className="rounded-control border border-red-500/40 px-3 py-1.5 text-[12px] text-red-400 transition-colors hover:bg-red-500/10"
         >
           Descartar
         </button>
         <button
           type="button"
           onClick={() => onApprove(buildPartialApproval(draft).markdown)}
-          className="rounded-control border border-harness/50 px-3 py-1.5 text-[11px] text-harness-soft transition-colors hover:bg-harness/10"
+          className="rounded-control border border-harness/50 px-3 py-1.5 text-[12px] text-harness-soft transition-colors hover:bg-harness/10"
         >
           Aprobar seleccionados
         </button>
         <button
           type="button"
           onClick={() => onApprove(draft)}
-          className="rounded-control bg-harness px-4 py-1.5 text-[11px] font-medium text-white transition-colors hover:bg-harness-strong"
+          className="rounded-control bg-harness px-4 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-harness-strong"
         >
           Aprobar
         </button>

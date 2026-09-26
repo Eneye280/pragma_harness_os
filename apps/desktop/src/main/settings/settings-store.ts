@@ -11,9 +11,10 @@ import {
 } from "../../shared/settings";
 import type { ProjectProfile } from "../../shared/profile";
 import { resolveEffectiveSettings } from "../profile/effective";
-import { migrateSettingsV1_0_1, withConfigVersion } from "../migrations/v1_0_1";
+import { migrateSettingsV1_0_1 } from "../migrations/v1_0_1";
 import { resolveSecretBox } from "../security/key";
-import { migrateSettingsV1_0_2, withConfigVersionV2 } from "../migrations/v1_0_2";
+import { migrateSettingsV1_0_2 } from "../migrations/v1_0_2";
+import { migrateSettingsV1_0_2_1, withConfigVersionV3 } from "../migrations/v1_0_2_1";
 import type { SecretBox } from "../security/crypto";
 
 const ProviderSchema = z.object({
@@ -151,12 +152,13 @@ export class SettingsStore {
         settings.provider.apiKey = this.secretBox.decrypt(settings.provider.apiKey);
       }
       const migrationV2 = migrateSettingsV1_0_2({ ...(settings as object), configVersion: migration.to } as never);
-      const changed = migration.changed || migrationV2.changed || rawVersion !== migrationV2.to;
+      const migrationV3 = migrateSettingsV1_0_2_1({ ...(migrationV2.settings as object), configVersion: migrationV2.to } as never);
+      const changed = migration.changed || migrationV2.changed || migrationV3.changed || rawVersion !== migrationV3.to;
       if (changed) {
-        this.settings = migrationV2.settings;
+        this.settings = migrationV3.settings;
         this.persist();
       }
-      return migrationV2.settings;
+      return migrationV3.settings;
     } catch {
       return structuredClone(DEFAULT_SETTINGS);
     }
@@ -221,7 +223,7 @@ export class SettingsStore {
 
   private persist(): void {
     mkdirSync(dirname(this.filePath), { recursive: true });
-    const toPersist = withConfigVersionV2(this.settings);
+    const toPersist = withConfigVersionV3(this.settings);
     const apiKey = toPersist.provider.apiKey;
     const payload = {
       ...toPersist,

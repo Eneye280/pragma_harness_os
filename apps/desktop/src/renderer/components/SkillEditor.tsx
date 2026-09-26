@@ -117,17 +117,17 @@ export function SkillEditor({ open, onClose, initialName, onSaved }: SkillEditor
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6" role="dialog" aria-modal="true" aria-label="Editor de skill">
       <div ref={containerRef} className="flex h-[80vh] w-full max-w-4xl flex-col rounded-panel border border-hairline bg-surface shadow-2xl">
         <div className="flex items-center gap-2 border-b border-hairline px-3 py-2">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-harness-soft">{initialName ? "Editar skill" : "Nueva skill"}</span>
+          <span className="text-[12px] font-semibold uppercase tracking-[0.16em] text-harness-soft">{initialName ? "Editar skill" : "Nueva skill"}</span>
           <select
             value={scope}
             aria-label="Destino de la skill"
             onChange={(event) => setScope(event.target.value === "global" ? "global" : "project")}
-            className="ml-auto rounded-control border border-hairline bg-surface px-2 py-1 text-[11px] text-zinc-300 outline-none"
+            className="ml-auto rounded-control border border-hairline bg-surface px-2 py-1 text-[12px] text-zinc-300 outline-none"
           >
             <option value="project">proyecto</option>
             <option value="global">global</option>
           </select>
-          <button type="button" onClick={onClose} className="rounded-control border border-hairline px-2 py-1 text-[11px] text-zinc-400 hover:bg-zinc-800">
+          <button type="button" onClick={onClose} className="rounded-control border border-hairline px-2 py-1 text-[12px] text-zinc-400 hover:bg-zinc-800">
             Cerrar
           </button>
         </div>
@@ -139,37 +139,37 @@ export function SkillEditor({ open, onClose, initialName, onSaved }: SkillEditor
             <Field label="triggers (coma)"><input aria-label="triggers" value={fields.triggers} onChange={(event) => setFields({ ...fields, triggers: event.target.value })} className={INPUT} /></Field>
             <Field label={`needs (${KNOWN_NEEDS.join(", ")})`}><input aria-label="needs" value={fields.needs} onChange={(event) => setFields({ ...fields, needs: event.target.value })} className={INPUT} /></Field>
             <Field label="priority"><input aria-label="priority" value={fields.priority} onChange={(event) => setFields({ ...fields, priority: event.target.value })} className={INPUT} /></Field>
-            <label className="block text-[10px] uppercase tracking-widest text-zinc-500">
+            <label className="block text-[12px] uppercase tracking-widest text-zinc-500">
               cuerpo
               <textarea
                 aria-label="cuerpo de la skill"
                 value={body}
                 onChange={(event) => setBody(event.target.value)}
-                className="mt-1 h-56 w-full resize-y rounded-control border border-hairline bg-surface px-2 py-1.5 font-mono text-[11px] text-zinc-300 outline-none"
+                className="mt-1 h-56 w-full resize-y rounded-control border border-hairline bg-surface px-2 py-1.5 font-mono text-[12px] text-zinc-300 outline-none"
               />
             </label>
           </div>
           <div className="flex min-h-0 flex-col gap-2 overflow-y-auto p-3">
-            <p className="text-[10px] uppercase tracking-widest text-zinc-500">preview</p>
+            <p className="text-[12px] uppercase tracking-widest text-zinc-500">preview</p>
             <MarkdownView text={body} />
             <div className="rounded-control border border-hairline bg-surface-raised p-2">
-              {validation.errors.map((error) => <p key={error} className="text-[10px] text-red-400">✕ {error}</p>)}
-              {validation.warnings.map((warning) => <p key={warning} className="text-[10px] text-amber-400">! {warning}</p>)}
-              {validation.ok && validation.warnings.length === 0 ? <p className="text-[10px] text-emerald-400">✓ válida</p> : null}
+              {validation.errors.map((error) => <p key={error} className="text-[12px] text-red-400">✕ {error}</p>)}
+              {validation.warnings.map((warning) => <p key={warning} className="text-[12px] text-amber-400">! {warning}</p>)}
+              {validation.ok && validation.warnings.length === 0 ? <p className="text-[12px] text-emerald-400">✓ válida</p> : null}
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2 border-t border-hairline px-3 py-2">
-          {message ? <p className="text-[11px] text-harness-soft" role="status">{message}</p> : null}
+          {message ? <p className="text-[12px] text-harness-soft" role="status">{message}</p> : null}
           <div className="ml-auto flex items-center gap-2">
             {initialName ? (
               <>
                 <button type="button" onClick={() => void duplicate()} disabled={busy} className={SECONDARY}>Duplicar</button>
-                <button type="button" onClick={() => void remove()} disabled={busy} className="rounded-control border border-red-500/40 px-3 py-1.5 text-[11px] text-red-400 hover:bg-red-500/10 disabled:opacity-40">Eliminar</button>
+                <button type="button" onClick={() => void remove()} disabled={busy} className="rounded-control border border-red-500/40 px-3 py-1.5 text-[12px] text-red-400 hover:bg-red-500/10 disabled:opacity-40">Eliminar</button>
               </>
             ) : null}
-            <button type="button" onClick={() => void save()} disabled={busy || !validation.ok} className="rounded-control bg-harness px-4 py-1.5 text-[11px] font-medium text-white hover:bg-harness-strong disabled:opacity-40">
+            <button type="button" onClick={() => void save()} disabled={busy || !validation.ok} className="rounded-control bg-harness px-4 py-1.5 text-[12px] font-medium text-white hover:bg-harness-strong disabled:opacity-40">
               Guardar
             </button>
           </div>
@@ -179,12 +179,12 @@ export function SkillEditor({ open, onClose, initialName, onSaved }: SkillEditor
   );
 }
 
-const INPUT = "w-full rounded-control border border-hairline bg-surface px-2 py-1.5 font-mono text-[11px] text-zinc-200 outline-none focus:border-harness/60";
-const SECONDARY = "rounded-control border border-hairline px-3 py-1.5 text-[11px] text-zinc-300 hover:bg-zinc-800 disabled:opacity-40";
+const INPUT = "w-full rounded-control border border-hairline bg-surface px-2 py-1.5 font-mono text-[12px] text-zinc-200 outline-none focus:border-harness/60";
+const SECONDARY = "rounded-control border border-hairline px-3 py-1.5 text-[12px] text-zinc-300 hover:bg-zinc-800 disabled:opacity-40";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }): React.ReactElement {
   return (
-    <label className="block text-[10px] uppercase tracking-widest text-zinc-500">
+    <label className="block text-[12px] uppercase tracking-widest text-zinc-500">
       {label}
       <div className="mt-1">{children}</div>
     </label>

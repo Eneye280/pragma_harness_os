@@ -147,20 +147,20 @@ export function GraphPanel({ open, onClose, storageKey = "" }: GraphPanelProps):
         }}
       >
         <div className="flex cursor-grab items-center gap-3 border-b border-hairline px-3 py-2" onMouseDown={beginDrag}>
-          <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-harness-soft">Dependency graph</span>
-          <span className="text-[11px] text-zinc-500">{graph ? `${graph.nodes.length} nodos · ${graph.edges.length} aristas · ${graph.cycles.length} ciclos` : "—"}</span>
+          <span className="text-[12px] font-semibold uppercase tracking-[0.16em] text-harness-soft">Dependency graph</span>
+          <span className="text-[12px] text-zinc-500">{graph ? `${graph.nodes.length} nodos · ${graph.edges.length} aristas · ${graph.cycles.length} ciclos` : "—"}</span>
           {delta ? (
-            <span className="rounded-full bg-harness/15 px-2 py-[1px] text-[10px] text-harness-soft">
+            <span className="rounded-full bg-harness/15 px-2 py-[1px] text-[12px] text-harness-soft">
               +{delta.added.length} −{delta.removed.length} ~{delta.changed.length}
             </span>
           ) : null}
-          <button type="button" aria-label="Colapsar grafo" onClick={() => setLayout((current) => toggleCollapsed(current, PANEL_ID))} className="ml-auto rounded-control border border-hairline px-2 py-1 text-[11px] text-zinc-300 hover:bg-zinc-800">
+          <button type="button" aria-label="Colapsar grafo" onClick={() => setLayout((current) => toggleCollapsed(current, PANEL_ID))} className="ml-auto rounded-control border border-hairline px-2 py-1 text-[12px] text-zinc-300 hover:bg-zinc-800">
             {rect.collapsed ? "▸" : "▾"}
           </button>
-          <button type="button" onClick={() => void window.harness?.graph.refresh().then((next) => setGraph(next ?? null))} className="rounded-control border border-hairline px-2 py-1 text-[11px] text-zinc-300 hover:bg-zinc-800">
+          <button type="button" onClick={() => void window.harness?.graph.refresh().then((next) => setGraph(next ?? null))} className="rounded-control border border-hairline px-2 py-1 text-[12px] text-zinc-300 hover:bg-zinc-800">
             Recalcular
           </button>
-          <button type="button" onClick={onClose} className="rounded-control border border-hairline px-2 py-1 text-[11px] text-zinc-400 hover:bg-zinc-800">
+          <button type="button" onClick={onClose} className="rounded-control border border-hairline px-2 py-1 text-[12px] text-zinc-400 hover:bg-zinc-800">
             Cerrar
           </button>
         </div>
@@ -211,7 +211,7 @@ export function GraphPanel({ open, onClose, storageKey = "" }: GraphPanelProps):
                 return (
                   <g key={node.id} transform={`translate(${position.x},${position.y})`} onClick={() => setFocus(isFocus ? null : node.id)} className="cursor-pointer">
                     <circle r={isFocus ? 6 : 4} fill={inCycle ? "#f87171" : isFocus ? "#a78bfa" : isNeighbor ? "#c4b5fd" : "#71717a"} />
-                    <text x={8} y={3} className={cn("text-[9px]", isFocus ? "fill-zinc-100" : "fill-zinc-500")}>
+                    <text x={8} y={3} className={cn("text-[12px]", isFocus ? "fill-zinc-100" : "fill-zinc-500")}>
                       {node.label}
                     </text>
                   </g>
@@ -219,15 +219,15 @@ export function GraphPanel({ open, onClose, storageKey = "" }: GraphPanelProps):
               })}
             </g>
           </svg>
-          {focus ? <p className="absolute bottom-2 left-3 font-mono text-[10px] text-zinc-400">{focus}</p> : null}
+          {focus ? <p className="absolute bottom-2 left-3 font-mono text-[12px] text-zinc-400">{focus}</p> : null}
         </div>
 
         {graph && graph.cycles.length > 0 ? (
           <div className="max-h-24 overflow-y-auto border-t border-hairline px-3 py-2">
-            <p className="text-[10px] uppercase tracking-widest text-red-400">ciclos</p>
+            <p className="text-[12px] uppercase tracking-widest text-red-400">ciclos</p>
             <ul className="mt-1 space-y-0.5">
               {graph.cycles.map((cycle, index) => (
-                <li key={`${cycle.join(">")}-${index}`} className="truncate font-mono text-[10px] text-zinc-500">{cycle.join(" → ")}</li>
+                <li key={`${cycle.join(">")}-${index}`} className="truncate font-mono text-[12px] text-zinc-500">{cycle.join(" → ")}</li>
               ))}
             </ul>
           </div>

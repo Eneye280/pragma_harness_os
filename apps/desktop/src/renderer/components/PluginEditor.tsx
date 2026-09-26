@@ -69,8 +69,8 @@ export function PluginEditor({ open, initial, onClose, onSaved }: PluginEditorPr
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6" role="dialog" aria-modal="true" aria-label="Editor de plugin">
       <div ref={containerRef} className="flex w-full max-w-2xl flex-col rounded-panel border border-hairline bg-surface shadow-2xl">
         <div className="flex items-center gap-2 border-b border-hairline px-3 py-2">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-harness-soft">{initial ? "Editar plugin" : "Nuevo plugin"}</span>
-          <button type="button" onClick={onClose} className="ml-auto rounded-control border border-hairline px-2 py-1 text-[11px] text-zinc-400 hover:bg-zinc-800">
+          <span className="text-[12px] font-semibold uppercase tracking-[0.16em] text-harness-soft">{initial ? "Editar plugin" : "Nuevo plugin"}</span>
+          <button type="button" onClick={onClose} className="ml-auto rounded-control border border-hairline px-2 py-1 text-[12px] text-zinc-400 hover:bg-zinc-800">
             Cerrar
           </button>
         </div>
@@ -95,13 +95,13 @@ export function PluginEditor({ open, initial, onClose, onSaved }: PluginEditorPr
         </div>
 
         <div className="flex items-center gap-2 border-t border-hairline px-3 py-2">
-          {message ? <p className="text-[11px] text-harness-soft" role="status">{message}</p> : null}
-          {!validation.ok ? <p className="text-[10px] text-red-400">{validation.errors.join(" · ")}</p> : null}
+          {message ? <p className="text-[12px] text-harness-soft" role="status">{message}</p> : null}
+          {!validation.ok ? <p className="text-[12px] text-red-400">{validation.errors.join(" · ")}</p> : null}
           <div className="ml-auto flex items-center gap-2">
             {initial ? (
-              <button type="button" onClick={() => void remove()} disabled={busy} className="rounded-control border border-red-500/40 px-3 py-1.5 text-[11px] text-red-400 hover:bg-red-500/10 disabled:opacity-40">Eliminar</button>
+              <button type="button" onClick={() => void remove()} disabled={busy} className="rounded-control border border-red-500/40 px-3 py-1.5 text-[12px] text-red-400 hover:bg-red-500/10 disabled:opacity-40">Eliminar</button>
             ) : null}
-            <button type="button" onClick={() => void save()} disabled={busy || !validation.ok} className="rounded-control bg-harness px-4 py-1.5 text-[11px] font-medium text-white hover:bg-harness-strong disabled:opacity-40">Guardar</button>
+            <button type="button" onClick={() => void save()} disabled={busy || !validation.ok} className="rounded-control bg-harness px-4 py-1.5 text-[12px] font-medium text-white hover:bg-harness-strong disabled:opacity-40">Guardar</button>
           </div>
         </div>
       </div>
@@ -109,11 +109,11 @@ export function PluginEditor({ open, initial, onClose, onSaved }: PluginEditorPr
   );
 }
 
-const INPUT = "w-full rounded-control border border-hairline bg-surface px-2 py-1.5 font-mono text-[11px] text-zinc-200 outline-none focus:border-harness/60";
+const INPUT = "w-full rounded-control border border-hairline bg-surface px-2 py-1.5 font-mono text-[12px] text-zinc-200 outline-none focus:border-harness/60";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }): React.ReactElement {
   return (
-    <label className="block text-[10px] uppercase tracking-widest text-zinc-500">
+    <label className="block text-[12px] uppercase tracking-widest text-zinc-500">
       {label}
       <div className="mt-1">{children}</div>
     </label>

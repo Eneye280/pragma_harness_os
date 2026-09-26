@@ -24,7 +24,7 @@ export function ToolCallCard({ call }: { call: ToolCallState }): React.ReactElem
       >
         <span className="text-zinc-500">{call.tool === "terminal" ? <IconSend width={13} height={13} /> : <IconFile width={13} height={13} />}</span>
         <span className="font-mono text-[11.5px] text-zinc-300">{call.summary}</span>
-        <span className="ml-auto flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-zinc-500">
+        <span className="ml-auto flex items-center gap-1.5 text-[12px] uppercase tracking-widest text-zinc-500">
           <span className={cn("h-1.5 w-1.5 rounded-full", status.dot)} />
           {status.label}
         </span>

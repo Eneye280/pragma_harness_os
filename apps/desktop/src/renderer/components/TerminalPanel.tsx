@@ -142,9 +142,9 @@ export function TerminalPanel({ height, onResize, onClose }: TerminalPanelProps)
         aria-label="Redimensionar terminal"
       />
       <div className="flex items-center gap-2 border-b border-hairline px-3 py-1.5">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">Terminal</span>
+        <span className="text-[12px] font-semibold uppercase tracking-[0.16em] text-zinc-500">Terminal</span>
         {ready ? <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> : <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-harness" />}
-        <span className="font-mono text-[10px] text-zinc-600">workspace pty</span>
+        <span className="font-mono text-[12px] text-zinc-600">workspace pty</span>
         <button
           type="button"
           onClick={onClose}

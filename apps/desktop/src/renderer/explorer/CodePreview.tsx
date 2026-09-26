@@ -29,9 +29,9 @@ export function CodePreview({ file, onClose }: CodePreviewProps): React.ReactEle
     <div className="flex h-full flex-col bg-surface">
       <div className="flex items-center gap-2 border-b border-hairline px-3 py-2">
         <span className="truncate font-mono text-[12px] text-zinc-300">{file.path}</span>
-        <span className="rounded-full bg-zinc-800 px-1.5 py-[1px] text-[10px] text-zinc-400">{file.language}</span>
-        <span className="text-[10px] text-zinc-600">{lines.length} líneas</span>
-        {file.truncated ? <span className="text-[10px] text-amber-400">truncado</span> : null}
+        <span className="rounded-full bg-zinc-800 px-1.5 py-[1px] text-[12px] text-zinc-400">{file.language}</span>
+        <span className="text-[12px] text-zinc-600">{lines.length} líneas</span>
+        {file.truncated ? <span className="text-[12px] text-amber-400">truncado</span> : null}
         <button
           type="button"
           onClick={onClose}

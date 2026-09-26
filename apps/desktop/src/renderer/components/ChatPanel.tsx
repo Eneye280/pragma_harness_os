@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { cn } from "../lib/cn";
 import { IconSend, IconSparkles } from "./icons";
-import { HarnessStrip } from "../chat/HarnessStrip";
+import { PipelineTimeline } from "../chat/PipelineTimeline";
 import { MarkdownView } from "../chat/MarkdownView";
 import { ToolCallCard } from "../chat/ToolCallCard";
 import { MessageTasks } from "./MessageTasks";
@@ -190,13 +190,13 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
             <EmptyConversation onPick={(text) => send(text)} />
           ) : (
             <>
-              {state.steps.length > 0 ? <HarnessStrip steps={state.steps} running={isRunning} /> : null}
+              {state.steps.length > 0 ? <PipelineTimeline steps={state.steps} running={isRunning} /> : null}
 
               {hiddenCount > 0 ? (
                 <button
                   type="button"
                   onClick={() => setRevealedCount((count) => count + CHAT_WINDOW_SIZE)}
-                  className="mx-auto rounded-panel border border-hairline bg-surface-raised px-3 py-1.5 text-[11px] text-zinc-400 transition-colors hover:text-zinc-200"
+                  className="mx-auto rounded-panel border border-hairline bg-surface-raised px-3 py-1.5 text-[12px] text-zinc-400 transition-colors hover:text-zinc-200"
                 >
                   Mostrar {Math.min(hiddenCount, CHAT_WINDOW_SIZE)} mensajes anteriores · {hiddenCount} ocultos
                 </button>
@@ -206,7 +206,7 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
                 message.role === "user" ? (
                   <div key={message.id} className="slide-up ml-auto max-w-[85%]">
                     {message.steer ? (
-                      <span className="mb-0.5 block text-right text-[10px] text-harness-soft">añadido al run en curso</span>
+                      <span className="mb-0.5 block text-right text-[12px] text-harness-soft">añadido al run en curso</span>
                     ) : null}
                     {message.attachments && message.attachments.length > 0 ? (
                       <div className="mb-1 flex flex-wrap justify-end gap-1.5">
@@ -219,18 +219,18 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
                               className="h-16 w-16 rounded-control border border-hairline object-cover"
                             />
                           ) : (
-                            <span key={attachment.id} className="rounded-control border border-hairline bg-surface-raised px-2 py-1 text-[10px] text-zinc-400">
+                            <span key={attachment.id} className="rounded-control border border-hairline bg-surface-raised px-2 py-1 text-[12px] text-zinc-400">
                               {attachment.name}
                             </span>
                           ),
                         )}
                       </div>
                     ) : null}
-                    <div className="rounded-sheet rounded-br-md border border-harness/30 bg-harness/15 px-3.5 py-2 text-[13px] text-zinc-100 shadow-[0_4px_12px_rgba(0,0,0,0.12)]">
+                    <div className="rounded-sheet rounded-br-md border border-harness/30 bg-harness/15 px-3.5 py-2 text-[13px] text-zinc-100 shadow-[0_3px_8px_rgba(0,0,0,0.08)]">
                       {message.content}
                     </div>
                     {message.attachments && message.attachments.length > 0 ? (
-                      <p className="mt-0.5 text-right text-[10px] text-zinc-500">
+                      <p className="mt-0.5 text-right text-[12px] text-zinc-500">
                         {message.attachments.map((attachment) => describeAttachment(attachment)).join(" · ")}
                       </p>
                     ) : null}
@@ -242,19 +242,19 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
                     </span>
                     <div className="glass min-w-0 flex-1 rounded-sheet rounded-tl-md px-3.5 py-2.5">
                       <div className="mb-1 flex items-center gap-2">
-                        <span className="text-[10px] tracking-label text-harness-soft">harness</span>
+                        <span className="text-[12px] tracking-label text-harness-soft">harness</span>
                         <button
                           type="button"
                           aria-label="Copiar respuesta"
                           onClick={() => void navigator.clipboard?.writeText(message.content).catch(() => undefined)}
-                          className="ml-auto rounded-control border border-hairline px-2 py-[1px] text-[10px] text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
+                          className="ml-auto rounded-control border border-hairline px-2 py-[1px] text-[12px] text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
                         >
                           copiar
                         </button>
                       </div>
                       <MarkdownView text={message.content} />
                       {!message.streaming && !veracityReview(message.content).ok ? (
-                        <p className="mt-1 rounded-control border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-[10px] text-amber-300" role="note">
+                        <p className="mt-1 rounded-control border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-[12px] text-amber-300" role="note">
                           Afirma versiones o APIs sin citar una fuente verificable. Pide la referencia antes de confiar.
                         </p>
                       ) : null}
@@ -268,23 +268,23 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
               {state.pendingApproval ? (
                 <div className="rounded-panel border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-[12px] text-amber-200" role="alertdialog" aria-label="Permiso de herramienta">
                   <p className="font-medium">El agente quiere ejecutar {state.pendingApproval.tool}</p>
-                  <p className="mt-0.5 font-mono text-[11px] text-amber-300/80">{state.pendingApproval.summary}</p>
+                  <p className="mt-0.5 font-mono text-[12px] text-amber-300/80">{state.pendingApproval.summary}</p>
                   <div className="mt-2 flex items-center gap-2">
-                    <label className="flex items-center gap-1 text-[11px] text-amber-300/90">
+                    <label className="flex items-center gap-1 text-[12px] text-amber-300/90">
                       <input type="checkbox" checked={rememberTool} onChange={(event) => setRememberTool(event.target.checked)} />
                       recordar
                     </label>
                     <button
                       type="button"
                       onClick={() => chat.approveTool(state.pendingApproval!.callId, state.pendingApproval!.tool, "approve", rememberTool)}
-                      className="ml-auto rounded-control bg-harness px-3 py-1 text-[11px] font-medium text-white hover:bg-harness-strong"
+                      className="ml-auto rounded-control bg-harness px-3 py-1 text-[12px] font-medium text-white hover:bg-harness-strong"
                     >
                       Aprobar
                     </button>
                     <button
                       type="button"
                       onClick={() => chat.approveTool(state.pendingApproval!.callId, state.pendingApproval!.tool, "reject", rememberTool)}
-                      className="rounded-control border border-red-500/40 px-3 py-1 text-[11px] text-red-300 hover:bg-red-500/10"
+                      className="rounded-control border border-red-500/40 px-3 py-1 text-[12px] text-red-300 hover:bg-red-500/10"
                     >
                       Rechazar
                     </button>
@@ -311,7 +311,7 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
           type="button"
           onClick={scrollToBottom}
           aria-label="Ir al final de la conversación"
-          className="absolute bottom-28 left-1/2 -translate-x-1/2 rounded-full border border-hairline bg-zinc-800 px-3 py-1 text-[11px] text-zinc-300 shadow-lg transition-colors hover:bg-zinc-700"
+          className="absolute bottom-28 left-1/2 -translate-x-1/2 rounded-full border border-hairline bg-zinc-800 px-3 py-1 text-[12px] text-zinc-300 shadow-lg transition-colors hover:bg-zinc-700"
         >
           ↓ scroll to bottom
         </button>
@@ -320,7 +320,7 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
       <div className="shrink-0 border-t border-hairline bg-surface px-6 py-4">
         {attachments.length > 0 ? (
           <div className="mx-auto mb-2 w-full max-w-[780px]">
-            <p className="mb-1 text-[10px] text-zinc-500">
+            <p className="mb-1 text-[12px] text-zinc-500">
               {attachments.length} adjunto(s) · {totalAttachmentTokens(attachments)} tokens estimados
             </p>
             <div className="flex flex-wrap gap-2">
@@ -329,15 +329,15 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
                   {attachment.kind === "image" && attachment.dataUrl ? (
                     <img src={attachment.dataUrl} alt={attachment.name} className="h-6 w-6 rounded object-cover" />
                   ) : null}
-                  <span className="max-w-[220px] truncate text-[10px] text-zinc-400" title={describeAttachment(attachment)}>
+                  <span className="max-w-[220px] truncate text-[12px] text-zinc-400" title={describeAttachment(attachment)}>
                     {attachment.name}
                   </span>
-                  <span className="font-mono text-[10px] text-zinc-600">{estimateAttachmentTokens(attachment)} tok</span>
+                  <span className="font-mono text-[12px] text-zinc-600">{estimateAttachmentTokens(attachment)} tok</span>
                   <button
                     type="button"
                     onClick={() => removeAttachment(attachment.id)}
                     aria-label={`Quitar ${attachment.name}`}
-                    className="text-[10px] text-zinc-500 transition-colors hover:text-red-300"
+                    className="text-[12px] text-zinc-500 transition-colors hover:text-red-300"
                   >
                     ✕
                   </button>
@@ -346,7 +346,7 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
             </div>
           </div>
         ) : null}
-        {attachmentError ? <p className="mx-auto mb-1 w-full max-w-[780px] text-[10px] text-red-400">{attachmentError}</p> : null}
+        {attachmentError ? <p className="mx-auto mb-1 w-full max-w-[780px] text-[12px] text-red-400">{attachmentError}</p> : null}
         <div className="glass mx-auto flex w-full max-w-[780px] items-end gap-2 rounded-sheet p-2 focus-within:border-harness/50">
           <input
             ref={fileInputRef}
@@ -407,7 +407,7 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
             </button>
           )}
         </div>
-        <p className="mx-auto mt-2 w-full max-w-[780px] text-[10px] text-zinc-600">
+        <p className="mx-auto mt-2 w-full max-w-[780px] text-[12px] text-zinc-600">
           {isRunning
             ? "Enter añade al run en curso (se re-evalúa y continúa) · ■ detiene"
             : "Enter envía · Shift+Enter salto de línea · Ctrl/Cmd+Enter fuerza sin harness"}
@@ -431,7 +431,7 @@ function EmptyConversation({ onPick }: { onPick: (text: string) => void }): Reac
       </div>
 
       <div className="slide-up rounded-panel border border-hairline bg-surface-raised p-4">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">Empieza</p>
+        <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-zinc-500">Empieza</p>
         <p className="mt-2 text-[13px] leading-relaxed text-zinc-300">
           Escribe un mensaje y verás los pasos del harness, la respuesta en streaming y los tool calls con su diff.
         </p>
@@ -441,7 +441,7 @@ function EmptyConversation({ onPick }: { onPick: (text: string) => void }): Reac
               key={suggestion}
               type="button"
               onClick={() => onPick(suggestion)}
-              className="rounded-panel border border-harness/30 bg-harness/10 px-2.5 py-1 text-[11px] text-harness-soft transition-colors hover:bg-harness/20"
+              className="rounded-panel border border-harness/30 bg-harness/10 px-2.5 py-1 text-[12px] text-harness-soft transition-colors hover:bg-harness/20"
             >
               {suggestion}
             </button>

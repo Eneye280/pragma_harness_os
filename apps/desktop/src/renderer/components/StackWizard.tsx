@@ -57,7 +57,7 @@ export function StackWizard({ onSkip, onApplied }: StackWizardProps): React.Reac
         <h2 id="stack-wizard-title" className="text-[13px] font-semibold text-zinc-100">
           Proyecto nuevo: elige tu stack
         </h2>
-        <p className="mt-1 text-[11px] text-zinc-500">
+        <p className="mt-1 text-[12px] text-zinc-500">
           Esta carpeta está vacía. Elige un stack y el harness deja skills, agente y gates por defecto.
         </p>
 
@@ -74,21 +74,21 @@ export function StackWizard({ onSkip, onApplied }: StackWizardProps): React.Reac
               )}
             >
               <span className="text-[12px] font-medium text-zinc-100">{bundle.label}</span>
-              <span className="text-[11px] text-zinc-500">{bundle.description}</span>
-              <span className="mt-1 font-mono text-[10px] text-zinc-500">
+              <span className="text-[12px] text-zinc-500">{bundle.description}</span>
+              <span className="mt-1 font-mono text-[12px] text-zinc-500">
                 agent {bundle.agent} · skills {bundle.skills.join(", ") || "—"}
               </span>
             </button>
           ))}
         </div>
 
-        {error ? <p className="mt-3 text-[11px] text-red-400">{error}</p> : null}
+        {error ? <p className="mt-3 text-[12px] text-red-400">{error}</p> : null}
 
         <div className="mt-4 flex items-center gap-2">
           <button
             type="button"
             onClick={onSkip}
-            className="rounded-control px-2 py-1.5 text-[11px] text-zinc-500 transition-colors hover:text-zinc-300"
+            className="rounded-control px-2 py-1.5 text-[12px] text-zinc-500 transition-colors hover:text-zinc-300"
           >
             Saltar
           </button>
@@ -96,7 +96,7 @@ export function StackWizard({ onSkip, onApplied }: StackWizardProps): React.Reac
             type="button"
             disabled={!selected || busy}
             onClick={() => void apply()}
-            className="ml-auto rounded-control bg-harness px-3 py-1.5 text-[11px] font-medium text-white transition-colors hover:bg-harness-strong disabled:opacity-50"
+            className="ml-auto rounded-control bg-harness px-3 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-harness-strong disabled:opacity-50"
           >
             {busy ? "Aplicando…" : "Aplicar stack"}
           </button>

@@ -61,3 +61,15 @@ Inspiración, no copia: superficies flotantes y blur (Glassmorphism), profundida
 sutil (Neumorfismo/Soft UI), bordes reales (Skeuomorphism), y jerarquía limpia
 (Apple HIG / Material 3). Las capturas comparativas viven en
 `.pragma-harness/evidence/` (ignoradas por git).
+
+## v1.0.2.1 — ajustes del sistema
+
+- **Sombras**: todas ×0.65 respecto de v1.0.2 (elevation-1 `0 1px 1px / .12`, elevation-3
+  `0 9px 22px / .16`, neumorfismo `3px 3px 7px / .17`).
+- **Tipografía**: mínimo **12px**; el token `--phs-text-caption` pasó de 11px a 12px. Escala
+  12/13/14/16/20/24. Fuentes del sistema con buen hinting (`Segoe UI Variable Text`,
+  `Cascadia Code`) y `text-rendering: optimizeLegibility`.
+- **Campos**: `.field` (borde `--color-hairline-strong`, foco con anillo harness) + defaults para
+  `input/select/textarea`; visibles en claro y oscuro, con placeholder de contraste AA.
+- **Overlays**: `.overlay-surface` (glass fuerte) compartido por palette, menús, popups y
+  notificaciones; `.layer-overlay` / `.layer-toast` para el z-index.

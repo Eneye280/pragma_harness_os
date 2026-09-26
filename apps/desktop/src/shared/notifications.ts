@@ -70,3 +70,47 @@ export function notificationFromBudget(tokensUsed: number, tokensLimit: number, 
   }
   return null;
 }
+
+export function formatDuration(ms: number): string {
+  if (ms < 1000) return `${Math.max(0, Math.round(ms))}ms`;
+  if (ms < 60_000) return `${(ms / 1000).toFixed(1)}s`;
+  const minutes = Math.floor(ms / 60_000);
+  const seconds = Math.round((ms % 60_000) / 1000);
+  return `${minutes}m ${seconds}s`;
+}
+
+export interface RunSummaryInput {
+  prompt?: string;
+  status: "done" | "blocked";
+  toolCalls: number;
+  failures: number;
+  durationMs: number;
+}
+
+/** Notificación real de un run: qué se pidió, cuántas tools, fallos y duración. */
+export function notificationFromRunSummary(input: RunSummaryInput): AppNotification {
+  const parts: string[] = [];
+  if (input.prompt) parts.push(`“${input.prompt.trim().slice(0, 60)}${input.prompt.trim().length > 60 ? "…" : ""}”`);
+  parts.push(`${input.toolCalls} tool${input.toolCalls === 1 ? "" : "s"}`);
+  if (input.failures > 0) parts.push(`${input.failures} fallo${input.failures === 1 ? "" : "s"}`);
+  parts.push(formatDuration(input.durationMs));
+  const blocked = input.status === "blocked" || input.failures > 0;
+  return createNotification({
+    kind: blocked ? "warning" : "success",
+    title: blocked ? "Run terminado con problemas" : "Run completado",
+    message: parts.join(" · "),
+    source: "chat",
+  });
+}
+
+export function notificationFromToolFailure(tool: string, summary: string): AppNotification {
+  return createNotification({ kind: "error", title: `Tool falló: ${tool}`, message: summary, source: "tools" });
+}
+
+export function notificationFromBlockedStep(phase: string, label: string, detail?: string): AppNotification {
+  return createNotification({ kind: "warning", title: `Paso bloqueado: ${phase}`, message: detail || label, source: "harness" });
+}
+
+export function notificationFromToolApproval(tool: string, summary: string): AppNotification {
+  return createNotification({ kind: "info", title: `Permiso solicitado: ${tool}`, message: summary, source: "tools" });
+}

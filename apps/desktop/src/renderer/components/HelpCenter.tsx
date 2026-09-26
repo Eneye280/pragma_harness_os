@@ -40,11 +40,11 @@ export function HelpCenter({ open, onClose, onOpenDoc, onStartTour }: HelpCenter
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6" role="dialog" aria-modal="true" aria-label="Centro de ayuda">
       <div ref={containerRef} className="sheet flex h-[70vh] w-full max-w-3xl flex-col overflow-hidden">
         <div className="flex items-center gap-2 border-b border-hairline px-3 py-2">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-harness-soft">Ayuda</span>
-          <button type="button" onClick={onStartTour} className="rounded-control border border-hairline px-2 py-1 text-[11px] text-zinc-300 hover:bg-zinc-800">
+          <span className="text-[12px] font-semibold uppercase tracking-[0.16em] text-harness-soft">Ayuda</span>
+          <button type="button" onClick={onStartTour} className="rounded-control border border-hairline px-2 py-1 text-[12px] text-zinc-300 hover:bg-zinc-800">
             Ver tour
           </button>
-          <button type="button" onClick={onClose} className="ml-auto rounded-control border border-hairline px-2 py-1 text-[11px] text-zinc-400 hover:bg-zinc-800">
+          <button type="button" onClick={onClose} className="ml-auto rounded-control border border-hairline px-2 py-1 text-[12px] text-zinc-400 hover:bg-zinc-800">
             Cerrar
           </button>
         </div>
@@ -69,7 +69,7 @@ export function HelpCenter({ open, onClose, onOpenDoc, onStartTour }: HelpCenter
 
         <div className="grid min-h-0 flex-1 grid-cols-[220px_1fr] divide-x divide-hairline p-3">
           <ul ref={listRef} role="list" className="max-h-full space-y-1 overflow-y-auto pr-2">
-            {topics.length === 0 ? <li className="text-[11px] text-zinc-500">sin resultados</li> : null}
+            {topics.length === 0 ? <li className="text-[12px] text-zinc-500">sin resultados</li> : null}
             {topics.map((topic) => (
               <li key={topic.id}>
                 <button
@@ -93,7 +93,7 @@ export function HelpCenter({ open, onClose, onOpenDoc, onStartTour }: HelpCenter
                 <p className="mt-2 text-[12px] leading-relaxed text-zinc-400">{selected.body}</p>
                 <div className="mt-2 flex flex-wrap gap-1">
                   {selected.tags.map((tag) => (
-                    <span key={tag} className="rounded-full bg-zinc-800 px-2 py-[1px] text-[10px] text-zinc-400">
+                    <span key={tag} className="rounded-full bg-zinc-800 px-2 py-[1px] text-[12px] text-zinc-400">
                       {tag}
                     </span>
                   ))}
@@ -102,14 +102,14 @@ export function HelpCenter({ open, onClose, onOpenDoc, onStartTour }: HelpCenter
                   <button
                     type="button"
                     onClick={() => onOpenDoc(selected.doc!)}
-                    className="mt-4 rounded-control border border-harness/40 px-3 py-1.5 text-[11px] text-harness-soft transition-colors hover:bg-harness/10"
+                    className="mt-4 rounded-control border border-harness/40 px-3 py-1.5 text-[12px] text-harness-soft transition-colors hover:bg-harness/10"
                   >
                     Abrir {selected.doc}
                   </button>
                 ) : null}
               </>
             ) : (
-              <p className="text-[11px] text-zinc-500">Escribe para buscar en la ayuda.</p>
+              <p className="text-[12px] text-zinc-500">Escribe para buscar en la ayuda.</p>
             )}
           </div>
         </div>

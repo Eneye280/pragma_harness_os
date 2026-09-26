@@ -43,13 +43,13 @@ export function UsageDashboard({ open, onClose }: UsageDashboardProps): React.Re
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6" role="dialog" aria-modal="true" aria-label="Dashboard de uso">
       <div ref={containerRef} className="sheet flex h-[78vh] w-full max-w-4xl flex-col overflow-hidden">
         <div className="flex items-center gap-2 border-b border-hairline px-3 py-2">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-harness-soft">Uso</span>
-          <select aria-label="Rango de uso" value={rangeId} onChange={(event) => setRangeId(event.target.value)} className="rounded-control border border-hairline bg-surface px-2 py-1 text-[11px] text-zinc-300 outline-none">
+          <span className="text-[12px] font-semibold uppercase tracking-[0.16em] text-harness-soft">Uso</span>
+          <select aria-label="Rango de uso" value={rangeId} onChange={(event) => setRangeId(event.target.value)} className="rounded-control border border-hairline bg-surface px-2 py-1 text-[12px] text-zinc-300 outline-none">
             {RANGES.map((range) => (
               <option key={range.id} value={range.id}>{range.label}</option>
             ))}
           </select>
-          <select aria-label="Agrupar por" value={groupBy} onChange={(event) => setGroupBy(event.target.value as typeof groupBy)} className="rounded-control border border-hairline bg-surface px-2 py-1 text-[11px] text-zinc-300 outline-none">
+          <select aria-label="Agrupar por" value={groupBy} onChange={(event) => setGroupBy(event.target.value as typeof groupBy)} className="rounded-control border border-hairline bg-surface px-2 py-1 text-[12px] text-zinc-300 outline-none">
             <option value="day">por día</option>
             <option value="session">por sesión</option>
             <option value="project">por proyecto</option>
@@ -57,18 +57,18 @@ export function UsageDashboard({ open, onClose }: UsageDashboardProps): React.Re
           <button
             type="button"
             onClick={() => void window.harness?.usage.csv(groupBy).then((result) => setCsv(result?.csv ?? ""))}
-            className="rounded-control border border-harness/40 px-2 py-1 text-[11px] text-harness-soft hover:bg-harness/10"
+            className="rounded-control border border-harness/40 px-2 py-1 text-[12px] text-harness-soft hover:bg-harness/10"
           >
             Exportar CSV
           </button>
-          <button type="button" onClick={onClose} className="ml-auto rounded-control border border-hairline px-2 py-1 text-[11px] text-zinc-400 hover:bg-zinc-800">
+          <button type="button" onClick={onClose} className="ml-auto rounded-control border border-hairline px-2 py-1 text-[12px] text-zinc-400 hover:bg-zinc-800">
             Cerrar
           </button>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto p-3">
           {comparison ? (
-            <div className="mb-3 grid grid-cols-3 gap-2 text-[11px]">
+            <div className="mb-3 grid grid-cols-3 gap-2 text-[12px]">
               <div className="card px-2 py-2">
                 <p className="text-zinc-500">harness-first</p>
                 <p className="text-zinc-100">{comparison.harness.calls} calls · {comparison.harness.tokens} tok</p>
@@ -88,7 +88,7 @@ export function UsageDashboard({ open, onClose }: UsageDashboardProps): React.Re
 
           <div className="mb-3"><TelemetryCharts buckets={buckets} comparison={comparison} /></div>
 
-          <table className="w-full text-left text-[11px]">
+          <table className="w-full text-left text-[12px]">
             <thead className="text-zinc-500">
               <tr>
                 <th className="py-1">{groupBy}</th>
@@ -122,8 +122,8 @@ export function UsageDashboard({ open, onClose }: UsageDashboardProps): React.Re
 
           {csv !== null ? (
             <div className="mt-3">
-              <p className="text-[10px] uppercase tracking-widest text-zinc-500">CSV exportado</p>
-              <textarea readOnly aria-label="CSV de uso" value={csv} className="mt-1 h-28 w-full resize-y rounded-control border border-hairline bg-surface px-2 py-1 font-mono text-[10px] text-zinc-300 outline-none" />
+              <p className="text-[12px] uppercase tracking-widest text-zinc-500">CSV exportado</p>
+              <textarea readOnly aria-label="CSV de uso" value={csv} className="mt-1 h-28 w-full resize-y rounded-control border border-hairline bg-surface px-2 py-1 font-mono text-[12px] text-zinc-300 outline-none" />
             </div>
           ) : null}
         </div>

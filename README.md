@@ -74,13 +74,12 @@ docs/                   HANDBOOK · ARCHITECTURE · PLUGIN-SDK
 
 ## Estado
 
-**SPEC v1.0.2 (frozen).** Acumula v1.0.0 + v1.0.1 (workspace/perfiles, sesiones y reanudar,
-adjuntos imagen/PDF/texto, plan editable con aprobación parcial, autoría de skills/plugins,
-inspector RAG, grafo de dependencias, permisos por tool, sandbox, tools de verificación,
-gate visual, routing/fallback, dashboard, health, feed privado, design system flotante,
-ayuda + tour) y la expansión v1.0.2: hot-reload de plugins/skills/agentes, notificaciones
-in-app, código resaltado en el chat, light/dark, settings por categorías, búsqueda web con
-citas obligatorias, guardrail de cuelgue >10 min, cifrado de secretos (AES-256-GCM),
-licencias y atribución, evidencia visual en el proyecto, auto-mejora, QA runner + perfiles
-Unity, terceros (MCP/Supabase), multi-agente en paralelo y telemetría con gráficas.
+**SPEC v1.0.2.1 (frozen).** Acumula v1.0.0/v1.0.1/v1.0.2 (workspace/perfiles, sesiones, adjuntos,
+plan con aprobación, autoría de skills/plugins, RAG, grafo, permisos por tool, sandbox, tools de
+verificación, gate visual, routing, dashboard, health, feed privado, ayuda + tour, hot-reload,
+código resaltado, light/dark, QA runner, terceros, multi-agente, telemetría) y el **rediseño
+v1.0.2.1**: jerarquía y capas únicas, Explorer **proyecto → sesiones**, **pipeline del chat como
+línea de tiempo**, Context con acciones (crear skills / reindexar RAG), **command palette real**,
+notificaciones flotantes con mensajes reales, Settings en secciones con foldouts, tipografía
+mínima 12px más nítida, campos visibles en claro/oscuro y sombras −35%.
 Cambios de arquitectura requieren un ADR nuevo y bump de versión. Repo privado — acceso bajo invitación.

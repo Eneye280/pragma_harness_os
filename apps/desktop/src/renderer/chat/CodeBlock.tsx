@@ -28,12 +28,12 @@ export function CodeBlock({ lang, content }: { lang: string; content: string }):
   return (
     <figure className="overflow-hidden rounded-control border border-hairline bg-black/50">
       <figcaption className="flex items-center gap-2 border-b border-hairline bg-surface-raised/60 px-3 py-1">
-        <span className="text-[10px] tracking-label text-zinc-500">{codeBlockLabel(lang)}</span>
+        <span className="text-[12px] tracking-label text-zinc-500">{codeBlockLabel(lang)}</span>
         <button
           type="button"
           onClick={() => void copy()}
           aria-label={copied ? "Copiado" : "Copiar código"}
-          className="ml-auto rounded-control border border-hairline px-2 py-[2px] text-[10px] text-zinc-400 transition-colors hover:bg-zinc-800"
+          className="ml-auto rounded-control border border-hairline px-2 py-[2px] text-[12px] text-zinc-400 transition-colors hover:bg-zinc-800"
         >
           {copied ? "copiado" : "copiar"}
         </button>
