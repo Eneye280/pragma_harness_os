@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { ChatService, buildAgentPrompt, parseToolRequest } from "../chat-service";
+import { ChatService, buildAgentPrompt, parseToolRequest, parseToolRequests } from "../chat-service";
 import type { ChatStreamEvent } from "../../../shared/chat-events";
 import type { ToolObservation, ToolRunner } from "../../tools";
 
@@ -57,6 +57,40 @@ describe("ChatService", () => {
     expect(observation).toMatchObject({ ok: true, diff: "+ # Nota", output: "wrote harness-note.md" });
   });
 
+  it("parses every valid tool block and ignores unknown or malformed ones", () => {
+    const text = [
+      '```tool\n{"tool":"fileEdit","args":{"path":"a","content":"1"}}\n```',
+      '```tool\n{"tool":"rm-rf","args":{}}\n```',
+      "```tool\nnot json\n```",
+      '```tool\n{"tool":"runTests","args":{}}\n```',
+    ].join("\n");
+    expect(parseToolRequests(text).map((request) => request.tool)).toEqual(["fileEdit", "runTests"]);
+  });
+
+  it("runs multiple tools and feeds results back until the model stops", async () => {
+    const toolBlock = (path: string) => `\`\`\`tool\n{"tool":"fileEdit","args":{"path":"${path}","content":"x"}}\n\`\`\``;
+    let turn = 0;
+    const gateway = {
+      stream: () => {
+        turn += 1;
+        return streamChunks(turn === 1 ? [`${toolBlock("index.html")}\n`, toolBlock("styles.css")] : ["Listo: calculadora creada."]);
+      },
+    };
+    const calls: string[] = [];
+    const runner = {
+      execute: async (request: { tool: string }) => {
+        calls.push(request.tool);
+        return { callId: "c", tool: request.tool, ok: true, output: "ok", diffPreview: "", durationMs: 1, ts: 0 };
+      },
+    };
+    const events: ChatStreamEvent[] = [];
+    const service = new ChatService({ gateway, toolRunner: runner as unknown as ToolRunner, toolWorkspacePath: "/tmp/ws" });
+    await service.run({ message: "crea una calculadora", sessionId: "s", workspacePath: "/tmp/repo" }, (event) => events.push(event));
+    expect(calls).toEqual(["fileEdit", "fileEdit"]);
+    expect(events.filter((event) => event.kind === "tool-call")).toHaveLength(2);
+    expect(events.filter((event) => event.kind === "tool-observation")).toHaveLength(2);
+  });
+
   it("skips harness phases when bypass is requested but still streams to the agent", async () => {
     const events = await runService(["respuesta"], makeRunner({}), true);
     const phases = events.filter((event) => event.kind === "harness-step").map((event) => (event as { phase: string }).phase);
@@ -85,6 +119,15 @@ describe("ChatService", () => {
     expect(prompt).toContain("[harness]");
     expect(prompt).toContain("needs=tdd-workflow,security-review");
     expect(prompt).toContain("agrega auth");
+  });
+
+  it("documents the tool protocol for real providers", () => {
+    const prompt = buildAgentPrompt({ message: "crea la calculadora", sessionId: "s", workspacePath: "/w" }, []);
+    expect(prompt).toContain("```tool");
+    expect(prompt).toContain('"tool":"fileEdit"');
+    for (const tool of ["fileRead", "fileEdit", "terminal", "runTests", "runBuild", "runLint", "webFetch", "mcp_call"]) {
+      expect(prompt).toContain(tool);
+    }
   });
 
   it("proposes a plan and waits for approval before executing", async () => {

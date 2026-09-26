@@ -54,4 +54,27 @@ describe("dependency graph builder", () => {
     expect(graph.cycles.length).toBe(1);
     expect(graph.cycles[0].sort()).toEqual(["src/a.ts", "src/b.ts"]);
   });
+
+  it("parses html script/link and css url references", () => {
+    expect(parseImports("index.html", '<script src="app.js"></script>\n<link rel="stylesheet" href="styles.css">\n<img src="logo.png">')).toEqual([
+      "app.js",
+      "styles.css",
+      "logo.png",
+    ]);
+    expect(parseImports("styles.css", '@import "base.css";\nbody { background: url(./bg.png); }')).toEqual(["base.css", "./bg.png"]);
+  });
+
+  it("links a web project through html and css even without js imports", () => {
+    const graph = buildDependencyGraph([
+      { path: "index.html", content: '<script src="app.js"></script><link href="styles.css" rel="stylesheet">' },
+      { path: "app.js", content: "console.log('calculator');" },
+      { path: "styles.css", content: "body { margin: 0; }" },
+    ]);
+    expect(graph.edges).toEqual(
+      expect.arrayContaining([
+        { from: "index.html", to: "app.js" },
+        { from: "index.html", to: "styles.css" },
+      ])
+    );
+  });
 });

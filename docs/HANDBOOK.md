@@ -247,3 +247,19 @@ Iteración sobre v1.0.2 enfocada en diseño y claridad, sin tocar el motor:
 
 `migrateSettingsV1_0_2_1` no añade claves obligatorias: rellena defaults, preserva todo y sella
 `configVersion: 4`. Idempotente. El arranque encadena v1.0.0 → v1.0.1 → v1.0.2 → v1.0.2.1.
+
+---
+
+## v1.0.2.2 — hotfix funcional
+
+- **Bucle agéntico**: el harness ejecuta **todas** las tools que propone el modelo y le devuelve
+  las observaciones para continuar (antes ejecutaba una y sin feedback). El prompt documenta el
+  protocolo `[tools]` (` ```tool ` con JSON) para providers reales.
+- **Grafo**: muestra todos los nodos (incluidos aislados) y entiende `<script src>`, `<link href>`,
+  `@import` y `url()` de HTML/CSS; transform SVG válido y estado vacío explicado.
+- **Diálogos anidados**: `Dialog` portalizado en su propia capa (`--phs-z-dialog`) y `useFocusTrap`
+  con pila — Escape cierra solo el diálogo superior (Settings ya no se cierra al editar un plugin).
+- **Sidebar único**: buscador arriba y, debajo, proyectos (folder) con sus sesiones; los archivos
+  viven dentro del proyecto activo y no se muestran carpetas vacías.
+- **E2E real**: con DeepSeek el harness creó `calculadora/{index.html,styles.css,script.js}` en un
+  proyecto vacío (suma, resta, multiplicación y división); `node --check` OK.

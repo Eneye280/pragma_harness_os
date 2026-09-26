@@ -76,12 +76,13 @@ export function GraphPanel({ open, onClose, storageKey = "" }: GraphPanelProps):
 
   const graphLayout = useMemo(() => {
     if (!graph) return { positions: new Map<string, { x: number; y: number }>(), nodes: [], edges: [] };
-    const connected = new Set(graph.edges.flatMap((edge) => [edge.from, edge.to]));
-    const nodes = graph.nodes.filter((node) => connected.has(node.id)).slice(0, MAX_NODES);
+    // Se muestran TODOS los nodos (también los aislados: html/css/js sin imports).
+    const nodes = graph.nodes.slice(0, MAX_NODES);
     const positions = new Map<string, { x: number; y: number }>();
-    const radius = Math.max(160, nodes.length * 6);
+    const count = Math.max(1, nodes.length);
+    const radius = nodes.length <= 1 ? 0 : Math.max(120, count * 5);
     nodes.forEach((node, index) => {
-      const angle = (index / Math.max(1, nodes.length)) * Math.PI * 2;
+      const angle = (index / count) * Math.PI * 2;
       positions.set(node.id, { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius });
     });
     const edges = graph.edges.filter((edge) => positions.has(edge.from) && positions.has(edge.to));
@@ -184,8 +185,8 @@ export function GraphPanel({ open, onClose, storageKey = "" }: GraphPanelProps):
             dragRef.current = null;
           }}
         >
-          <svg width="100%" height="100%" role="img" aria-label="Grafo de dependencias">
-            <g transform={`translate(50%,50%) scale(${zoom}) translate(${pan.x},${pan.y})`}>
+          <svg width="100%" height="100%" viewBox="-420 -320 840 640" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Grafo de dependencias">
+            <g transform={`scale(${zoom}) translate(${pan.x},${pan.y})`}>
               {graphLayout.edges.map((edge) => {
                 const from = graphLayout.positions.get(edge.from)!;
                 const to = graphLayout.positions.get(edge.to)!;
@@ -219,6 +220,14 @@ export function GraphPanel({ open, onClose, storageKey = "" }: GraphPanelProps):
               })}
             </g>
           </svg>
+          {graph && graph.nodes.length === 0 ? (
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6">
+              <p className="max-w-[320px] text-center text-[12px] leading-relaxed text-zinc-500">
+                Sin dependencias todavía. El grafo lee imports de TS/JS/C# y referencias de HTML/CSS
+                (<span className="font-mono">&lt;script src&gt;</span>, <span className="font-mono">import</span>, <span className="font-mono">using</span>).
+              </p>
+            </div>
+          ) : null}
           {focus ? <p className="absolute bottom-2 left-3 font-mono text-[12px] text-zinc-400">{focus}</p> : null}
         </div>
 

@@ -24,6 +24,23 @@ export function parseToolRequest(rawText: string): z.infer<typeof ToolRequestSch
   }
 }
 
+/** Todos los bloques ```tool válidos del texto, en orden. */
+export function parseToolRequests(rawText: string): Array<z.infer<typeof ToolRequestSchema>> {
+  const requests: Array<z.infer<typeof ToolRequestSchema>> = [];
+  for (const match of rawText.matchAll(/```tool\s*([\s\S]*?)```/g)) {
+    try {
+      const parsed: unknown = JSON.parse(match[1].trim());
+      const result = ToolRequestSchema.safeParse(parsed);
+      if (result.success) requests.push(result.data);
+    } catch {
+      // bloque inválido: se ignora
+    }
+  }
+  return requests;
+}
+
+export const MAX_TOOL_ROUNDS = 6;
+
 export interface ChatGatewayStreamChunk {
   textDelta: string;
   isDone: boolean;
@@ -69,15 +86,39 @@ export interface ChatServiceDeps {
   onPostmortem?: (entry: { sessionId: string; goal: string; outcome: "done" | "failed" | "blocked"; failures: string[]; fixes: string[]; lessons: string[] }) => void;
 }
 
+export const TOOL_PROTOCOL = [
+  "[tools] para leer o modificar el proyecto debes emitir uno o más bloques con este formato exacto:",
+  "```tool",
+  '{"tool":"fileEdit","args":{"path":"index.html","content":"<html>…</html>"}}',
+  "```",
+  "[tools] disponibles: fileRead{path}, fileEdit{path,content}, terminal{command,args[]}, runTests{}, runBuild{}, runLint{}, webFetch{url}, mcp_call{server,tool,args}. Las rutas son relativas al proyecto. Usa un bloque por archivo; no describas el bloque, emítelo.",
+].join("\n");
+
 export function buildAgentPrompt(request: ChatSendRequest, needs: string[], approvedPlan?: string): string {
   const sections = [
     "[harness] compila reglas, skills y contexto antes de despertar al agente.",
     `[intent] needs=${needs.join(",") || "none"}`,
     "[style] responde en markdown, conciso, sin relleno.",
+    TOOL_PROTOCOL,
   ];
   if (approvedPlan) sections.push("[plan aprobado por el usuario]", approvedPlan);
   sections.push("[user]", request.message);
   return sections.join("\n");
+}
+
+/** Prompt de continuación tras ejecutar tools: devuelve las observaciones al modelo. */
+export function buildToolFollowupPrompt(basePrompt: string, modelText: string, observations: Array<{ tool: string; ok: boolean; output: string }>): string {
+  const results = observations
+    .map((observation) => `- ${observation.tool}: ${observation.ok ? "ok" : "error"} — ${observation.output.slice(0, 500) || "(sin salida)"}`)
+    .join("\n");
+  return [
+    basePrompt,
+    "[assistant anterior]",
+    modelText.slice(-2000),
+    "[resultado de las tools]",
+    results,
+    "[instrucción] continúa en el mismo formato. Si ya terminaste la tarea, responde un resumen breve sin bloques ```tool.",
+  ].join("\n");
 }
 
 export class ChatService {
@@ -314,47 +355,63 @@ export class ChatService {
 
       let lastDiff: string | undefined;
 
-      const pendingToolCall = parseToolRequest(fullText);
-      if (pendingToolCall) {
-        const callId = `call-${Date.now().toString(36)}`;
-        const toolArgs = pendingToolCall.args;
-        const filePath = typeof toolArgs.path === "string" ? toolArgs.path : "scratch.txt";
-        const toolSummary = typeof toolArgs.path === "string" ? `${pendingToolCall.tool} → ${filePath}` : pendingToolCall.tool;
-        emit({
-          kind: "tool-call",
-          sessionId,
-          callId,
-          tool: pendingToolCall.tool,
-          summary: toolSummary,
-          status: "running",
+      if (this.deps.resolveToolPermission) {
+        this.deps.toolRunner.configure({
+          permissionFor: this.deps.resolveToolPermission,
+          approveTool: async (request) => {
+            emit({ kind: "tool-approval", sessionId, callId: request.callId, tool: request.tool, summary: request.summary });
+            return this.deps.requestToolApproval ? this.deps.requestToolApproval(request) : { approved: false };
+          },
         });
-        const toolWorkspacePath =
-          typeof this.deps.toolWorkspacePath === "function" ? this.deps.toolWorkspacePath() : this.deps.toolWorkspacePath;
-        if (this.deps.resolveToolPermission) {
-          this.deps.toolRunner.configure({
-            permissionFor: this.deps.resolveToolPermission,
-            approveTool: async (request) => {
-              emit({ kind: "tool-approval", sessionId, callId: request.callId, tool: request.tool, summary: request.summary });
-              return this.deps.requestToolApproval ? this.deps.requestToolApproval(request) : { approved: false };
-            },
+      }
+
+      // Bucle agéntico: ejecuta las tools que proponga el modelo y le devuelve
+      // los resultados hasta que deje de pedir tools (o se alcance el tope).
+      const executed = new Set<string>();
+      let agentText = fullText;
+      for (let round = 0; round < MAX_TOOL_ROUNDS && !signal?.aborted; round += 1) {
+        const requests = parseToolRequests(agentText).filter((request) => !executed.has(JSON.stringify(request)));
+        if (requests.length === 0) break;
+
+        const observations: Array<{ tool: string; ok: boolean; output: string }> = [];
+        for (const pendingToolCall of requests) {
+          executed.add(JSON.stringify(pendingToolCall));
+          const callId = `call-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+          const toolArgs = pendingToolCall.args;
+          const filePath = typeof toolArgs.path === "string" ? toolArgs.path : "";
+          const toolSummary = filePath ? `${pendingToolCall.tool} → ${filePath}` : pendingToolCall.tool;
+          emit({ kind: "tool-call", sessionId, callId, tool: pendingToolCall.tool, summary: toolSummary, status: "running" });
+
+          const toolWorkspacePath =
+            typeof this.deps.toolWorkspacePath === "function" ? this.deps.toolWorkspacePath() : this.deps.toolWorkspacePath;
+          const observation = await this.deps.toolRunner.execute({
+            tool: pendingToolCall.tool,
+            args: pendingToolCall.args,
+            sessionId,
+            workspaceHash: toolWorkspacePath,
+            workspacePath: toolWorkspacePath,
           });
+          lastDiff = observation.diffPreview ?? lastDiff;
+          const output = observation.output || observation.stderr || "";
+          observations.push({ tool: pendingToolCall.tool, ok: observation.ok, output });
+          emit({ kind: "tool-observation", sessionId, callId, ok: observation.ok, output, diff: observation.diffPreview });
         }
-        const observation = await this.deps.toolRunner.execute({
-          tool: pendingToolCall.tool,
-          args: pendingToolCall.args,
-          sessionId,
-          workspaceHash: toolWorkspacePath,
-          workspacePath: toolWorkspacePath,
-        });
-        lastDiff = observation.diffPreview;
-        emit({
-          kind: "tool-observation",
-          sessionId,
-          callId,
-          ok: observation.ok,
-          output: observation.output || observation.stderr || "",
-          diff: observation.diffPreview,
-        });
+
+        if (signal?.aborted) break;
+        emit({ kind: "harness-step", sessionId, phase: "agent", status: "running", label: "agente continúa tras las tools…" });
+        const followup = buildToolFollowupPrompt(finalPrompt, agentText, observations);
+        let nextText = "";
+        for await (const chunk of this.deps.gateway.stream(followup)) {
+          if (signal?.aborted) break;
+          if (chunk.isDone) break;
+          if (!chunk.textDelta) continue;
+          nextText += chunk.textDelta;
+          emit({ kind: "assistant-delta", sessionId, text: chunk.textDelta });
+        }
+        emit({ kind: "assistant-done", sessionId });
+        fullText += `\n${nextText}`;
+        agentText = nextText;
+        if (!nextText.trim()) break;
       }
 
       if (!request.bypassHarness && this.deps.pluginRunner) {
