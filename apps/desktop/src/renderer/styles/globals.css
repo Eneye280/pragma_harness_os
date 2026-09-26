@@ -18,6 +18,13 @@
 
   --radius-panel: 0.75rem;
   --radius-control: 0.5rem;
+  --radius-sheet: 1.125rem;
+
+  --phs-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --phs-elevation-2: 0 10px 30px rgba(0, 0, 0, 0.45);
+  --phs-elevation-3: 0 24px 60px rgba(0, 0, 0, 0.55);
+  --phs-blur: 18px;
+  --phs-blur-strong: 28px;
 }
 
 :root {
@@ -90,6 +97,48 @@ body {
 
 .slide-up {
   animation: slide-up var(--phs-motion-base) var(--phs-easing);
+}
+
+.floating-panel {
+  background: color-mix(in srgb, var(--color-surface-raised) 82%, transparent);
+  backdrop-filter: blur(var(--phs-blur));
+  -webkit-backdrop-filter: blur(var(--phs-blur));
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--phs-elevation-2);
+}
+
+.floating-toolbar {
+  background: color-mix(in srgb, var(--color-surface) 70%, transparent);
+  backdrop-filter: blur(var(--phs-blur-strong));
+  -webkit-backdrop-filter: blur(var(--phs-blur-strong));
+  border-bottom: 1px solid var(--color-hairline);
+  box-shadow: var(--phs-elevation-1);
+}
+
+.sheet {
+  background: color-mix(in srgb, var(--color-surface-raised) 88%, transparent);
+  backdrop-filter: blur(var(--phs-blur-strong));
+  -webkit-backdrop-filter: blur(var(--phs-blur-strong));
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sheet);
+  box-shadow: var(--phs-elevation-3);
+}
+
+.card {
+  background: color-mix(in srgb, var(--color-surface-raised) 70%, transparent);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--phs-elevation-1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floating-panel,
+  .floating-toolbar,
+  .sheet,
+  .card {
+    transition: none;
+  }
 }
 
 :focus-visible {

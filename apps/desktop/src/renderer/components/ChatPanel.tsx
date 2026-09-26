@@ -334,6 +334,7 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
           <input
             ref={fileInputRef}
             type="file"
+            aria-label="Adjuntar archivo"
             accept="image/*,application/pdf,text/*"
             multiple
             hidden
