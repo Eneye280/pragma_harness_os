@@ -11,6 +11,7 @@ import type { SkillSummary } from "../shared/skills";
 import type { AgentSummary } from "../shared/agents";
 import type { Attachment } from "../shared/attachments";
 import type { RagProgressEvent, RagRecallHit, RagStats } from "../shared/rag";
+import type { DependencyGraph, GraphDelta } from "../shared/graph";
 import type { BundleSummary, BundleValidation, StackDetection } from "../shared/bundles";
 import type { SessionRecord, SessionSummary } from "../shared/session";
 import type { WorkspaceChangedPayload, WorkspacePickResult, WorkspaceState } from "../shared/workspace";
@@ -99,6 +100,12 @@ export interface SkillsBridge {
   delete: (name: string) => Promise<SkillAuthoringResult>;
 }
 
+export interface GraphBridge {
+  get: () => Promise<DependencyGraph>;
+  refresh: () => Promise<DependencyGraph>;
+  onUpdated: (cb: (delta: GraphDelta) => void) => () => void;
+}
+
 export interface PluginsBridge {
   list: () => Promise<{ custom: import("../shared/plugin-authoring").CustomPluginDef[] }>;
   save: (def: import("../shared/plugin-authoring").CustomPluginDef) => Promise<{ ok: boolean; errors: string[]; custom: import("../shared/plugin-authoring").CustomPluginDef[] }>;
@@ -170,6 +177,7 @@ export interface HarnessBridge {
   skills: SkillsBridge;
   plugins: PluginsBridge;
   tasks: TasksBridge;
+  graph: GraphBridge;
   agents: AgentsBridge;
   bundles: BundlesBridge;
   sessions: SessionsBridge;
@@ -294,6 +302,16 @@ const tasks: TasksBridge = {
   list: () => ipcRenderer.invoke("tasks:list"),
   save: (list) => ipcRenderer.invoke("tasks:save", { tasks: list })
 };
+
+const graph: GraphBridge = {
+  get: () => ipcRenderer.invoke("graph:get"),
+  refresh: () => ipcRenderer.invoke("graph:refresh"),
+  onUpdated: (cb) => {
+    const handler = (_e: unknown, data: unknown) => cb(data as GraphDelta);
+    ipcRenderer.on("graph:updated", handler as never);
+    return () => ipcRenderer.removeListener("graph:updated", handler as never);
+  },
+};
 const bundles: BundlesBridge = {
   list: () => ipcRenderer.invoke("bundles:list"),
   apply: (stack: string) => ipcRenderer.invoke("bundles:apply", stack),
@@ -356,6 +374,7 @@ const harness: HarnessBridge = {
   skills,
   plugins,
   tasks,
+  graph,
   agents,
   bundles,
   sessions,
