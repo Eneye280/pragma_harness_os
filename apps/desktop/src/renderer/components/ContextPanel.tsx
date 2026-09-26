@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { HarnessContextSnapshot } from "@shared/context-snapshot";
 import { cn } from "../lib/cn";
 import { IconActivity, IconFile } from "./icons";
+import { RagInspector } from "./RagInspector";
 
 interface ContextPanelProps {
   snapshot: HarnessContextSnapshot | null;
@@ -165,6 +166,10 @@ export function ContextPanel({ snapshot, onOpenFile }: ContextPanelProps): React
             </Section>
           </div>
         )}
+
+        <div className="mt-1.5">
+          <RagInspector onOpenFile={onOpenFile} />
+        </div>
       </div>
 
       <div className="border-t border-hairline px-3 py-2 text-[10px] text-zinc-600">lo que el harness compila · pre-agent</div>

@@ -7,9 +7,18 @@ import { buildHarnessContext, type HarnessContextDeps, type HarnessContextResult
 
 let indexPromise: Promise<number> | null = null;
 let agentProvider: ((domain: string) => { id: string; name: string; prompt: string; skills: string[] } | null) | null = null;
+let ragExcludesProvider: (() => string[]) | null = null;
+
+export function configureRagExcludes(provider: () => string[]): void {
+  ragExcludesProvider = provider;
+}
 
 function ensureRagIndexed(): Promise<number> {
-  if (!indexPromise) indexPromise = ragIndex.index().catch(() => 0);
+  if (!indexPromise) {
+    const excludes = ragExcludesProvider?.() ?? [];
+    if (excludes.length > 0) ragIndex.setExcludes(excludes);
+    indexPromise = ragIndex.index().catch(() => 0);
+  }
   return indexPromise;
 }
 

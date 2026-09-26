@@ -16,10 +16,12 @@ import { registerAgentsHandlers } from "./ipc/agents-handlers";
 import { registerBundlesHandlers } from "./ipc/bundles-handlers";
 import { registerSessionsHandlers } from "./ipc/sessions-handlers";
 import { registerAttachmentsHandlers } from "./ipc/attachments-handlers";
+import { registerRagHandlers } from "./ipc/rag-handlers";
 import { JsonSessionRepository, SessionStore } from "./sessions";
 import { skillCompiler } from "./harness/skills/skill-compiler";
 import { AgentCatalog } from "./agents";
 import { configureAgentProvider } from "./context";
+import { configureRagExcludes } from "./context";
 import { SettingsController, SettingsStore } from "./settings";
 import { CostTracker } from "./cost";
 import { createUpdaterHost } from "./updater";
@@ -94,6 +96,8 @@ app.whenReady().then(() => {
   const sessionStore = new SessionStore(new JsonSessionRepository(join(app.getPath("userData"), "pragma-harness", "sessions")));
   registerSessionsHandlers(() => sessionStore);
   registerAttachmentsHandlers();
+  registerRagHandlers(() => mainWindow, profileStore, workspace);
+  configureRagExcludes(() => profileStore.read(workspace.current() ?? "")?.rag?.excludes ?? []);
   updater.init();
 
   app.on("activate", () => {
