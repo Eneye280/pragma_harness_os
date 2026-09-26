@@ -1,6 +1,13 @@
 import type { ProjectProfileInfo } from "./profile";
+import { DEFAULT_ROUTING_RULES } from "./routing";
 
 export type ProviderName = "mock" | "deepseek" | "anthropic" | "openai" | "ollama";
+
+export interface RoutingSettings {
+  rules: import("./routing").RoutingRule[];
+  fallbackModels: string[];
+  maxRetries: number;
+}
 
 export const KNOWN_PROVIDERS: ProviderName[] = ["mock", "deepseek", "anthropic", "openai", "ollama"];
 export const KNOWN_PLUGINS = ["commit-guard", "secret-scan", "no-console-log"] as const;
@@ -84,6 +91,7 @@ export interface HarnessSettings {
   sandbox: SandboxFlags;
   workspace: WorkspaceSettings;
   tools: ToolPermissionSettings;
+  routing: RoutingSettings;
 }
 
 export const DEFAULT_SETTINGS: HarnessSettings = {
@@ -104,6 +112,7 @@ export const DEFAULT_SETTINGS: HarnessSettings = {
   sandbox: { enabled: false, image: "node:22", network: false, cpus: 1, memoryMb: 1024, readOnlyWorkspace: true },
   workspace: { active: "", recents: [] },
   tools: { askBeforeTools: true, perTool: {} },
+  routing: { rules: DEFAULT_ROUTING_RULES, fallbackModels: [], maxRetries: 2 },
 };
 
 export function maskSecret(secret: string): string {
