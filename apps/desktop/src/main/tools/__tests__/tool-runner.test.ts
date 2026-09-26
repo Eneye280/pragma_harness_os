@@ -145,4 +145,38 @@ describe("ToolRunner — file terminal and mcp support", () => {
     expect(result.finalText).toBe("listo, archivo creado");
     expect(readFileSync(join(workspacePath, "loop.txt"), "utf8")).toBe("from-loop");
   });
+
+  it("denies a tool call when the per-tool policy is deny", async () => {
+    const runner = new ToolRunner({ permission: "allow", permissionFor: () => "deny" });
+    const observation = await runner.execute(makeInput({ tool: "fileEdit", workspacePath, args: { path: "blocked.txt", content: "x" } }));
+    expect(observation.blocked).toBe(true);
+    expect(observation.ok).toBe(false);
+    expect(existsSync(join(workspacePath, "blocked.txt"))).toBe(false);
+  });
+
+  it("asks for approval and honors reject", async () => {
+    const requested: string[] = [];
+    const runner = new ToolRunner({
+      permission: "allow",
+      permissionFor: () => "ask",
+      approveTool: async (request) => {
+        requested.push(request.tool);
+        return { approved: false };
+      },
+    });
+    const observation = await runner.execute(makeInput({ tool: "terminal", workspacePath, args: { command: "git", args: ["status"] } }));
+    expect(requested).toEqual(["terminal"]);
+    expect(observation.blocked).toBe(true);
+  });
+
+  it("executes once approval flows through", async () => {
+    const runner = new ToolRunner({
+      permission: "allow",
+      permissionFor: () => "ask",
+      approveTool: async () => ({ approved: true, remember: "allow" }),
+    });
+    const observation = await runner.execute(makeInput({ tool: "fileEdit", workspacePath, args: { path: "approved.txt", content: "ok" } }));
+    expect(observation.ok).toBe(true);
+    expect(readFileSync(join(workspacePath, "approved.txt"), "utf8")).toBe("ok");
+  });
 });

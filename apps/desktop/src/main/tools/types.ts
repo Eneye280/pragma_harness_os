@@ -39,6 +39,23 @@ export interface ConfirmHook {
   (pendingEdit: PendingEditPreview): Promise<boolean>;
 }
 
+export interface ToolApprovalRequest {
+  callId: string;
+  tool: ToolName;
+  summary: string;
+  sessionId: string;
+  args: Record<string, unknown>;
+}
+
+export interface ToolApprovalDecision {
+  approved: boolean;
+  remember?: "allow" | "deny";
+}
+
+export interface ApproveHook {
+  (request: ToolApprovalRequest): Promise<ToolApprovalDecision>;
+}
+
 export interface PendingEditPreview {
   callId: string;
   absolutePath: string;

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { FileEditHistory, readWorkspaceFile } from "./file-tools";
 import { loadMcpConfig, redactMcpEnv, routeMcpTool } from "./mcp";
 import { runTerminal } from "./terminal";
-import { redactSecrets, type ConfirmHook, type PermissionMode, type ToolCallInput, type ToolCallRecord, type ToolName, type ToolObservation } from "./types";
+import { redactSecrets, type ApproveHook, type ConfirmHook, type PermissionMode, type ToolApprovalRequest, type ToolCallInput, type ToolCallRecord, type ToolName, type ToolObservation } from "./types";
 
 export const FileReadArgsSchema = z.object({ path: z.string().min(1) });
 export const FileEditArgsSchema = z.object({ path: z.string().min(1), content: z.string() });
@@ -19,6 +19,8 @@ export const McpCallArgsSchema = z.object({
 
 export interface RunnerOptions {
   permission: PermissionMode;
+  permissionFor?: (tool: ToolName) => PermissionMode;
+  approveTool?: ApproveHook;
   confirm?: ConfirmHook;
   mcpExecutor?: (route: { serverName: string; toolName: string }, params: Record<string, unknown>) => Promise<string>;
   eventSink?: (eventType: "agent:tool-call" | "agent:observation", payload: unknown, sessionId: string, workspaceHash: string) => void;
@@ -64,7 +66,11 @@ export function parseToolCallFromText(llmText: string): ToolCallInput | null {
 export class ToolRunner {
   private readonly fileHistory = new FileEditHistory();
 
-  constructor(private readonly options: RunnerOptions = { permission: "allow" }) {}
+  constructor(private options: RunnerOptions = { permission: "allow" }) {}
+
+  configure(partial: Partial<RunnerOptions>): void {
+    this.options = { ...this.options, ...partial };
+  }
 
   undoLastFileEdit() {
     return this.fileHistory.undoLast();
@@ -86,7 +92,8 @@ export class ToolRunner {
     const startedAt = Date.now();
 
     try {
-      const observation = await this.dispatch(input, callRecord.id, startedAt);
+      const denied = await this.authorize(input, callRecord.id, startedAt);
+      const observation = denied ?? (await this.dispatch(input, callRecord.id, startedAt));
       this.emitEvent("agent:observation", observation, input.sessionId, input.workspaceHash);
       return observation;
     } catch (dispatchError) {
@@ -113,6 +120,46 @@ export class ToolRunner {
       redacted[argKey] = typeof argValue === "string" ? redactSecrets(argValue) : argValue;
     }
     return redacted;
+  }
+
+  private summarize(input: ToolCallInput): string {
+    const args = input.args as { path?: unknown; command?: unknown; qualifiedTool?: unknown };
+    if (typeof args.path === "string") return `${input.tool} → ${args.path}`;
+    if (typeof args.command === "string") return `${input.tool} → ${args.command}`;
+    if (typeof args.qualifiedTool === "string") return `${input.tool} → ${args.qualifiedTool}`;
+    return input.tool;
+  }
+
+  private async authorize(input: ToolCallInput, callId: string, startedAt: number): Promise<ToolObservation | null> {
+    const mode = this.options.permissionFor?.(input.tool) ?? this.options.permission;
+    if (mode === "allow") return null;
+    if (mode === "deny") {
+      return {
+        callId,
+        tool: input.tool,
+        ok: false,
+        output: "",
+        blocked: true,
+        blockReason: `${input.tool} denied by permission policy`,
+        durationMs: Date.now() - startedAt,
+        ts: Date.now(),
+      };
+    }
+    const request: ToolApprovalRequest = { callId, tool: input.tool, summary: this.summarize(input), sessionId: input.sessionId, args: input.args };
+    const decision = this.options.approveTool ? await this.options.approveTool(request) : { approved: false };
+    if (!decision.approved) {
+      return {
+        callId,
+        tool: input.tool,
+        ok: false,
+        output: "",
+        blocked: true,
+        blockReason: `${input.tool} rejected by user`,
+        durationMs: Date.now() - startedAt,
+        ts: Date.now(),
+      };
+    }
+    return null;
   }
 
   private async dispatch(input: ToolCallInput, callId: string, startedAt: number): Promise<ToolObservation> {

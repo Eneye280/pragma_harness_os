@@ -1,4 +1,4 @@
-import type { BudgetSettings, PostGateFlags, PreGateFlags, ProviderName, SandboxFlags } from "./settings";
+import type { BudgetSettings, PostGateFlags, PreGateFlags, ProviderName, SandboxFlags, ToolPermissionSettings } from "./settings";
 
 export interface ProjectProfile {
   name?: string;
@@ -14,6 +14,7 @@ export interface ProjectProfile {
   agent?: string;
   sandbox?: Partial<SandboxFlags>;
   rag?: { excludes?: string[] };
+  tools?: Partial<ToolPermissionSettings>;
 }
 
 export interface ProjectProfileInfo {

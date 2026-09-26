@@ -48,6 +48,14 @@ export interface ToolObservationEvent {
   diff?: string;
 }
 
+export interface ToolApprovalEvent {
+  kind: "tool-approval";
+  sessionId: string;
+  callId: string;
+  tool: string;
+  summary: string;
+}
+
 export interface ChatErrorEvent {
   kind: "error";
   sessionId: string;
@@ -79,6 +87,7 @@ export type ChatStreamEvent =
   | UserMessageEvent
   | ToolCallEvent
   | ToolObservationEvent
+  | ToolApprovalEvent
   | ChatErrorEvent
   | PlanProposedEvent
   | PlanResolvedEvent

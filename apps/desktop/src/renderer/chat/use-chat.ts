@@ -26,6 +26,7 @@ export interface UseChatResult {
   startNewSession: () => void;
   steer: (text: string) => void;
   cancel: (sessionId?: string) => void;
+  approveTool: (callId: string, tool: string, decision: "approve" | "reject", remember: boolean) => void;
   reset: () => void;
 }
 
@@ -154,6 +155,10 @@ export function useChat(workspacePath = ""): UseChatResult {
     void window.harness?.plan.revise(sessionRef.current, markdown);
   }, []);
 
+  const approveTool = useCallback((callId: string, tool: string, decision: "approve" | "reject", remember: boolean) => {
+    void window.harness?.approveTool({ callId, tool, decision, remember });
+  }, []);
+
   const state = states[sessionId] ?? INITIAL_CHAT_STATE;
   const runningSessions = Object.entries(states)
     .filter(([, sessionState]) => sessionState.agentPhase === "running")
@@ -172,6 +177,7 @@ export function useChat(workspacePath = ""): UseChatResult {
     startNewSession,
     steer,
     cancel,
+    approveTool,
     reset,
   };
 }

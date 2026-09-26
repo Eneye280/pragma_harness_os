@@ -60,7 +60,11 @@ export function createChatService(
   onCostRecorded?: (snapshot: import("../../shared/cost").CostSnapshot) => void,
   getWorkspace?: () => string,
   pollSteer?: (sessionId: string) => string | null,
-  customPlugins?: () => import("../harness/plugin-chain").HarnessPlugin[]
+  customPlugins?: () => import("../harness/plugin-chain").HarnessPlugin[],
+  toolApproval?: {
+    resolvePermission: (tool: import("../tools").ToolName) => import("../tools").PermissionMode;
+    requestApproval: (request: import("../tools").ToolApprovalRequest) => Promise<import("../tools").ToolApprovalDecision>;
+  }
 ): ChatService {
   const gateway = new SettingsGateway(() => settingsController.store.get(), createGatewayForConfig);
   const toolWorkspacePath = getWorkspace ?? resolveHarnessWorkspace;
@@ -108,6 +112,8 @@ export function createChatService(
     },
     pluginRunner: createPluginRunner((name) => settingsController.store.get().plugins[name] === true, customPlugins),
     pollSteer,
+    resolveToolPermission: toolApproval?.resolvePermission,
+    requestToolApproval: toolApproval?.requestApproval,
   });
 }
 

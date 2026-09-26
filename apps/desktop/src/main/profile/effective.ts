@@ -26,5 +26,9 @@ export function resolveEffectiveSettings(global: HarnessSettings, profile: Proje
     agent: profile.agent ?? global.agent,
     sandbox: { ...global.sandbox, ...profile.sandbox },
     workspace: global.workspace,
+    tools: {
+      askBeforeTools: profile.tools?.askBeforeTools ?? global.tools.askBeforeTools,
+      perTool: { ...global.tools.perTool, ...profile.tools?.perTool },
+    },
   };
 }

@@ -165,6 +165,7 @@ export interface HarnessBridge {
   onChatEvent: (cb: (event: ChatStreamEvent) => void) => () => void;
   cancel: (sessionId: string) => Promise<{ ok: boolean }>;
   steer: (sessionId: string, text: string) => Promise<{ ok: boolean }>;
+  approveTool: (payload: { callId: string; tool: string; decision: "approve" | "reject"; remember?: boolean }) => Promise<{ ok: boolean; error?: string }>;
   explorer: ExplorerBridge;
   terminal: TerminalBridge;
   settings: SettingsBridge;
@@ -362,6 +363,7 @@ const harness: HarnessBridge = {
   },
   cancel: (sessionId: string) => ipcRenderer.invoke("harness:cancel", sessionId),
   steer: (sessionId: string, text: string) => ipcRenderer.invoke("harness:steer", { sessionId, text }),
+  approveTool: (payload) => ipcRenderer.invoke("harness:approveTool", payload),
   explorer,
   terminal,
   settings,
