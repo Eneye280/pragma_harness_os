@@ -38,6 +38,21 @@ const sendMessageSchema = z.object({
   message: z.string().min(1).max(20000),
   sessionId: z.string().min(1).max(120).optional(),
   bypassHarness: z.boolean().optional(),
+  attachments: z
+    .array(
+      z.object({
+        id: z.string().min(1).max(120),
+        kind: z.enum(["image", "document"]),
+        name: z.string().min(1).max(300),
+        mime: z.string().max(120),
+        size: z.number().nonnegative(),
+        dataUrl: z.string().max(8_000_000).optional(),
+        text: z.string().max(200_000).optional(),
+        description: z.string().max(2000).optional(),
+      })
+    )
+    .max(10)
+    .optional(),
 });
 const pingResponse = { status: "harness:ready" as const, version: "0.1.0" };
 
@@ -186,6 +201,7 @@ export function registerIpcHandlers(
           sessionId: context.sessionId,
           workspacePath: context.workspacePath,
           bypassHarness: parsed.data.bypassHarness,
+          attachments: parsed.data.attachments,
         },
         (chatEvent) => {
           const targetWindow = getMainWindow();

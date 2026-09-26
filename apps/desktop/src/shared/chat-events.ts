@@ -89,6 +89,7 @@ export interface ChatSendRequest {
   sessionId: string;
   workspacePath: string;
   bypassHarness?: boolean;
+  attachments?: import("./attachments").Attachment[];
 }
 
 export const HARNESS_PHASE_ORDER: HarnessPhase[] = [

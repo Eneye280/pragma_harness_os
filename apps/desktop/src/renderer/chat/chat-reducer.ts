@@ -8,6 +8,7 @@ export interface ChatMessage {
   content: string;
   streaming: boolean;
   steer?: boolean;
+  attachments?: import("@shared/attachments").Attachment[];
 }
 
 export interface HarnessStepState {
@@ -50,7 +51,7 @@ export const INITIAL_CHAT_STATE: ChatState = {
 };
 
 export type ChatAction =
-  | { type: "send"; id: string; text: string }
+  | { type: "send"; id: string; text: string; attachments?: import("@shared/attachments").Attachment[] }
   | { type: "stream"; event: ChatStreamEvent }
   | { type: "restore"; state: unknown }
   | { type: "reset" };
@@ -159,7 +160,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         ...state,
         messages: [
           ...state.messages,
-          { id: action.id, role: "user", content: action.text, streaming: false },
+          { id: action.id, role: "user", content: action.text, streaming: false, attachments: action.attachments },
           { id: `${action.id}-assistant`, role: "assistant", content: "", streaming: true },
         ],
         steps: [],
@@ -190,7 +191,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
 export type SessionStates = Record<string, ChatState>;
 
 export type SessionsAction =
-  | { type: "send"; sessionId: string; id: string; text: string }
+  | { type: "send"; sessionId: string; id: string; text: string; attachments?: import("@shared/attachments").Attachment[] }
   | { type: "stream"; event: ChatStreamEvent }
   | { type: "restore"; sessionId: string; state: unknown }
   | { type: "reset"; sessionId: string }
@@ -205,6 +206,7 @@ export function sessionStatesReducer(map: SessionStates, action: SessionsAction)
           type: "send",
           id: action.id,
           text: action.text,
+          attachments: action.attachments,
         }),
       };
     case "stream": {
