@@ -43,4 +43,35 @@ describe("RagIndex — local deterministic recall", () => {
     const hits = rag.recall("tdd", 5);
     expect(hits.length).toBeGreaterThan(0);
   });
+
+  it("excludes change the indexed set and the hits", () => {
+    const rag = new RagIndex({ root: "/tmp", patterns: [] });
+    rag.addDocument("skills/auth/SKILL.md", "auth with supabase");
+    rag.addDocument("skills/security/SKILL.md", "auth security review");
+    const before = rag.recall("auth", 5).length;
+
+    rag.setExcludes(["skills/auth/**"]);
+    expect(rag.getExcludes()).toEqual(["skills/auth/**"]);
+    const after = rag.recall("auth", 5);
+
+    expect(after.length).toBeLessThan(before);
+    expect(after.every((hit) => !hit.path.startsWith("skills/auth/"))).toBe(true);
+  });
+
+  it("ignores excluded documents added after the fact", () => {
+    const rag = new RagIndex({ root: "/tmp", patterns: [], excludes: ["*.tmp"] });
+    rag.addDocument("draft.tmp", "auth draft");
+    rag.addDocument("real.md", "auth real");
+    expect(rag.size).toBe(1);
+    expect(rag.listDocuments().map((doc) => doc.path)).toEqual(["real.md"]);
+  });
+
+  it("reports progress while indexing and supports incremental reindex", async () => {
+    const rag = new RagIndex({ patterns: ["skills/**/SKILL.md"] });
+    const progress: number[] = [];
+    await rag.index((event) => progress.push(event.processed));
+    expect(progress.length).toBeGreaterThan(0);
+    const size = await rag.reindex("incremental");
+    expect(size).toBe(rag.size);
+  });
 });

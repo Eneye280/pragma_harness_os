@@ -10,6 +10,7 @@ import type { GitStatus } from "../shared/git";
 import type { SkillSummary } from "../shared/skills";
 import type { AgentSummary } from "../shared/agents";
 import type { Attachment } from "../shared/attachments";
+import type { RagProgressEvent, RagRecallHit, RagStats } from "../shared/rag";
 import type { BundleSummary, BundleValidation, StackDetection } from "../shared/bundles";
 import type { SessionRecord, SessionSummary } from "../shared/session";
 import type { WorkspaceChangedPayload, WorkspacePickResult, WorkspaceState } from "../shared/workspace";
@@ -107,6 +108,14 @@ export interface AttachmentsBridge {
   extractText: (dataUrl: string) => Promise<{ error: string | null; text: string }>;
 }
 
+export interface RagBridge {
+  stats: () => Promise<RagStats>;
+  recall: (query: string, topK?: number) => Promise<{ ok: boolean; hits: RagRecallHit[] }>;
+  reindex: (mode?: "full" | "incremental") => Promise<{ mode: "full" | "incremental"; indexed: number; size: number }>;
+  setExcludes: (excludes: string[]) => Promise<{ ok: boolean; excludes?: string[]; error?: string }>;
+  onProgress: (cb: (progress: RagProgressEvent) => void) => () => void;
+}
+
 export interface SendMessageOptions {
   sessionId?: string;
   bypassHarness?: boolean;
@@ -136,6 +145,7 @@ export interface HarnessBridge {
   bundles: BundlesBridge;
   sessions: SessionsBridge;
   attachments: AttachmentsBridge;
+  rag: RagBridge;
   windowControls: WindowControlsBridge;
 }
 
@@ -260,6 +270,18 @@ const attachments: AttachmentsBridge = {
   extractText: (dataUrl: string) => ipcRenderer.invoke("attachments:extractText", dataUrl)
 };
 
+const rag: RagBridge = {
+  stats: () => ipcRenderer.invoke("rag:stats"),
+  recall: (query: string, topK?: number) => ipcRenderer.invoke("rag:recall", { query, topK }),
+  reindex: (mode?: "full" | "incremental") => ipcRenderer.invoke("rag:reindex", { mode }),
+  setExcludes: (excludes: string[]) => ipcRenderer.invoke("rag:setExcludes", { excludes }),
+  onProgress: (cb) => {
+    const handler = (_e: unknown, data: unknown) => cb(data as RagProgressEvent);
+    ipcRenderer.on("rag:progress", handler as never);
+    return () => ipcRenderer.removeListener("rag:progress", handler as never);
+  },
+};
+
 const harness: HarnessBridge = {
   ping: () => ipcRenderer.invoke("harness:ping"),
   sendMessage: (message: string, options?: SendMessageOptions) =>
@@ -292,6 +314,7 @@ const harness: HarnessBridge = {
   bundles,
   sessions,
   attachments,
+  rag,
   windowControls
 };
 

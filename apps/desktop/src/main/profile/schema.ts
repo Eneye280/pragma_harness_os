@@ -34,4 +34,5 @@ export const ProjectProfileSchema = z.object({
   skills: z.record(z.boolean()).optional(),
   agent: z.string().optional(),
   sandbox: z.object({ enabled: z.boolean().optional(), image: z.string().optional() }).optional(),
+  rag: z.object({ excludes: z.array(z.string()).optional() }).optional(),
 });

@@ -13,6 +13,7 @@ export interface ProjectProfile {
   skills?: Record<string, boolean>;
   agent?: string;
   sandbox?: Partial<SandboxFlags>;
+  rag?: { excludes?: string[] };
 }
 
 export interface ProjectProfileInfo {
