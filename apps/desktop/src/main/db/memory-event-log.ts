@@ -10,7 +10,8 @@ export type HarnessEventType =
   | "agent:tool-call"
   | "agent:observation"
   | "harness:gate"
-  | "harness:memory-write";
+  | "harness:memory-write"
+  | "plan:decision";
 
 export interface HarnessEvent {
   id: string;

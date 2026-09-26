@@ -116,8 +116,16 @@ export function registerIpcHandlers(
       .safeParse(rawPayload);
     if (!payload.success) return { ok: false, error: "invalid plan decision" };
     const { sessionId, action, markdown } = payload.data;
-    if (action === "discard") return { ok: planController.decide(sessionId, { action: "discard" }) };
-    return { ok: planController.decide(sessionId, { action: "approve", markdown: markdown ?? "" }) };
+    const ok = action === "discard" ? planController.decide(sessionId, { action: "discard" }) : planController.decide(sessionId, { action: "approve", markdown: markdown ?? "" });
+    if (ok) {
+      memoryLog.append({
+        type: "plan:decision",
+        payload: { action, partial: action === "approve" ? /Aprobación parcial/.test(markdown ?? "") : false },
+        sessionId,
+        workspaceHash: workspace.current() ?? "unknown",
+      });
+    }
+    return { ok };
   });
 
   ipcMain.handle("plan:revise", async (_event, rawPayload: unknown) => {
