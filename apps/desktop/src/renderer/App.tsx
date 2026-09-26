@@ -7,6 +7,7 @@ import { GraphPanel } from "./components/GraphPanel";
 import { HelpCenter } from "./components/HelpCenter";
 import { TourOverlay } from "./components/TourOverlay";
 import { UsageDashboard } from "./components/UsageDashboard";
+import { DiagnosticsPanel } from "./components/DiagnosticsPanel";
 import { INITIAL_TOUR_STATE, TOUR_STEPS, loadTourState, saveTourState, startTour, type TourState } from "./shell/tour";
 import { StackWizard } from "./components/StackWizard";
 import { SettingsModal } from "./components/SettingsModal";
@@ -42,6 +43,7 @@ export function App(): React.ReactElement {
   const [graphOpen, setGraphOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [usageOpen, setUsageOpen] = useState(false);
+  const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const [tour, setTour] = useState<TourState>(() => {
     try {
       const loaded = loadTourState(window.localStorage);
@@ -213,6 +215,7 @@ export function App(): React.ReactElement {
         onOpenGraph={() => setGraphOpen(true)}
         onOpenHelp={() => setHelpOpen(true)}
         onOpenUsage={() => setUsageOpen(true)}
+        onOpenDiagnostics={() => setDiagnosticsOpen(true)}
       />
       <ShellLayout
         explorerOpen={panels.explorerOpen}
@@ -291,6 +294,7 @@ export function App(): React.ReactElement {
       />
 
       <UsageDashboard open={usageOpen} onClose={() => setUsageOpen(false)} />
+      <DiagnosticsPanel open={diagnosticsOpen} onClose={() => setDiagnosticsOpen(false)} />
 
       {tour.active ? (
         <TourOverlay

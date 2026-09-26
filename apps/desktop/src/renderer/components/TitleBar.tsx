@@ -18,6 +18,7 @@ interface TitleBarProps {
   onOpenGraph: () => void;
   onOpenHelp: () => void;
   onOpenUsage: () => void;
+  onOpenDiagnostics: () => void;
 }
 
 export function TitleBar({
@@ -33,6 +34,7 @@ export function TitleBar({
   onOpenGraph,
   onOpenHelp,
   onOpenUsage,
+  onOpenDiagnostics,
 }: TitleBarProps): React.ReactElement {
   const [isMaximized, setIsMaximized] = useState(false);
 
@@ -126,6 +128,9 @@ export function TitleBar({
         </TitleBarButton>
         <TitleBarButton label="Uso" onClick={onOpenUsage}>
           <span className="text-[11px]">Uso</span>
+        </TitleBarButton>
+        <TitleBarButton label="Diagnóstico" onClick={onOpenDiagnostics}>
+          <span className="text-[11px]">Health</span>
         </TitleBarButton>
         <div className="mx-1 h-4 w-px bg-hairline" />
         <WindowButton label="Minimize" onClick={() => controls?.minimize()}>
