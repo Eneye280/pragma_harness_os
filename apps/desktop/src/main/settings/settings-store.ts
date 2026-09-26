@@ -78,6 +78,12 @@ export const SettingsSchema = z.object({
       maxRetries: z.number().int().min(0).max(5).default(2),
     })
     .default({ rules: [], fallbackModels: [], maxRetries: 2 }),
+  integrations: z
+    .object({
+      supabase: z.object({ url: z.string().default(""), anonKey: z.string().default(""), enabled: z.boolean().default(false) }).default({ url: "", anonKey: "", enabled: false }),
+      mcpServers: z.array(z.object({ name: z.string(), url: z.string(), enabled: z.boolean() })).default([]),
+    })
+    .default({ supabase: { url: "", anonKey: "", enabled: false }, mcpServers: [] }),
   updater: z
     .object({
       feedUrl: z.string().default(""),
@@ -113,6 +119,7 @@ export function sanitizeIncoming(current: HarnessSettings, incoming: HarnessSett
     tools: incoming.tools ?? current.tools,
     routing: incoming.routing ?? current.routing,
     updater: incoming.updater ?? current.updater,
+    integrations: incoming.integrations ?? current.integrations,
   };
 }
 

@@ -57,6 +57,7 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
   const [revealKey, setRevealKey] = useState(false);
   const [skillQuery, setSkillQuery] = useState("");
   const [categoryQuery, setCategoryQuery] = useState("");
+  const [integrationResult, setIntegrationResult] = useState<string | null>(null);
   const [skillEditor, setSkillEditor] = useState<{ name: string | null } | null>(null);
   const [customPlugins, setCustomPlugins] = useState<CustomPluginDef[]>([]);
   const [pluginEditor, setPluginEditor] = useState<{ def: CustomPluginDef | null } | null>(null);
@@ -733,6 +734,44 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
             ) : null}
           </Section>
 
+          <Section title="Integraciones (terceros)" description="Conexiones externas (MCP/Supabase) que el harness puede usar cuando las actives. Las credenciales se guardan cifradas.">
+            <Toggle
+              label={draft.integrations.supabase.enabled ? "Supabase activo" : "Supabase off"}
+              checked={draft.integrations.supabase.enabled}
+              onChange={(value) => setDraft({ ...draft, integrations: { ...draft.integrations, supabase: { ...draft.integrations.supabase, enabled: value } } })}
+            />
+            <div className="grid grid-cols-2 gap-2">
+              <Field label="Project URL">
+                <input
+                  aria-label="Supabase URL"
+                  value={draft.integrations.supabase.url}
+                  onChange={(event) => setDraft({ ...draft, integrations: { ...draft.integrations, supabase: { ...draft.integrations.supabase, url: event.target.value } } })}
+                  className="w-full rounded-control border border-hairline bg-surface px-2 py-1.5 font-mono text-[11px] text-zinc-200 outline-none focus:border-harness/60"
+                />
+              </Field>
+              <Field label="Anon key (pública)">
+                <input
+                  aria-label="Supabase anon key"
+                  type="password"
+                  value={draft.integrations.supabase.anonKey}
+                  onChange={(event) => setDraft({ ...draft, integrations: { ...draft.integrations, supabase: { ...draft.integrations.supabase, anonKey: event.target.value } } })}
+                  className="w-full rounded-control border border-hairline bg-surface px-2 py-1.5 font-mono text-[11px] text-zinc-200 outline-none focus:border-harness/60"
+                />
+              </Field>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void window.harness?.integrations.test("supabase").then((result) => setIntegrationResult(`${result.ok ? "ok" : "error"} · ${result.detail}`))}
+                className="rounded-control border border-harness/40 px-3 py-1.5 text-[11px] text-harness-soft hover:bg-harness/10"
+              >
+                Probar Supabase
+              </button>
+              {integrationResult ? <span className="text-[11px] text-zinc-400">{integrationResult}</span> : null}
+            </div>
+            <p className="text-[10px] text-zinc-600">Guarda para persistir. Los MCP de terceros se activan por config.</p>
+          </Section>
+
           <Section title="Perfil del proyecto">
             <div className="flex items-center gap-2">
               <span
@@ -834,6 +873,7 @@ const SETTINGS_CATEGORIES: Array<{ id: string; label: string; keywords: string; 
   { id: "skills", label: "Skills", keywords: "skill catálogo prioridad", target: "sec-skills" },
   { id: "security", label: "Seguridad y tools", keywords: "sandbox docker permisos allow ask deny", target: "sec-sandbox" },
   { id: "updates", label: "Actualizaciones", keywords: "update feed canal notas", target: "sec-actualizaciones" },
+  { id: "integrations", label: "Integraciones", keywords: "supabase mcp terceros integraciones", target: "sec-integraciones-terceros" },
   { id: "project", label: "Proyecto", keywords: "perfil workspace recientes", target: "sec-perfil-del-proyecto" },
 ];
 

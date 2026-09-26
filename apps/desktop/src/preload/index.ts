@@ -108,6 +108,11 @@ export interface GraphBridge {
   onUpdated: (cb: (delta: GraphDelta) => void) => () => void;
 }
 
+export interface IntegrationsBridge {
+  get: () => Promise<{ supabase: { url: string; enabled: boolean; hasKey: boolean }; mcpServers: Array<{ name: string; url: string; enabled: boolean }> }>;
+  test: (provider: "supabase") => Promise<{ ok: boolean; status: number; detail: string }>;
+}
+
 export interface QaBridge {
   scenarios: () => Promise<{ scenarios: Array<{ id: string; name: string }> }>;
   run: (scenarioId?: string) => Promise<{ ok: boolean; errors?: string[]; result: { scenarioId: string; ok: boolean; passed: number; failed: number; skipped: number } | null }>;
@@ -232,6 +237,7 @@ export interface HarnessBridge {
   evidence: EvidenceBridge;
   learning: LearningBridge;
   qa: QaBridge;
+  integrations: IntegrationsBridge;
   agents: AgentsBridge;
   bundles: BundlesBridge;
   sessions: SessionsBridge;
@@ -384,6 +390,11 @@ const diagnostics: DiagnosticsBridge = {
   paths: () => ipcRenderer.invoke("diagnostics:paths"),
 };
 
+const integrations: IntegrationsBridge = {
+  get: () => ipcRenderer.invoke("integrations:get"),
+  test: (provider) => ipcRenderer.invoke("integrations:test", { provider }),
+};
+
 const qa: QaBridge = {
   scenarios: () => ipcRenderer.invoke("qa:scenarios"),
   run: () => ipcRenderer.invoke("qa:run", undefined),
@@ -482,6 +493,7 @@ const harness: HarnessBridge = {
   evidence,
   learning,
   qa,
+  integrations,
   agents,
   bundles,
   sessions,

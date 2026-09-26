@@ -32,5 +32,6 @@ export function resolveEffectiveSettings(global: HarnessSettings, profile: Proje
     },
     routing: global.routing,
     updater: global.updater,
+    integrations: global.integrations,
   };
 }
