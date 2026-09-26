@@ -4,6 +4,9 @@ import { CommandPalette } from "./components/CommandPalette";
 import { OnboardingCard } from "./components/OnboardingCard";
 import { SessionsPanel } from "./components/SessionsPanel";
 import { GraphPanel } from "./components/GraphPanel";
+import { HelpCenter } from "./components/HelpCenter";
+import { TourOverlay } from "./components/TourOverlay";
+import { INITIAL_TOUR_STATE, TOUR_STEPS, loadTourState, saveTourState, startTour, type TourState } from "./shell/tour";
 import { StackWizard } from "./components/StackWizard";
 import { SettingsModal } from "./components/SettingsModal";
 import { ShellLayout } from "./components/ShellLayout";
@@ -36,6 +39,15 @@ export function App(): React.ReactElement {
   });
   const [stackWizardOpen, setStackWizardOpen] = useState(false);
   const [graphOpen, setGraphOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [tour, setTour] = useState<TourState>(() => {
+    try {
+      const loaded = loadTourState(window.localStorage);
+      return loaded.seen.length === 0 ? { ...loaded, active: true } : loaded;
+    } catch {
+      return INITIAL_TOUR_STATE;
+    }
+  });
   const explorer = useExplorer();
   const cost = useCost();
   const dreamLearned = useDream();
@@ -197,6 +209,7 @@ export function App(): React.ReactElement {
         onOpenSettings={openSettings}
         onOpenSessions={openSessions}
         onOpenGraph={() => setGraphOpen(true)}
+        onOpenHelp={() => setHelpOpen(true)}
       />
       <ShellLayout
         explorerOpen={panels.explorerOpen}
@@ -261,6 +274,34 @@ export function App(): React.ReactElement {
       />
 
       <GraphPanel open={graphOpen} onClose={() => setGraphOpen(false)} storageKey={workspace.active} />
+
+      <HelpCenter
+        open={helpOpen}
+        onClose={() => setHelpOpen(false)}
+        onOpenDoc={(doc) => {
+          openFile(doc);
+          setHelpOpen(false);
+        }}
+        onStartTour={() => {
+          setTour((current) => startTour(current));
+          setHelpOpen(false);
+        }}
+      />
+
+      {tour.active ? (
+        <TourOverlay
+          state={tour}
+          steps={TOUR_STEPS}
+          onChange={(next) => {
+            setTour(next);
+            try {
+              saveTourState(window.localStorage, next);
+            } catch {
+              // storage unavailable
+            }
+          }}
+        />
+      ) : null}
 
       {dreamLearned.length > 0 ? (
         <div className="pointer-events-none fixed right-4 top-12 z-40 flex w-[320px] flex-col gap-2">
