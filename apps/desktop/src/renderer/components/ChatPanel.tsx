@@ -5,11 +5,12 @@ import { HarnessStrip } from "../chat/HarnessStrip";
 import { MarkdownView } from "../chat/MarkdownView";
 import { ToolCallCard } from "../chat/ToolCallCard";
 import { CHAT_WINDOW_SIZE, selectVisibleMessages } from "../chat/visible-messages";
-import { describeAttachment, type Attachment } from "@shared/attachments";
+import { describeAttachment, estimateAttachmentTokens, totalAttachmentTokens, type Attachment } from "@shared/attachments";
 import type { UseChatResult } from "../chat/use-chat";
 
 const SCROLL_THRESHOLD = 80;
 const MAX_ATTACHMENTS = 6;
+const MAX_FILE_BYTES = 8 * 1024 * 1024;
 
 const SUGGESTIONS = ["crea un archivo de nota", "agrega un endpoint /users", "revisa la seguridad del último cambio"];
 
@@ -46,6 +47,8 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [revealedCount, setRevealedCount] = useState(0);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [attachmentError, setAttachmentError] = useState<string | null>(null);
+  const [attachmentAnnouncement, setAttachmentAnnouncement] = useState("");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -88,8 +91,20 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
 
   async function handleFiles(files: FileList | null): Promise<void> {
     if (!files || files.length === 0) return;
+    setAttachmentError(null);
+    const incoming = Array.from(files);
+    const oversize = incoming.filter((file) => file.size > MAX_FILE_BYTES);
+    const sized = incoming.filter((file) => file.size <= MAX_FILE_BYTES);
+    const slots = Math.max(0, MAX_ATTACHMENTS - attachments.length);
+    const accepted = sized.slice(0, slots);
+    if (oversize.length > 0) {
+      setAttachmentError(`${oversize.length} archivo(s) superan 8MB y se omitieron`);
+    } else if (sized.length > slots) {
+      setAttachmentError(`máximo ${MAX_ATTACHMENTS} adjuntos`);
+    }
+    if (accepted.length === 0) return;
     const added: Attachment[] = [];
-    for (const file of Array.from(files).slice(0, MAX_ATTACHMENTS)) {
+    for (const file of accepted) {
       const isImage = file.type.startsWith("image/");
       const isPdf = file.type === "application/pdf";
       let dataUrl: string | undefined;
@@ -114,7 +129,16 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
       });
     }
     setAttachments((current) => [...current, ...added].slice(0, MAX_ATTACHMENTS));
+    setAttachmentAnnouncement(`${added.length} adjunto(s) añadido(s). Total ${totalAttachmentTokens([...attachments, ...added])} tokens estimados`);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  function removeAttachment(id: string): void {
+    setAttachments((current) => {
+      const next = current.filter((entry) => entry.id !== id);
+      setAttachmentAnnouncement(`adjunto quitado. Quedan ${next.length}`);
+      return next;
+    });
   }
 
   function submitSteer(): void {
@@ -141,7 +165,19 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
   const hasConversation = state.messages.length > 0;
 
   return (
-    <div className="relative flex h-full flex-col bg-surface">
+    <div
+      className="relative flex h-full flex-col bg-surface"
+      onDragOver={(event) => {
+        event.preventDefault();
+      }}
+      onDrop={(event) => {
+        event.preventDefault();
+        void handleFiles(event.dataTransfer?.files ?? null);
+      }}
+    >
+      <div aria-live="polite" role="status" className="sr-only">
+        {attachmentAnnouncement}
+      </div>
       <div aria-live="polite" role="status" className="sr-only">
         {isRunning ? "Harness trabajando" : state.error ? `harness error: ${state.error}` : ""}
       </div>
@@ -236,27 +272,34 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
 
       <div className="shrink-0 border-t border-hairline bg-surface px-6 py-4">
         {attachments.length > 0 ? (
-          <div className="mx-auto mb-2 flex w-full max-w-[780px] flex-wrap gap-2">
-            {attachments.map((attachment) => (
-              <span key={attachment.id} className="flex items-center gap-2 rounded-control border border-hairline bg-surface-raised px-2 py-1">
-                {attachment.kind === "image" && attachment.dataUrl ? (
-                  <img src={attachment.dataUrl} alt={attachment.name} className="h-6 w-6 rounded object-cover" />
-                ) : null}
-                <span className="max-w-[220px] truncate text-[10px] text-zinc-400" title={describeAttachment(attachment)}>
-                  {attachment.name}
+          <div className="mx-auto mb-2 w-full max-w-[780px]">
+            <p className="mb-1 text-[10px] text-zinc-500">
+              {attachments.length} adjunto(s) · {totalAttachmentTokens(attachments)} tokens estimados
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {attachments.map((attachment) => (
+                <span key={attachment.id} className="flex items-center gap-2 rounded-control border border-hairline bg-surface-raised px-2 py-1">
+                  {attachment.kind === "image" && attachment.dataUrl ? (
+                    <img src={attachment.dataUrl} alt={attachment.name} className="h-6 w-6 rounded object-cover" />
+                  ) : null}
+                  <span className="max-w-[220px] truncate text-[10px] text-zinc-400" title={describeAttachment(attachment)}>
+                    {attachment.name}
+                  </span>
+                  <span className="font-mono text-[10px] text-zinc-600">{estimateAttachmentTokens(attachment)} tok</span>
+                  <button
+                    type="button"
+                    onClick={() => removeAttachment(attachment.id)}
+                    aria-label={`Quitar ${attachment.name}`}
+                    className="text-[10px] text-zinc-500 transition-colors hover:text-red-300"
+                  >
+                    ✕
+                  </button>
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setAttachments((current) => current.filter((entry) => entry.id !== attachment.id))}
-                  aria-label={`Quitar ${attachment.name}`}
-                  className="text-[10px] text-zinc-500 transition-colors hover:text-red-300"
-                >
-                  ✕
-                </button>
-              </span>
-            ))}
+              ))}
+            </div>
           </div>
         ) : null}
+        {attachmentError ? <p className="mx-auto mb-1 w-full max-w-[780px] text-[10px] text-red-400">{attachmentError}</p> : null}
         <div className="mx-auto flex w-full max-w-[780px] items-end gap-2 rounded-panel border border-hairline bg-surface-raised p-2 focus-within:border-harness/50">
           <input
             ref={fileInputRef}
@@ -280,6 +323,13 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             onKeyDown={handleKeyDown}
+            onPaste={(event) => {
+              const files = event.clipboardData?.files;
+              if (files && files.length > 0) {
+                event.preventDefault();
+                void handleFiles(files);
+              }
+            }}
             placeholder={isRunning ? "Añadir al run en curso… (Enter envía al agente)" : "Escribe un mensaje… (Enter envía)"}
             aria-label="Mensaje para el harness"
             className="max-h-40 flex-1 resize-none bg-transparent px-2 py-1.5 text-[13px] text-zinc-200 outline-none placeholder:text-zinc-500"

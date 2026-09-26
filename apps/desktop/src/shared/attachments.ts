@@ -57,3 +57,12 @@ export function chunkText(text: string, maxChars: number = ATTACHMENT_TEXT_LIMIT
   if (normalized.length <= maxChars) return normalized;
   return `${normalized.slice(0, maxChars)}…[truncado ${normalized.length - maxChars} chars]`;
 }
+
+export function estimateAttachmentTokens(attachment: Attachment): number {
+  if (attachment.kind === "image") return 200;
+  return Math.ceil((attachment.text?.length ?? 0) / 4);
+}
+
+export function totalAttachmentTokens(attachments: Attachment[]): number {
+  return attachments.reduce((sum, attachment) => sum + estimateAttachmentTokens(attachment), 0);
+}
