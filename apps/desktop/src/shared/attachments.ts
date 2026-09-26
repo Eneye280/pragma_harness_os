@@ -44,8 +44,16 @@ export function buildAttachmentNote(attachments: Attachment[] | undefined): stri
   return attachments
     .map((attachment) => {
       const base = attachment.description || describeAttachment(attachment);
-      const excerpt = attachment.text ? ` — ${attachment.text.replace(/\s+/g, " ").trim().slice(0, 240)}` : "";
+      const excerpt = attachment.text ? ` — ${chunkText(attachment.text)}` : "";
       return `- ${base}${excerpt}`;
     })
     .join("\n");
+}
+
+export const ATTACHMENT_TEXT_LIMIT = 6000;
+
+export function chunkText(text: string, maxChars: number = ATTACHMENT_TEXT_LIMIT): string {
+  const normalized = text.replace(/\s+/g, " ").trim();
+  if (normalized.length <= maxChars) return normalized;
+  return `${normalized.slice(0, maxChars)}…[truncado ${normalized.length - maxChars} chars]`;
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildAttachmentNote, describeAttachment, pngSizeFromDataUrl, type Attachment } from "../attachments";
+import { buildAttachmentNote, chunkText, describeAttachment, pngSizeFromDataUrl, type Attachment } from "../attachments";
 
 const PNG_1x1 =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
@@ -35,5 +35,13 @@ describe("attachments", () => {
     expect(note).toContain('documento "req.txt" (text/plain, 1KB) — requisitos del sistema');
     expect(buildAttachmentNote([])).toBe("");
     expect(buildAttachmentNote(undefined)).toBe("");
+  });
+
+  it("chunks long text with a truncation marker", () => {
+    expect(chunkText("hola   mundo", 100)).toBe("hola mundo");
+    const long = "x".repeat(50);
+    const chunked = chunkText(long, 10);
+    expect(chunked.startsWith("x".repeat(10))).toBe(true);
+    expect(chunked).toContain("[truncado 40 chars]");
   });
 });

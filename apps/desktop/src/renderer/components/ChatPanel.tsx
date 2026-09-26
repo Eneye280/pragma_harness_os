@@ -22,6 +22,24 @@ function readAsDataUrl(file: File): Promise<string> {
   });
 }
 
+function readAsText(file: File): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
+    reader.onerror = () => resolve("");
+    reader.readAsText(file);
+  });
+}
+
+const TEXT_EXTENSIONS = [".md", ".txt", ".csv", ".json", ".ts", ".tsx", ".js", ".jsx", ".cs", ".lua", ".glsl", ".yml", ".yaml", ".sql"];
+
+function isTextFile(file: File): boolean {
+  if (file.type.startsWith("text/")) return true;
+  if (file.type === "application/json") return true;
+  const lower = file.name.toLowerCase();
+  return TEXT_EXTENSIONS.some((extension) => lower.endsWith(extension));
+}
+
 export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement {
   const { state, isRunning, send, steer, cancel } = chat;
   const [draft, setDraft] = useState("");
@@ -73,7 +91,18 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
     const added: Attachment[] = [];
     for (const file of Array.from(files).slice(0, MAX_ATTACHMENTS)) {
       const isImage = file.type.startsWith("image/");
-      const dataUrl = isImage ? await readAsDataUrl(file) : undefined;
+      const isPdf = file.type === "application/pdf";
+      let dataUrl: string | undefined;
+      let text: string | undefined;
+      if (isImage) {
+        dataUrl = await readAsDataUrl(file);
+      } else if (isPdf) {
+        dataUrl = await readAsDataUrl(file);
+        const extracted = await window.harness?.attachments.extractText(dataUrl);
+        text = extracted?.text || undefined;
+      } else if (isTextFile(file)) {
+        text = await readAsText(file);
+      }
       added.push({
         id: `${Date.now()}-${file.name}`,
         kind: isImage ? "image" : "document",
@@ -81,6 +110,7 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
         mime: file.type || "application/octet-stream",
         size: file.size,
         dataUrl,
+        text,
       });
     }
     setAttachments((current) => [...current, ...added].slice(0, MAX_ATTACHMENTS));
