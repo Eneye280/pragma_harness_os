@@ -107,6 +107,12 @@ export interface GraphBridge {
   onUpdated: (cb: (delta: GraphDelta) => void) => () => void;
 }
 
+export interface DiagnosticsBridge {
+  get: () => Promise<{ generatedAt: number; checks: Array<{ id: string; label: string; status: "ok" | "warn" | "fail"; detail: string }>; report: string }>;
+  repairRag: () => Promise<{ ok: boolean; size: number }>;
+  paths: () => Promise<{ workspace: string; workspaceExists: boolean }>;
+}
+
 export interface UsageBridge {
   get: (range?: { fromTs?: number; toTs?: number }) => Promise<{ entries: UsageEntry[]; buckets: UsageBucket[]; comparison: UsageComparison }>;
   csv: (groupBy?: "day" | "session" | "project") => Promise<{ csv: string }>;
@@ -196,6 +202,7 @@ export interface HarnessBridge {
   graph: GraphBridge;
   visual: VisualBridge;
   usage: UsageBridge;
+  diagnostics: DiagnosticsBridge;
   agents: AgentsBridge;
   bundles: BundlesBridge;
   sessions: SessionsBridge;
@@ -340,6 +347,12 @@ const usage: UsageBridge = {
   get: (range) => ipcRenderer.invoke("usage:get", range ?? {}),
   csv: (groupBy) => ipcRenderer.invoke("usage:csv", { groupBy }),
 };
+
+const diagnostics: DiagnosticsBridge = {
+  get: () => ipcRenderer.invoke("diagnostics:get"),
+  repairRag: () => ipcRenderer.invoke("diagnostics:repairRag"),
+  paths: () => ipcRenderer.invoke("diagnostics:paths"),
+};
 const bundles: BundlesBridge = {
   list: () => ipcRenderer.invoke("bundles:list"),
   apply: (stack: string) => ipcRenderer.invoke("bundles:apply", stack),
@@ -406,6 +419,7 @@ const harness: HarnessBridge = {
   graph,
   visual,
   usage,
+  diagnostics,
   agents,
   bundles,
   sessions,

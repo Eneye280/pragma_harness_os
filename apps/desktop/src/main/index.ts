@@ -20,6 +20,8 @@ import { registerRagHandlers } from "./ipc/rag-handlers";
 import { registerPluginsHandlers } from "./ipc/plugins-handlers";
 import { registerGraphHandlers } from "./ipc/graph-handlers";
 import { registerVisualHandlers } from "./ipc/visual-handlers";
+import { registerDiagnosticsHandlers } from "./ipc/diagnostics-handlers";
+import { GitStatusService } from "./git";
 import { DependencyGraphService } from "./graph/graph-service";
 import { JsonSessionRepository, SessionStore } from "./sessions";
 import { skillCompiler } from "./harness/skills/skill-compiler";
@@ -104,6 +106,26 @@ app.whenReady().then(() => {
   registerPluginsHandlers(() => mainWindow, workspace, settingsController);
   registerGraphHandlers(() => mainWindow, workspace, new DependencyGraphService());
   registerVisualHandlers(workspace);
+  registerDiagnosticsHandlers({
+    version: app.getVersion(),
+    settingsController,
+    workspace,
+    sqliteAvailable: () => false,
+    gitStatus: async () => {
+      const status = await new GitStatusService().getStatus(workspace.current() ?? "");
+      return status.isRepo
+        ? { clean: !status.dirty, detail: `${status.branch ?? "detached"} · ${status.changedCount} cambios` }
+        : { clean: false, detail: "sin repositorio git" };
+    },
+    serverHealth: async () => {
+      try {
+        const response = await fetch("http://127.0.0.1:4096/health");
+        return { reachable: response.ok, detail: response.ok ? "harness:ready en :4096" : `http ${response.status}` };
+      } catch {
+        return { reachable: false, detail: "sin respuesta en :4096" };
+      }
+    },
+  });
   configureRagExcludes(() => profileStore.read(workspace.current() ?? "")?.rag?.excludes ?? []);
   updater.init();
 
