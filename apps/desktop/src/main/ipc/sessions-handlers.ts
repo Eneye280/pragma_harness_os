@@ -8,6 +8,10 @@ export function registerSessionsHandlers(getStore: () => SessionStore): void {
     return { sessions: getStore().list(hashWorkspace(rawWorkspacePath)) };
   });
 
+  ipcMain.handle("sessions:listAll", async () => {
+    return { sessions: getStore().listAll() };
+  });
+
   ipcMain.handle("sessions:latest", async (_event, rawWorkspacePath: unknown) => {
     if (typeof rawWorkspacePath !== "string" || !rawWorkspacePath) return { session: null };
     return { session: getStore().latest(hashWorkspace(rawWorkspacePath)) };

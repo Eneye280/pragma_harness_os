@@ -15,13 +15,14 @@ export function useSessions(workspacePath: string, currentSessionId: string): Us
 
   const refresh = useCallback(() => {
     const bridge = window.harness?.sessions;
-    if (!bridge || !workspacePath) {
+    if (!bridge) {
       setSessions([]);
       return;
     }
     setLoading(true);
-    bridge
-      .list(workspacePath)
+    // Carga todas las sesiones (todos los proyectos) para no "cerrar" proyectos al cambiar.
+    const request = bridge.listAll ? bridge.listAll() : bridge.list(workspacePath);
+    request
       .then((result) => setSessions(result.sessions))
       .catch(() => undefined)
       .finally(() => setLoading(false));

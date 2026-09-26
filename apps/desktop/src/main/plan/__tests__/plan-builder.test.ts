@@ -59,4 +59,20 @@ describe("plan builder", () => {
     expect(plan.files.length).toBeGreaterThan(0);
     expect(extractFilesFromMarkdown(plan.markdown).length).toBeGreaterThan(0);
   });
+
+  it("adapts the plan to a web request (specific files and thinking)", () => {
+    const markdown = buildPlanMarkdown("crea un minijuego de saltar y recoger monedas en 3d, en html", featureIntent("medium"), ["index.html", "styles.css", "app.js"]);
+    expect(markdown).toContain("## Pensamiento");
+    expect(markdown).toContain("Web (HTML/CSS/JS)");
+    expect(markdown).toContain("## Sugerencias");
+    expect(markdown).toContain("Solo se hará lo pedido");
+    expect(markdown).toContain("Abrir el HTML en el navegador");
+  });
+
+  it("derives web files when the request is a webpage without explicit paths", () => {
+    const files = extractPlanFiles("crea una calculadora web", featureIntent("medium"));
+    expect(files).toContain("index.html");
+    expect(files).toContain("styles.css");
+    expect(files).toContain("app.js");
+  });
 });

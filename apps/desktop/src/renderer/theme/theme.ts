@@ -23,6 +23,10 @@ export function applyTheme(mode: ThemeMode, prefersDark: boolean, target: ThemeD
   return resolved;
 }
 
+export function applyAccent(accentId: string, target: { documentElement: { setAttribute(name: string, value: string): void } }): void {
+  target.documentElement.setAttribute("data-accent", accentId);
+}
+
 export function loadThemeMode(storage: { getItem(key: string): string | null }): ThemeMode {
   try {
     const raw = storage.getItem(THEME_STORAGE_KEY);

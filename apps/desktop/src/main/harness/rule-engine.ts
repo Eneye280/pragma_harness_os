@@ -15,6 +15,12 @@ function truncateByTokens(text: string, maxTokens: number): string {
 }
 
 export class RuleEngine {
+  private projectRulesProvider: (() => Array<{ id: string; text: string }>) | null = null;
+
+  setProjectRulesProvider(provider: (() => Array<{ id: string; text: string }>) | null): void {
+    this.projectRulesProvider = provider;
+  }
+
   compile(intent: { domain: string }, opts: RuleCompileOptions = {}): string {
     const maxTokens = opts.maxTokens ?? 1200;
     const domain = intent.domain as keyof typeof DOMAIN_RULES;
@@ -27,6 +33,11 @@ export class RuleEngine {
     const styleBlock = Object.entries(STYLE_RULES)
       .map(([k, v]) => `- [${k}] ${v}`)
       .join("\n");
+
+    const projectRules = this.projectRulesProvider?.() ?? [];
+    const projectBlock = projectRules.length > 0
+      ? `\n\n## Project rules (${projectRules.length})\n${projectRules.map((rule) => `- [${rule.id}] ${rule.text}`).join("\n")}`
+      : "";
 
     let agentsBlock = "";
     if (opts.includeAgentsMd !== false) {
@@ -51,7 +62,7 @@ ${coreBlock}
 ${styleBlock}
 
 ## Domain [${domain}]
-- ${domainRule}${agentsBlock}`;
+- ${domainRule}${projectBlock}${agentsBlock}`;
 
     return truncateByTokens(raw, maxTokens);
   }

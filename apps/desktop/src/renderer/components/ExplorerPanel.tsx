@@ -39,7 +39,47 @@ export function ExplorerPanel({
   onNewSession,
 }: ExplorerPanelProps): React.ReactElement {
   const [expandedOverride, setExpandedOverride] = useState<Record<string, boolean>>({});
+  const [creating, setCreating] = useState(false);
+  const [newFileName, setNewFileName] = useState("");
+  const [dropActive, setDropActive] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
   const query = explorer.search.trim().toLowerCase();
+
+  async function createFile(): Promise<void> {
+    const name = newFileName.trim();
+    if (!name) {
+      setCreating(false);
+      return;
+    }
+    const result = await window.harness?.explorer.writeFile(name, "");
+    if (result?.error) setNotice(result.error);
+    else setNotice(`creado ${name}`);
+    setNewFileName("");
+    setCreating(false);
+    explorer.refresh();
+  }
+
+  async function handleDrop(event: React.DragEvent): Promise<void> {
+    event.preventDefault();
+    setDropActive(false);
+    if (!activePath) return;
+    const files = Array.from(event.dataTransfer?.files ?? []);
+    if (files.length === 0) return;
+    let written = 0;
+    for (const file of files) {
+      const buffer = await file.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+      let binary = "";
+      for (let index = 0; index < bytes.length; index += 8192) {
+        binary += String.fromCharCode(...bytes.subarray(index, index + 8192));
+      }
+      const base64 = btoa(binary);
+      const result = await window.harness?.explorer.writeFile(file.name, base64, "base64");
+      if (!result?.error) written += 1;
+    }
+    setNotice(`${written} archivo(s) añadido(s)`);
+    explorer.refresh();
+  }
 
   // Un solo sidebar: buscador arriba y, debajo, proyectos → sesiones.
   // Se ocultan los proyectos sin sesiones (no mostramos carpetas vacías).
@@ -58,7 +98,15 @@ export function ExplorerPanel({
   }
 
   return (
-    <div className="flex h-full flex-col bg-transparent">
+    <div
+      className={cn("flex h-full flex-col bg-transparent", dropActive ? "ring-2 ring-inset ring-harness/60" : "")}
+      onDragOver={(event) => {
+        event.preventDefault();
+        if (activePath) setDropActive(true);
+      }}
+      onDragLeave={() => setDropActive(false)}
+      onDrop={(event) => void handleDrop(event)}
+    >
       <div className="border-b border-hairline p-2.5">
         <div className="flex items-center gap-2">
           <label className="field flex min-w-0 flex-1 items-center gap-2 px-2.5 py-1.5">
@@ -83,6 +131,16 @@ export function ExplorerPanel({
           </label>
           <button
             type="button"
+            onClick={() => setCreating((value) => !value)}
+            disabled={!activePath}
+            aria-label="Nuevo archivo"
+            title="Nuevo archivo en el proyecto"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-control border border-hairline text-zinc-400 transition-colors hover:border-harness/40 hover:text-zinc-100 disabled:opacity-40"
+          >
+            +
+          </button>
+          <button
+            type="button"
             onClick={onOpenFolder}
             disabled={openingFolder}
             aria-label="Abrir proyecto"
@@ -92,6 +150,33 @@ export function ExplorerPanel({
             <IconFolder width={15} height={15} />
           </button>
         </div>
+        {creating ? (
+          <div className="mt-2 flex items-center gap-2">
+            <input
+              autoFocus
+              value={newFileName}
+              onChange={(event) => setNewFileName(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") void createFile();
+                if (event.key === "Escape") setCreating(false);
+              }}
+              placeholder="ruta/nombre.ext"
+              aria-label="Nombre del nuevo archivo"
+              className="field min-w-0 flex-1 px-2.5 py-1.5 text-[12px] text-zinc-200"
+            />
+            <button type="button" onClick={() => void createFile()} className="rounded-control bg-harness px-2.5 py-1.5 text-[12px] font-medium text-white hover:bg-harness-strong">
+              Crear
+            </button>
+          </div>
+        ) : null}
+        {notice ? (
+          <button type="button" onClick={() => setNotice(null)} className="mt-1.5 block text-left text-[12px] text-zinc-500 hover:text-zinc-300">
+            {notice} · toca para ocultar
+          </button>
+        ) : null}
+        {activePath && !creating ? (
+          <p className="mt-1.5 text-[12px] text-zinc-600">Arrastra archivos aquí (txt, pdf, imágenes, código…) para añadirlos al proyecto.</p>
+        ) : null}
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">

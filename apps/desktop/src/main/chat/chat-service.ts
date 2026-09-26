@@ -99,6 +99,7 @@ export function buildAgentPrompt(request: ChatSendRequest, needs: string[], appr
     "[harness] compila reglas, skills y contexto antes de despertar al agente.",
     `[intent] needs=${needs.join(",") || "none"}`,
     "[style] responde en markdown, conciso, sin relleno.",
+    "[scope] haz exactamente lo pedido, ni más ni menos. Si detectas algo extra útil, sugiérelo al final en una sección «Sugerencias», pero NO lo ejecutes ni modifiques nada fuera del alcance.",
     TOOL_PROTOCOL,
   ];
   if (approvedPlan) sections.push("[plan aprobado por el usuario]", approvedPlan);

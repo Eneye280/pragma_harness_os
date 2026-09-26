@@ -20,6 +20,8 @@ import { registerAttachmentsHandlers } from "./ipc/attachments-handlers";
 import { registerRagHandlers } from "./ipc/rag-handlers";
 import { registerPluginsHandlers } from "./ipc/plugins-handlers";
 import { registerGraphHandlers } from "./ipc/graph-handlers";
+import { registerRulesHandlers } from "./ipc/rules-handlers";
+import { registerShellHandlers } from "./ipc/shell-handlers";
 import { registerVisualHandlers } from "./ipc/visual-handlers";
 import { registerDiagnosticsHandlers } from "./ipc/diagnostics-handlers";
 import { registerHotReloadHandlers } from "./ipc/hotreload-handlers";
@@ -34,7 +36,8 @@ import { JsonSessionRepository, SessionStore } from "./sessions";
 import { skillCompiler } from "./harness/skills/skill-compiler";
 import { AgentCatalog } from "./agents";
 import { configureAgentProvider } from "./context";
-import { configureRagExcludes } from "./context";
+import { configureProjectRules, configureRagExcludes } from "./context";
+import { readProjectRules } from "./rules/project-rules";
 import { SettingsController, SettingsStore } from "./settings";
 import { CostTracker } from "./cost";
 import { createUpdaterHost } from "./updater";
@@ -139,6 +142,9 @@ app.whenReady().then(() => {
     },
   });
   configureRagExcludes(() => profileStore.read(workspace.current() ?? "")?.rag?.excludes ?? []);
+  configureProjectRules(() => readProjectRules(workspace.current()));
+  registerRulesHandlers(workspace);
+  registerShellHandlers(workspace);
   updater.init();
 
   let hotReloadRegistry: HotReloadRegistry | null = null;

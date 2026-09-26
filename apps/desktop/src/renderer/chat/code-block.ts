@@ -1,16 +1,26 @@
 import type { CodeTokenKind } from "../explorer/code-tokens";
 
+/** Clases de color por token; definidas en globals.css (`.tok-*`). */
 export const TOKEN_CLASS: Record<CodeTokenKind, string> = {
-  plain: "text-zinc-300",
-  comment: "text-zinc-500 italic",
-  string: "text-emerald-300",
-  keyword: "text-harness-soft",
-  number: "text-amber-300",
+  plain: "tok-plain",
+  comment: "tok-comment",
+  string: "tok-string",
+  keyword: "tok-keyword",
+  number: "tok-number",
+  type: "tok-type",
+  tag: "tok-tag",
+  attr: "tok-attr",
+  property: "tok-property",
+  function: "tok-function",
+  operator: "tok-operator",
+  literal: "tok-literal",
+  meta: "tok-meta",
 };
 
 const KNOWN_LANGUAGES = new Set([
   "ts", "tsx", "js", "jsx", "typescript", "javascript", "json", "yaml", "yml",
-  "cs", "csharp", "glsl", "hlsl", "lua", "sql", "bash", "sh", "shell", "diff", "md", "markdown", "html", "css",
+  "cs", "csharp", "glsl", "hlsl", "lua", "sql", "bash", "sh", "shell", "ps1", "powershell",
+  "diff", "patch", "md", "markdown", "html", "htm", "xml", "svg", "css", "scss", "text",
 ]);
 
 export function sanitizeLang(lang: string): string {

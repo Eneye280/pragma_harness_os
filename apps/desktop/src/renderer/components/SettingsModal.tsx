@@ -15,6 +15,7 @@ import type { UseUpdaterResult } from "../settings/use-updater";
 import type { UseSkillsResult } from "../skills/use-skills";
 import type { UseAgentsResult } from "../agents/use-agents";
 import { useFocusTrap } from "../shell/use-focus-trap";
+import { ACCENTS } from "../theme/accents";
 import { SkillEditor } from "./SkillEditor";
 import { PluginEditor } from "./PluginEditor";
 import type { CustomPluginDef, ProjectTask } from "@shared/plugin-authoring";
@@ -29,6 +30,8 @@ interface SettingsModalProps {
   agentsState: UseAgentsResult;
   themeMode: import("../theme/theme").ThemeMode;
   onThemeChange: (mode: import("../theme/theme").ThemeMode) => void;
+  accent: string;
+  onAccentChange: (accent: string) => void;
 }
 
 const UPDATE_STAGE_LABEL: Record<string, string> = {
@@ -51,7 +54,7 @@ const POST_GATE_LABELS: Array<{ key: keyof HarnessSettings["gates"]["post"]; lab
   { key: "visual", label: "visual" },
 ];
 
-export function SettingsModal({ open, onClose, settingsState, cost, updater, skillsState, agentsState, themeMode, onThemeChange }: SettingsModalProps): React.ReactElement | null {
+export function SettingsModal({ open, onClose, settingsState, cost, updater, skillsState, agentsState, themeMode, onThemeChange, accent, onAccentChange }: SettingsModalProps): React.ReactElement | null {
   const { settings, resolved, saving, error, testResult, save, testProvider, writeProfile, clearProfile } = settingsState;
   const [draft, setDraft] = useState<HarnessSettings | null>(settings);
   const [revealKey, setRevealKey] = useState(false);
@@ -64,6 +67,8 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
   const [pluginEditor, setPluginEditor] = useState<{ def: CustomPluginDef | null } | null>(null);
   const [tasks, setTasks] = useState<ProjectTask[]>([]);
   const [newTask, setNewTask] = useState("");
+  const [projectRules, setProjectRules] = useState<Array<{ id: string; text: string }>>([]);
+  const [newRule, setNewRule] = useState("");
   const [feedResult, setFeedResult] = useState<{ ok: boolean; available: boolean; reason: string; release: { version: string; notes: string; channel: string } | null } | null>(null);
   const containerRef = useFocusTrap(open, onClose);
 
@@ -71,11 +76,27 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
     if (!open) return;
     void window.harness?.plugins.list().then((result) => setCustomPlugins(result?.custom ?? []));
     void window.harness?.tasks.list().then((result) => setTasks(result?.tasks ?? []));
+    void window.harness?.rules.list().then((result) => setProjectRules(result?.rules ?? []));
   }, [open]);
 
   async function persistTasks(next: ProjectTask[]): Promise<void> {
     setTasks(next);
     await window.harness?.tasks.save(next);
+  }
+
+  async function addRule(): Promise<void> {
+    const text = newRule.trim();
+    if (!text) return;
+    const result = await window.harness?.rules.add(text);
+    if (!result?.error) {
+      setProjectRules(result?.rules ?? []);
+      setNewRule("");
+    }
+  }
+
+  async function removeRule(id: string): Promise<void> {
+    const result = await window.harness?.rules.remove(id);
+    setProjectRules(result?.rules ?? []);
   }
 
   useEffect(() => {
@@ -183,14 +204,37 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
                   onClick={() => onThemeChange(mode)}
                   className={cn(
                     "rounded-control border px-3 py-1.5 text-[12px] transition-colors",
-                    themeMode === mode ? "border-harness/50 bg-harness/10 text-harness-soft" : "border-hairline bg-surface text-zinc-400 hover:bg-zinc-800",
+                    themeMode === mode ? "border-harness/50 bg-harness/10 text-harness-soft" : "border-hairline bg-surface text-zinc-400 hover:bg-surface-raised",
                   )}
                 >
                   {mode === "system" ? "sistema" : mode === "light" ? "claro" : "oscuro"}
                 </button>
               ))}
             </div>
-            <p className="text-[12px] text-zinc-600">El tema sigue al sistema salvo que lo fijes. Se guarda por usuario.</p>
+            <p className="text-[12px] text-zinc-500">El tema sigue al sistema salvo que lo fijes. Se guarda por usuario.</p>
+
+            <div className="mt-3 border-t border-hairline pt-3">
+              <p className="mb-2 text-[12px] font-medium text-zinc-400">Color de acento</p>
+              <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Color de acento">
+                {ACCENTS.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={accent === option.id}
+                    aria-label={option.label}
+                    title={option.label}
+                    onClick={() => onAccentChange(option.id)}
+                    className={cn(
+                      "h-7 w-7 rounded-full border-2 transition-transform hover:scale-110",
+                      accent === option.id ? "border-zinc-100" : "border-transparent",
+                    )}
+                    style={{ background: option.base }}
+                  />
+                ))}
+              </div>
+              <p className="mt-1.5 text-[12px] text-zinc-500">Se aplica a botones, foco, timeline y acentos de toda la UI.</p>
+            </div>
           </Section>
 
           <Section title="Provider (BYOK)" description="Quién ejecuta el modelo: mock local o un proveedor real con tu API key (nunca sale de tu máquina).">
@@ -356,6 +400,39 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
                 ))}
               </div>
             </div>
+          </Section>
+
+          <Section anchor="sec-reglas" title={`Reglas del proyecto (${projectRules.length})`} description="Reglas propias del proyecto que el harness inyecta en cada run, además de G1-G10. Formato libre.">
+            <div className="flex items-center gap-2">
+              <input
+                value={newRule}
+                onChange={(event) => setNewRule(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") void addRule();
+                }}
+                placeholder="p. ej. usa nombres en español para las clases del dominio"
+                aria-label="Nueva regla del proyecto"
+                className="field min-w-0 flex-1 px-2.5 py-1.5 text-[12px] text-zinc-200"
+              />
+              <button type="button" onClick={() => void addRule()} className="rounded-control border border-harness/40 bg-harness/10 px-3 py-1.5 text-[12px] text-harness-soft hover:bg-harness/20">
+                Añadir regla
+              </button>
+            </div>
+            {projectRules.length === 0 ? (
+              <p className="text-[12px] text-zinc-500">Sin reglas propias. Se guardan en <span className="font-mono">.pragma-harness/rules.json</span> y se inyectan en el bloque de reglas.</p>
+            ) : (
+              <ul className="space-y-1">
+                {projectRules.map((rule) => (
+                  <li key={rule.id} className="flex items-start gap-2 rounded-control border border-hairline bg-surface px-2 py-1.5">
+                    <span className="mt-[2px] font-mono text-[12px] text-harness-soft">{rule.id}</span>
+                    <span className="flex-1 text-[12px] text-zinc-200">{rule.text}</span>
+                    <button type="button" aria-label={`Quitar ${rule.id}`} onClick={() => void removeRule(rule.id)} className="rounded-control px-1.5 text-[12px] text-zinc-500 hover:text-red-300">
+                      ✕
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </Section>
 
           <Section title="Plugins">

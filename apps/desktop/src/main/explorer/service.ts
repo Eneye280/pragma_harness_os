@@ -1,5 +1,5 @@
-import { readFileSync, statSync } from "fs";
-import { extname } from "path";
+import { mkdirSync, readFileSync, statSync, writeFileSync } from "fs";
+import { dirname, extname } from "path";
 import fastGlob from "fast-glob";
 import { simpleGit } from "simple-git";
 import { resolveInsideWorkspace } from "../tools/file-tools";
@@ -118,6 +118,13 @@ export class ExplorerService {
     }
 
     return { root: this.workspacePath, nodes: sortNodes(rootNodes), fileCount: files.length };
+  }
+
+  writeFile(relativePath: string, content: string, encoding: "utf8" | "base64" = "utf8"): { path: string } {
+    const absolutePath = resolveInsideWorkspace(this.workspacePath, relativePath);
+    mkdirSync(dirname(absolutePath), { recursive: true });
+    writeFileSync(absolutePath, content, encoding === "base64" ? { encoding: "base64" } : "utf8");
+    return { path: relativePath };
   }
 
   readFile(relativePath: string): ExplorerFile {
