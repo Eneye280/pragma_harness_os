@@ -58,7 +58,7 @@ export function TitleBar({
       style={{ height: layout.titleBarHeight }}
     >
       <div className="flex min-w-0 items-center gap-2">
-        <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-harness shadow-[0_0_12px_rgba(139,92,246,0.8)]" />
+        <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-harness shadow-[0_0_6px_rgba(139,92,246,0.4)]" />
         <span className="truncate text-title tracking-tight text-zinc-100" title={workspaceName}>
           {workspaceName || "Pragma Harness OS"}
         </span>
