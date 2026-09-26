@@ -108,6 +108,11 @@ export interface GraphBridge {
   onUpdated: (cb: (delta: GraphDelta) => void) => () => void;
 }
 
+export interface LicensesBridge {
+  inventory: () => Promise<{ entries: Array<{ name: string; version?: string; license: string; url?: string }>; assessments: Array<{ name: string; license: string; risk: string; reason: string }>; blocking: boolean }>;
+  writeThirdParty: () => Promise<{ ok: boolean; path?: string; count?: number; error?: string }>;
+}
+
 export interface HotReloadBridge {
   reload: () => Promise<{ ok: boolean; error?: string }>;
   onChanged: (cb: (change: { kinds: string[]; paths: string[]; ts: number }) => void) => () => void;
@@ -210,6 +215,7 @@ export interface HarnessBridge {
   usage: UsageBridge;
   diagnostics: DiagnosticsBridge;
   hotreload: HotReloadBridge;
+  licenses: LicensesBridge;
   agents: AgentsBridge;
   bundles: BundlesBridge;
   sessions: SessionsBridge;
@@ -362,6 +368,11 @@ const diagnostics: DiagnosticsBridge = {
   paths: () => ipcRenderer.invoke("diagnostics:paths"),
 };
 
+const licenses: LicensesBridge = {
+  inventory: () => ipcRenderer.invoke("licenses:inventory"),
+  writeThirdParty: () => ipcRenderer.invoke("licenses:writeThirdParty"),
+};
+
 const hotreload: HotReloadBridge = {
   reload: () => ipcRenderer.invoke("hotreload:reload"),
   onChanged: (cb) => {
@@ -438,6 +449,7 @@ const harness: HarnessBridge = {
   usage,
   diagnostics,
   hotreload,
+  licenses,
   agents,
   bundles,
   sessions,
