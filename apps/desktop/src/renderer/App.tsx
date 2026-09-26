@@ -8,6 +8,8 @@ import { HelpCenter } from "./components/HelpCenter";
 import { TourOverlay } from "./components/TourOverlay";
 import { UsageDashboard } from "./components/UsageDashboard";
 import { DiagnosticsPanel } from "./components/DiagnosticsPanel";
+import { NotificationCenter } from "./components/NotificationCenter";
+import { useNotifications } from "./notifications/use-notifications";
 import { INITIAL_TOUR_STATE, TOUR_STEPS, loadTourState, saveTourState, startTour, type TourState } from "./shell/tour";
 import { StackWizard } from "./components/StackWizard";
 import { SettingsModal } from "./components/SettingsModal";
@@ -44,6 +46,8 @@ export function App(): React.ReactElement {
   const [helpOpen, setHelpOpen] = useState(false);
   const [usageOpen, setUsageOpen] = useState(false);
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const notifications = useNotifications();
   const [tour, setTour] = useState<TourState>(() => {
     try {
       const loaded = loadTourState(window.localStorage);
@@ -225,6 +229,8 @@ export function App(): React.ReactElement {
         onOpenHelp={() => setHelpOpen(true)}
         onOpenUsage={() => setUsageOpen(true)}
         onOpenDiagnostics={() => setDiagnosticsOpen(true)}
+        unreadNotifications={notifications.unread}
+        onOpenNotifications={() => setNotificationsOpen(true)}
       />
       <ShellLayout
         explorerOpen={panels.explorerOpen}
@@ -304,6 +310,15 @@ export function App(): React.ReactElement {
 
       <UsageDashboard open={usageOpen} onClose={() => setUsageOpen(false)} />
       <DiagnosticsPanel open={diagnosticsOpen} onClose={() => setDiagnosticsOpen(false)} />
+      <NotificationCenter
+        toasts={notifications.toasts}
+        notifications={notifications.notifications}
+        open={notificationsOpen}
+        onClose={() => setNotificationsOpen(false)}
+        onMarkAll={notifications.markAll}
+        onMarkOne={notifications.markOne}
+        onDismiss={notifications.dismiss}
+      />
 
       {tour.active ? (
         <TourOverlay
