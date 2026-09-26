@@ -5,6 +5,7 @@ import { runPipelineStub } from "../harness/pipeline/stub";
 import { MemoryEventLog } from "../db/memory-event-log";
 import { createChatService } from "../chat";
 import { PlanController } from "../plan";
+import { CustomPluginHost } from "../plugins/custom";
 import { DreamingScheduler } from "../dreaming";
 import { vault } from "../memory/vault";
 import { AgentGateway } from "../llm/gateway";
@@ -78,6 +79,7 @@ export function registerIpcHandlers(
   workspace: WorkspaceFolderController
 ): void {
   const planController = new PlanController();
+  const customPluginHost = new CustomPluginHost(() => workspace.current());
   const chatService = createChatService(
     settingsController,
     costTracker,
@@ -87,7 +89,8 @@ export function registerIpcHandlers(
       if (win) win.webContents.send("cost:updated", snapshot);
     },
     () => workspace.current(),
-    pollSteer
+    pollSteer,
+    () => customPluginHost.load()
   );
 
   ipcMain.handle("cost:get", async () => {
