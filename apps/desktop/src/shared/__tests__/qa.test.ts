@@ -40,3 +40,12 @@ describe("internal QA runner", () => {
     expect(result.results[1].detail).toMatch(/offline/);
   });
 });
+
+describe("ordered qa scripts", () => {
+  it("keeps only the scripts that exist, in canonical order", async () => {
+    const { orderedScriptNames } = await import("../qa");
+    expect(orderedScriptNames({ build: "x", test: "y", deploy: "z" })).toEqual(["test", "build"]);
+    expect(orderedScriptNames({})).toEqual([]);
+    expect(orderedScriptNames(undefined)).toEqual([]);
+  });
+});

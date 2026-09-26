@@ -16,6 +16,7 @@ import type { UsageBucket, UsageComparison, UsageEntry } from "../shared/usage";
 import type { BundleSummary, BundleValidation, StackDetection } from "../shared/bundles";
 import type { SessionRecord, SessionSummary } from "../shared/session";
 import type { WorkspaceChangedPayload, WorkspacePickResult, WorkspaceState } from "../shared/workspace";
+import type { QaProjectReport } from "../shared/qa";
 
 export interface WindowControlsBridge {
   minimize: () => Promise<void>;
@@ -131,6 +132,7 @@ export interface IntegrationsBridge {
 
 export interface QaBridge {
   scenarios: () => Promise<{ scenarios: Array<{ id: string; name: string }> }>;
+  verifyProject: () => Promise<QaProjectReport>;
   run: (scenarioId?: string) => Promise<{ ok: boolean; errors?: string[]; result: { scenarioId: string; ok: boolean; passed: number; failed: number; skipped: number } | null }>;
 }
 
@@ -421,6 +423,7 @@ const integrations: IntegrationsBridge = {
 };
 
 const qa: QaBridge = {
+  verifyProject: () => ipcRenderer.invoke("qa:verifyProject"),
   scenarios: () => ipcRenderer.invoke("qa:scenarios"),
   run: () => ipcRenderer.invoke("qa:run", undefined),
 };

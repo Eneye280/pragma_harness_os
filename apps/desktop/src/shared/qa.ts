@@ -1,3 +1,10 @@
+export const QA_SCRIPT_ORDER = ["lint", "typecheck", "test", "build"] as const;
+
+export function orderedScriptNames(scripts: Record<string, string> | undefined): string[] {
+  const map = scripts ?? {};
+  return QA_SCRIPT_ORDER.filter((script) => typeof map[script] === "string");
+}
+
 export type QaStep =
   | { action: "request"; method: "GET" | "POST"; path: string; expectStatus?: number }
   | { action: "expectText"; text: string }
@@ -100,4 +107,20 @@ export async function runScenario(scenario: QaScenario, deps: QaRunnerDeps = {})
     skipped: results.filter((result) => result.status === "skipped").length,
     results,
   };
+}
+
+export interface QaProjectStep {
+  name: string;
+  ok: boolean;
+  detail: string;
+  durationMs?: number;
+}
+
+export interface QaProjectReport {
+  ok: boolean;
+  stack: "node" | "web" | "unknown";
+  steps: QaProjectStep[];
+  consoleErrors: string[];
+  screenshotPath?: string;
+  screenshotDataUrl?: string;
 }

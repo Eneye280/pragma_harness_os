@@ -1,7 +1,7 @@
 appId: com.pragma.harness
 productName: Pragma Harness OS
 copyright: Copyright © 2026 Pragma
-buildVersion: 1.0.2.4
+buildVersion: 1.0.2.5
 
 directories:
   buildResources: build
@@ -27,7 +27,7 @@ win:
     - target: nsis
       arch:
         - x64
-  artifactName: Pragma Harness OS-Setup-1.0.2.4.${ext}
+  artifactName: Pragma Harness OS-Setup-1.0.2.5.${ext}
 
 nsis:
   oneClick: false

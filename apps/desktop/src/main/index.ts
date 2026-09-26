@@ -119,7 +119,7 @@ app.whenReady().then(() => {
   registerVisualHandlers(workspace);
   registerLicensesHandlers(workspace);
   registerEvidenceHandlers(workspace);
-  registerQaHandlers();
+  registerQaHandlers(workspace);
   registerIntegrationsHandlers(settingsController);
   registerDiagnosticsHandlers({
     version: APP_VERSION,
