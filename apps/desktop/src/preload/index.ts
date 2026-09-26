@@ -108,6 +108,11 @@ export interface GraphBridge {
   onUpdated: (cb: (delta: GraphDelta) => void) => () => void;
 }
 
+export interface HotReloadBridge {
+  reload: () => Promise<{ ok: boolean; error?: string }>;
+  onChanged: (cb: (change: { kinds: string[]; paths: string[]; ts: number }) => void) => () => void;
+}
+
 export interface DiagnosticsBridge {
   get: () => Promise<{ generatedAt: number; checks: Array<{ id: string; label: string; status: "ok" | "warn" | "fail"; detail: string }>; report: string }>;
   repairRag: () => Promise<{ ok: boolean; size: number }>;
@@ -204,6 +209,7 @@ export interface HarnessBridge {
   visual: VisualBridge;
   usage: UsageBridge;
   diagnostics: DiagnosticsBridge;
+  hotreload: HotReloadBridge;
   agents: AgentsBridge;
   bundles: BundlesBridge;
   sessions: SessionsBridge;
@@ -355,6 +361,15 @@ const diagnostics: DiagnosticsBridge = {
   repairRag: () => ipcRenderer.invoke("diagnostics:repairRag"),
   paths: () => ipcRenderer.invoke("diagnostics:paths"),
 };
+
+const hotreload: HotReloadBridge = {
+  reload: () => ipcRenderer.invoke("hotreload:reload"),
+  onChanged: (cb) => {
+    const handler = (_e: unknown, data: unknown) => cb(data as { kinds: string[]; paths: string[]; ts: number });
+    ipcRenderer.on("hotreload:changed", handler as never);
+    return () => ipcRenderer.removeListener("hotreload:changed", handler as never);
+  },
+};
 const bundles: BundlesBridge = {
   list: () => ipcRenderer.invoke("bundles:list"),
   apply: (stack: string) => ipcRenderer.invoke("bundles:apply", stack),
@@ -422,6 +437,7 @@ const harness: HarnessBridge = {
   visual,
   usage,
   diagnostics,
+  hotreload,
   agents,
   bundles,
   sessions,
