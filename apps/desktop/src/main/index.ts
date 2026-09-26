@@ -23,6 +23,7 @@ import { registerVisualHandlers } from "./ipc/visual-handlers";
 import { registerDiagnosticsHandlers } from "./ipc/diagnostics-handlers";
 import { registerHotReloadHandlers } from "./ipc/hotreload-handlers";
 import { registerLicensesHandlers } from "./ipc/licenses-handlers";
+import { registerEvidenceHandlers } from "./ipc/evidence-handlers";
 import { HotReloadRegistry } from "./hotreload";
 import { GitStatusService } from "./git";
 import { DependencyGraphService } from "./graph/graph-service";
@@ -111,6 +112,7 @@ app.whenReady().then(() => {
   registerGraphHandlers(() => mainWindow, workspace, new DependencyGraphService());
   registerVisualHandlers(workspace);
   registerLicensesHandlers(workspace);
+  registerEvidenceHandlers(workspace);
   registerDiagnosticsHandlers({
     version: app.getVersion(),
     settingsController,
