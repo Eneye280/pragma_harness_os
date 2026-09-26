@@ -27,6 +27,8 @@ interface SettingsModalProps {
   updater: UseUpdaterResult;
   skillsState: UseSkillsResult;
   agentsState: UseAgentsResult;
+  themeMode: import("../theme/theme").ThemeMode;
+  onThemeChange: (mode: import("../theme/theme").ThemeMode) => void;
 }
 
 const UPDATE_STAGE_LABEL: Record<string, string> = {
@@ -49,7 +51,7 @@ const POST_GATE_LABELS: Array<{ key: keyof HarnessSettings["gates"]["post"]; lab
   { key: "visual", label: "visual" },
 ];
 
-export function SettingsModal({ open, onClose, settingsState, cost, updater, skillsState, agentsState }: SettingsModalProps): React.ReactElement | null {
+export function SettingsModal({ open, onClose, settingsState, cost, updater, skillsState, agentsState, themeMode, onThemeChange }: SettingsModalProps): React.ReactElement | null {
   const { settings, resolved, saving, error, testResult, save, testProvider, writeProfile, clearProfile } = settingsState;
   const [draft, setDraft] = useState<HarnessSettings | null>(settings);
   const [revealKey, setRevealKey] = useState(false);
@@ -122,6 +124,26 @@ export function SettingsModal({ open, onClose, settingsState, cost, updater, ski
         </div>
 
         <div className="flex-1 space-y-5 overflow-y-auto px-4 py-4">
+          <Section title="Apariencia">
+            <div className="flex items-center gap-2">
+              {(["system", "light", "dark"] as const).map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  aria-pressed={themeMode === mode}
+                  onClick={() => onThemeChange(mode)}
+                  className={cn(
+                    "rounded-control border px-3 py-1.5 text-[11px] transition-colors",
+                    themeMode === mode ? "border-harness/50 bg-harness/10 text-harness-soft" : "border-hairline bg-surface text-zinc-400 hover:bg-zinc-800",
+                  )}
+                >
+                  {mode === "system" ? "sistema" : mode === "light" ? "claro" : "oscuro"}
+                </button>
+              ))}
+            </div>
+            <p className="text-[10px] text-zinc-600">El tema sigue al sistema salvo que lo fijes. Se guarda por usuario.</p>
+          </Section>
+
           <Section title="Provider (BYOK)">
             <div className="grid grid-cols-2 gap-3">
               <Field label="Provider">
