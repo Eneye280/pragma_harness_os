@@ -2,6 +2,7 @@ import { useCallback, useEffect, useReducer, useState } from "react";
 import type { ExplorerFile } from "@shared/explorer";
 import { CommandPalette } from "./components/CommandPalette";
 import { OnboardingCard } from "./components/OnboardingCard";
+import { SessionsPanel } from "./components/SessionsPanel";
 import { StackWizard } from "./components/StackWizard";
 import { SettingsModal } from "./components/SettingsModal";
 import { ShellLayout } from "./components/ShellLayout";
@@ -16,6 +17,7 @@ import { useWorkspace } from "./workspace/use-workspace";
 import { useGitStatus } from "./git/use-git-status";
 import { useSkills } from "./skills/use-skills";
 import { useAgents } from "./agents/use-agents";
+import { useSessions } from "./sessions/use-sessions";
 import { INITIAL_PANEL_STATE, actionForShortcut, panelReducer } from "./shell/panel-state";
 import { isEditableTarget, resolveShellShortcut } from "./shell/shortcuts";
 import { ONBOARDING_STORAGE_KEY, shouldShowOnboarding } from "./shell/onboarding";
@@ -42,6 +44,7 @@ export function App(): React.ReactElement {
   const git = useGitStatus(workspace.active);
   const skillsState = useSkills(workspace.active);
   const agentsState = useAgents(workspace.active);
+  const sessionsState = useSessions(workspace.active, chat.sessionId);
   const refreshSettings = settingsState.refresh;
 
   useEffect(() => {
@@ -144,6 +147,8 @@ export function App(): React.ReactElement {
   );
   const openSettings = useCallback(() => dispatch({ type: "open-settings" }), []);
   const closeSettings = useCallback(() => dispatch({ type: "close-settings" }), []);
+  const openSessions = useCallback(() => dispatch({ type: "toggle-sessions" }), []);
+  const closeSessions = useCallback(() => dispatch({ type: "close-sessions" }), []);
   const dismissOnboarding = useCallback(() => {
     try {
       localStorage.setItem(ONBOARDING_STORAGE_KEY, "done");
@@ -188,6 +193,7 @@ export function App(): React.ReactElement {
         onToggleContext={toggleContext}
         onToggleTerminal={toggleTerminal}
         onOpenSettings={openSettings}
+        onOpenSessions={openSessions}
       />
       <ShellLayout
         explorerOpen={panels.explorerOpen}
@@ -229,6 +235,24 @@ export function App(): React.ReactElement {
 
       {showOnboarding ? <OnboardingCard onDismiss={dismissOnboarding} /> : null}
       {stackWizardOpen ? <StackWizard onSkip={dismissStackWizard} onApplied={handleStackApplied} /> : null}
+
+      <SessionsPanel
+        open={panels.sessionsOpen}
+        onClose={closeSessions}
+        sessions={sessionsState.sessions}
+        currentSessionId={chat.sessionId}
+        loading={sessionsState.loading}
+        onOpen={(id) => {
+          void chat.openSession(id);
+          closeSessions();
+        }}
+        onNew={() => {
+          chat.startNewSession();
+          closeSessions();
+        }}
+        onRename={(id, title) => void sessionsState.rename(id, title)}
+        onDelete={(id) => void sessionsState.remove(id)}
+      />
 
       {dreamLearned.length > 0 ? (
         <div className="pointer-events-none fixed right-4 top-12 z-40 flex w-[320px] flex-col gap-2">

@@ -4,7 +4,8 @@ export type ShellShortcut =
   | "command-palette"
   | "search-files"
   | "toggle-terminal"
-  | "open-settings";
+  | "open-settings"
+  | "session-history";
 
 export interface KeyChord {
   key: string;
@@ -19,6 +20,7 @@ export function resolveShellShortcut(chord: KeyChord): ShellShortcut | null {
   if (!hasPrimaryModifier || chord.altKey) return null;
   const key = chord.key.toLowerCase();
   if (chord.shiftKey && key === "c") return "toggle-context";
+  if (chord.shiftKey && key === "h") return "session-history";
   if (chord.shiftKey) return null;
   if (key === "b") return "toggle-explorer";
   if (key === "k") return "command-palette";
