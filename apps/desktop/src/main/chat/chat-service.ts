@@ -8,6 +8,7 @@ import type { ChatSendRequest, ChatStreamEvent } from "../../shared/chat-events"
 import { buildAttachmentNote } from "../../shared/attachments";
 import { DEFAULT_STUCK_TIMEOUT_MS, diagnoseStuck, StuckMonitor } from "../../shared/stuck";
 
+
 const ToolRequestSchema = z.object({
   tool: z.enum(["fileRead", "fileEdit", "terminal", "mcp_call", "runTests", "runBuild", "runLint", "webFetch"]),
   args: z.record(z.unknown()),
@@ -83,15 +84,17 @@ export interface ChatServiceDeps {
   requestToolApproval?: (request: import("../tools").ToolApprovalRequest) => Promise<import("../tools").ToolApprovalDecision>;
   consumeFallback?: () => import("../llm/fallback").FallbackAttempt | null;
   stuckTimeoutMs?: number;
+  workspaceBlock?: (message: string) => Promise<string>;
   onPostmortem?: (entry: { sessionId: string; goal: string; outcome: "done" | "failed" | "blocked"; failures: string[]; fixes: string[]; lessons: string[] }) => void;
 }
 
 export const TOOL_PROTOCOL = [
-  "[tools] para leer o modificar el proyecto debes emitir uno o más bloques con este formato exacto:",
+  "[tools] tienes permiso permanente para usar estas herramientas: NO pidas confirmación, emite el bloque directamente.",
+  "[tools] para leer o modificar el proyecto emite uno o más bloques con este formato exacto:",
   "```tool",
-  '{"tool":"fileEdit","args":{"path":"index.html","content":"<html>…</html>"}}',
+  '{"tool":"fileRead","args":{"path":"index.html"}}',
   "```",
-  "[tools] disponibles: fileRead{path}, fileEdit{path,content}, terminal{command,args[]}, runTests{}, runBuild{}, runLint{}, webFetch{url}, mcp_call{server,tool,args}. Las rutas son relativas al proyecto. Usa un bloque por archivo; no describas el bloque, emítelo.",
+  "[tools] disponibles: fileRead{path}, fileEdit{path,content}, terminal{command,args[]}, runTests{}, runBuild{}, runLint{}, webFetch{url}, mcp_call{server,tool,args}. Las rutas son relativas al proyecto. Un bloque por archivo. Nunca respondas que no puedes leer o listar: el listado [workspace files] y fileRead están disponibles.",
 ].join("\n");
 
 export function buildAgentPrompt(request: ChatSendRequest, needs: string[], approvedPlan?: string): string {
@@ -278,7 +281,16 @@ export class ChatService {
       const prompt = approvedPlanMarkdown
         ? buildAgentPrompt(request, intent.needs, approvedPlanMarkdown)
         : assembledPrompt || buildAgentPrompt(request, intent.needs);
-      const finalPrompt = attachmentNote ? `${prompt}\n\n[adjuntos]\n${attachmentNote}` : prompt;
+      let workspaceBlock = "";
+      if (this.deps.workspaceBlock) {
+        try {
+          workspaceBlock = await this.deps.workspaceBlock(request.message);
+        } catch {
+          workspaceBlock = "";
+        }
+      }
+      const promptWithWorkspace = workspaceBlock ? `${prompt}\n\n${workspaceBlock}` : prompt;
+      const finalPrompt = attachmentNote ? `${promptWithWorkspace}\n\n[adjuntos]\n${attachmentNote}` : promptWithWorkspace;
       let fullText = "";
       for await (const chunk of this.deps.gateway.stream(finalPrompt)) {
         if (signal?.aborted) break;

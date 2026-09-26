@@ -14,6 +14,7 @@ import { runTerminal } from "../tools";
 import type { CostTracker } from "../cost";
 import { ChatService, type ChatGateway } from "./chat-service";
 import { matchScenario } from "./mock-scenarios";
+import { buildWorkspaceBlock } from "./workspace-files";
 import { estimateCostUsd } from "../cost/pricing";
 import type { UsageEntry } from "../../shared/usage";
 
@@ -178,6 +179,7 @@ export function createChatService(
     },
     pluginRunner: createPluginRunner((name) => settingsController.store.get().plugins[name] === true, customPlugins),
     pollSteer,
+    workspaceBlock: (message) => buildWorkspaceBlock(toolWorkspacePath(), message),
     resolveToolPermission: toolApproval?.resolvePermission,
     requestToolApproval: toolApproval?.requestApproval,
     onPostmortem,

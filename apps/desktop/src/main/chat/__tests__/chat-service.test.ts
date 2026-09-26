@@ -124,7 +124,8 @@ describe("ChatService", () => {
   it("documents the tool protocol for real providers", () => {
     const prompt = buildAgentPrompt({ message: "crea la calculadora", sessionId: "s", workspacePath: "/w" }, []);
     expect(prompt).toContain("```tool");
-    expect(prompt).toContain('"tool":"fileEdit"');
+    expect(prompt).toContain('"tool":"fileRead"');
+    expect(prompt).toContain("NO pidas confirmación");
     for (const tool of ["fileRead", "fileEdit", "terminal", "runTests", "runBuild", "runLint", "webFetch", "mcp_call"]) {
       expect(prompt).toContain(tool);
     }

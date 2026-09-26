@@ -423,7 +423,7 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
           <button
             type="button"
             disabled={isRunning || !hasConversation}
-            onClick={() => send("Verifica lo que acabas de crear: ejecuta los tests/build con las tools, revisa que la funcionalidad pedida funcione y reporta o corrige los errores.", { bypassHarness: false })}
+            onClick={() => send("Modo QA: verifica el trabajo reciente del proyecto. Usa el listado [workspace files] para ubicar los archivos y léelos con fileRead; si el proyecto tiene package.json ejecuta los tests/build con las tools (runTests/runBuild) y muestra la salida real; si es HTML, revisa el flujo y reporta errores concretos. Corrige solo lo necesario (no agregues scope).", { bypassHarness: false })}
             className="rounded-control border border-harness/40 bg-harness/10 px-2.5 py-1 text-[12px] text-harness-soft transition-colors hover:bg-harness/20 disabled:opacity-40"
           >
             Verificar (QA)
