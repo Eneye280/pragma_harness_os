@@ -47,7 +47,7 @@ export interface ChatServiceDeps {
   }) => Promise<{ snapshot: import("../../shared/context-snapshot").HarnessContextSnapshot; finalPrompt: string }>;
   tokenLimit?: number;
   model?: () => string;
-  onUsage?: (usage: { domain: string; inputTokens: number; outputTokens: number }) => void;
+  onUsage?: (usage: { domain: string; inputTokens: number; outputTokens: number; sessionId: string; mode: "harness" | "bypass"; durationMs: number }) => void;
   budgetWindow?: () => { tokensUsed: number; tokensLimit: number; costUsedUsd: number; costLimitUsd: number };
   preGateRunner?: (context: {
     message: string;
@@ -83,6 +83,7 @@ export class ChatService {
   async run(request: ChatSendRequest, emit: (event: ChatStreamEvent) => void, options: { signal?: AbortSignal } = {}): Promise<void> {
     const sessionId = request.sessionId;
     const signal = options.signal;
+    const runStartedAt = Date.now();
     const attachmentNote = buildAttachmentNote(request.attachments);
 
     try {
@@ -228,6 +229,9 @@ export class ChatService {
         domain: intent.domain,
         inputTokens: approximateTokens(finalPrompt),
         outputTokens: approximateTokens(fullText),
+        sessionId,
+        mode: request.bypassHarness ? "bypass" : "harness",
+        durationMs: Date.now() - runStartedAt,
       });
 
       let steerRound = 0;

@@ -13,6 +13,8 @@ import { SandboxRunner } from "../sandbox";
 import { runTerminal } from "../tools";
 import type { CostTracker } from "../cost";
 import { ChatService, type ChatGateway } from "./chat-service";
+import { estimateCostUsd } from "../cost/pricing";
+import type { UsageEntry } from "../../shared/usage";
 
 const TOOL_INTENT_PATTERN = /(archivo|file|crea|create|write|escribe|guarda|save)/i;
 const CONSOLE_INTENT_PATTERN = /(console\.log|console|debug|consola)/i;
@@ -80,7 +82,8 @@ export function createChatService(
   toolApproval?: {
     resolvePermission: (tool: import("../tools").ToolName) => import("../tools").PermissionMode;
     requestApproval: (request: import("../tools").ToolApprovalRequest) => Promise<import("../tools").ToolApprovalDecision>;
-  }
+  },
+  onUsageEntry?: (entry: UsageEntry) => void
 ): ChatService {
   let lastFallback: import("../llm/fallback").FallbackAttempt | null = null;
   const gateway: ChatGateway = {
@@ -135,6 +138,17 @@ export function createChatService(
         outputTokens: usage.outputTokens,
       });
       onCostRecorded?.(snapshot);
+      onUsageEntry?.({
+        ts: Date.now(),
+        sessionId: usage.sessionId,
+        workspace: (getWorkspace ?? resolveHarnessWorkspace)(),
+        mode: usage.mode,
+        domain: usage.domain,
+        tokens: usage.inputTokens + usage.outputTokens,
+        usd: estimateCostUsd(config.provider, config.model, usage.inputTokens, usage.outputTokens),
+        calls: 1,
+        durationMs: usage.durationMs,
+      });
     },
     budgetWindow: () => {
       const settings = settingsController.store.get();
