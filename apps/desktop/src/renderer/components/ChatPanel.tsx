@@ -5,17 +5,30 @@ import { HarnessStrip } from "../chat/HarnessStrip";
 import { MarkdownView } from "../chat/MarkdownView";
 import { ToolCallCard } from "../chat/ToolCallCard";
 import { CHAT_WINDOW_SIZE, selectVisibleMessages } from "../chat/visible-messages";
+import { describeAttachment, type Attachment } from "@shared/attachments";
 import type { UseChatResult } from "../chat/use-chat";
 
 const SCROLL_THRESHOLD = 80;
+const MAX_ATTACHMENTS = 6;
 
 const SUGGESTIONS = ["crea un archivo de nota", "agrega un endpoint /users", "revisa la seguridad del último cambio"];
+
+function readAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
+    reader.onerror = () => resolve("");
+    reader.readAsDataURL(file);
+  });
+}
 
 export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement {
   const { state, isRunning, send, steer, cancel } = chat;
   const [draft, setDraft] = useState("");
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [revealedCount, setRevealedCount] = useState(0);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   function isNearBottom(): boolean {
@@ -49,9 +62,29 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
   }
 
   function submit(bypassHarness: boolean): void {
-    if (!draft.trim() || isRunning) return;
-    send(draft, { bypassHarness });
+    if ((!draft.trim() && attachments.length === 0) || isRunning) return;
+    send(draft || "(adjunto)", { bypassHarness, attachments });
     setDraft("");
+    setAttachments([]);
+  }
+
+  async function handleFiles(files: FileList | null): Promise<void> {
+    if (!files || files.length === 0) return;
+    const added: Attachment[] = [];
+    for (const file of Array.from(files).slice(0, MAX_ATTACHMENTS)) {
+      const isImage = file.type.startsWith("image/");
+      const dataUrl = isImage ? await readAsDataUrl(file) : undefined;
+      added.push({
+        id: `${Date.now()}-${file.name}`,
+        kind: isImage ? "image" : "document",
+        name: file.name,
+        mime: file.type || "application/octet-stream",
+        size: file.size,
+        dataUrl,
+      });
+    }
+    setAttachments((current) => [...current, ...added].slice(0, MAX_ATTACHMENTS));
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
   function submitSteer(): void {
@@ -106,9 +139,32 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
                     {message.steer ? (
                       <span className="mb-0.5 block text-right text-[10px] text-harness-soft">añadido al run en curso</span>
                     ) : null}
+                    {message.attachments && message.attachments.length > 0 ? (
+                      <div className="mb-1 flex flex-wrap justify-end gap-1.5">
+                        {message.attachments.map((attachment) =>
+                          attachment.kind === "image" && attachment.dataUrl ? (
+                            <img
+                              key={attachment.id}
+                              src={attachment.dataUrl}
+                              alt={attachment.name}
+                              className="h-16 w-16 rounded-control border border-hairline object-cover"
+                            />
+                          ) : (
+                            <span key={attachment.id} className="rounded-control border border-hairline bg-surface-raised px-2 py-1 text-[10px] text-zinc-400">
+                              {attachment.name}
+                            </span>
+                          ),
+                        )}
+                      </div>
+                    ) : null}
                     <div className="rounded-panel border border-harness/30 bg-harness/10 px-3.5 py-2 text-[13px] text-zinc-100">
                       {message.content}
                     </div>
+                    {message.attachments && message.attachments.length > 0 ? (
+                      <p className="mt-0.5 text-right text-[10px] text-zinc-500">
+                        {message.attachments.map((attachment) => describeAttachment(attachment)).join(" · ")}
+                      </p>
+                    ) : null}
                   </div>
                 ) : (
                   <div key={message.id} className="slide-up flex gap-3">
@@ -149,7 +205,46 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
       ) : null}
 
       <div className="shrink-0 border-t border-hairline bg-surface px-6 py-4">
+        {attachments.length > 0 ? (
+          <div className="mx-auto mb-2 flex w-full max-w-[780px] flex-wrap gap-2">
+            {attachments.map((attachment) => (
+              <span key={attachment.id} className="flex items-center gap-2 rounded-control border border-hairline bg-surface-raised px-2 py-1">
+                {attachment.kind === "image" && attachment.dataUrl ? (
+                  <img src={attachment.dataUrl} alt={attachment.name} className="h-6 w-6 rounded object-cover" />
+                ) : null}
+                <span className="max-w-[220px] truncate text-[10px] text-zinc-400" title={describeAttachment(attachment)}>
+                  {attachment.name}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setAttachments((current) => current.filter((entry) => entry.id !== attachment.id))}
+                  aria-label={`Quitar ${attachment.name}`}
+                  className="text-[10px] text-zinc-500 transition-colors hover:text-red-300"
+                >
+                  ✕
+                </button>
+              </span>
+            ))}
+          </div>
+        ) : null}
         <div className="mx-auto flex w-full max-w-[780px] items-end gap-2 rounded-panel border border-hairline bg-surface-raised p-2 focus-within:border-harness/50">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,application/pdf,text/*"
+            multiple
+            hidden
+            onChange={(event) => void handleFiles(event.target.files)}
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            aria-label="Adjuntar archivo"
+            title="Adjuntar imagen o archivo"
+            className="mb-0.5 flex h-8 w-8 items-center justify-center rounded-control text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
+          >
+            +
+          </button>
           <textarea
             rows={1}
             value={draft}

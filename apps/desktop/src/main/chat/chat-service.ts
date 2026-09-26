@@ -5,6 +5,7 @@ import { buildPlan, shouldProposePlan } from "../plan";
 import type { PlanGate } from "../plan";
 import type { ToolRunner } from "../tools";
 import type { ChatSendRequest, ChatStreamEvent } from "../../shared/chat-events";
+import { buildAttachmentNote } from "../../shared/attachments";
 
 const ToolRequestSchema = z.object({
   tool: z.enum(["fileRead", "fileEdit", "terminal", "mcp_call"]),
@@ -79,9 +80,21 @@ export class ChatService {
   async run(request: ChatSendRequest, emit: (event: ChatStreamEvent) => void, options: { signal?: AbortSignal } = {}): Promise<void> {
     const sessionId = request.sessionId;
     const signal = options.signal;
+    const attachmentNote = buildAttachmentNote(request.attachments);
 
     try {
       const intent = classify(request.message, request.workspacePath);
+
+      if (attachmentNote) {
+        emit({
+          kind: "harness-step",
+          sessionId,
+          phase: "context",
+          status: "done",
+          label: `adjuntos: ${request.attachments?.length ?? 0}`,
+          detail: attachmentNote.slice(0, 240),
+        });
+      }
 
       if (!request.bypassHarness) {
         emit({ kind: "harness-step", sessionId, phase: "classify", status: "running", label: "clasificando…" });
@@ -194,8 +207,9 @@ export class ChatService {
       const prompt = approvedPlanMarkdown
         ? buildAgentPrompt(request, intent.needs, approvedPlanMarkdown)
         : assembledPrompt || buildAgentPrompt(request, intent.needs);
+      const finalPrompt = attachmentNote ? `${prompt}\n\n[adjuntos]\n${attachmentNote}` : prompt;
       let fullText = "";
-      for await (const chunk of this.deps.gateway.stream(prompt)) {
+      for await (const chunk of this.deps.gateway.stream(finalPrompt)) {
         if (signal?.aborted) break;
         if (chunk.isDone) break;
         if (!chunk.textDelta) continue;
@@ -205,7 +219,7 @@ export class ChatService {
       emit({ kind: "assistant-done", sessionId });
       this.deps.onUsage?.({
         domain: intent.domain,
-        inputTokens: approximateTokens(prompt),
+        inputTokens: approximateTokens(finalPrompt),
         outputTokens: approximateTokens(fullText),
       });
 

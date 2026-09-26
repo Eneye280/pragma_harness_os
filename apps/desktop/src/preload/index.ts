@@ -9,6 +9,7 @@ import type { UpdateStatus } from "../shared/updater";
 import type { GitStatus } from "../shared/git";
 import type { SkillSummary } from "../shared/skills";
 import type { AgentSummary } from "../shared/agents";
+import type { Attachment } from "../shared/attachments";
 import type { BundleSummary, BundleValidation, StackDetection } from "../shared/bundles";
 import type { SessionRecord, SessionSummary } from "../shared/session";
 import type { WorkspaceChangedPayload, WorkspacePickResult, WorkspaceState } from "../shared/workspace";
@@ -105,6 +106,7 @@ export interface SessionsBridge {
 export interface SendMessageOptions {
   sessionId?: string;
   bypassHarness?: boolean;
+  attachments?: Attachment[];
 }
 
 export interface HarnessBridge {

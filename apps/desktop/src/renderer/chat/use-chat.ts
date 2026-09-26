@@ -18,7 +18,7 @@ export interface UseChatResult {
   sessionId: string;
   isRunning: boolean;
   runningSessions: string[];
-  send: (text: string, options?: { bypassHarness?: boolean }) => void;
+  send: (text: string, options?: { bypassHarness?: boolean; attachments?: import("@shared/attachments").Attachment[] }) => void;
   approvePlan: (markdown: string) => void;
   discardPlan: () => void;
   revisePlan: (markdown: string) => void;
@@ -94,13 +94,14 @@ export function useChat(workspacePath = ""): UseChatResult {
     return () => clearTimeout(handle);
   }, [states, hydrated, workspacePath]);
 
-  const send = useCallback((text: string, options?: { bypassHarness?: boolean }) => {
+  const send = useCallback((text: string, options?: { bypassHarness?: boolean; attachments?: import("@shared/attachments").Attachment[] }) => {
     const trimmed = text.trim();
-    if (!trimmed) return;
+    const attachments = options?.attachments ?? [];
+    if (!trimmed && attachments.length === 0) return;
     const id = createId();
-    dispatch({ type: "send", sessionId: sessionRef.current, id, text: trimmed });
+    dispatch({ type: "send", sessionId: sessionRef.current, id, text: trimmed, attachments });
     window.harness
-      ?.sendMessage(trimmed, { sessionId: sessionRef.current, bypassHarness: options?.bypassHarness })
+      ?.sendMessage(trimmed || "(adjunto)", { sessionId: sessionRef.current, bypassHarness: options?.bypassHarness, attachments })
       .catch(() => {
         dispatch({
           type: "stream",
