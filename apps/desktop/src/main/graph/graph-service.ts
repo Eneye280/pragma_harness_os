@@ -5,7 +5,7 @@ import { watch, type FSWatcher } from "chokidar";
 import { buildDependencyGraph, type GraphFile } from "./builder";
 import type { DependencyGraph, GraphDelta } from "../../shared/graph";
 
-const PATTERNS = ["**/*.{ts,tsx,js,jsx,mjs,cjs,mts,cts,cs}"];
+const PATTERNS = ["**/*.{ts,tsx,js,jsx,mjs,cjs,mts,cts,cs,html,htm,css}"];
 const IGNORED = /(^|[\\/])(node_modules|dist|out|build|\.git|coverage|\.pragma-harness)([\\/]|$)/;
 const MAX_FILE_CHARS = 200_000;
 
@@ -60,7 +60,7 @@ export class DependencyGraphService {
   }
 
   private scheduleRefresh(changedPath: string): void {
-    if (!/\.(ts|tsx|js|jsx|mjs|cjs|mts|cts|cs)$/i.test(changedPath)) return;
+    if (!/\.(ts|tsx|js|jsx|mjs|cjs|mts|cts|cs|html|htm|css)$/i.test(changedPath)) return;
     if (this.timer) clearTimeout(this.timer);
     this.timer = setTimeout(() => {
       void this.emitDelta();

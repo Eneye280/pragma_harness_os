@@ -7,7 +7,8 @@ export interface GraphFile {
 }
 
 const TS_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".mts", ".cts"];
-const RESOLVE_EXTENSIONS = [...TS_EXTENSIONS, ".json", ".vue", ".svelte"];
+const WEB_EXTENSIONS = [".html", ".htm", ".css"];
+const RESOLVE_EXTENSIONS = [...TS_EXTENSIONS, ...WEB_EXTENSIONS, ".json", ".vue", ".svelte"];
 
 function stripComments(content: string): string {
   return content.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
@@ -20,7 +21,18 @@ export function parseImports(filePath: string, content: string): string[] {
     for (const match of content.matchAll(/^\s*using\s+([A-Za-z_][\w.]*)\s*;/gm)) specifiers.push(`ns:${match[1]}`);
     return [...new Set(specifiers)];
   }
-  if (RESOLVE_EXTENSIONS.includes(extension)) {
+  if (extension === ".html" || extension === ".htm") {
+    for (const match of content.matchAll(/<script[^>]*\ssrc=["']([^"']+)["']/gi)) specifiers.push(match[1]);
+    for (const match of content.matchAll(/<link[^>]*\shref=["']([^"']+)["']/gi)) specifiers.push(match[1]);
+    for (const match of content.matchAll(/<img[^>]*\ssrc=["']([^"']+)["']/gi)) specifiers.push(match[1]);
+    return [...new Set(specifiers)];
+  }
+  if (extension === ".css") {
+    for (const match of content.matchAll(/@import\s+(?:url\()?["']([^"']+)["']/gi)) specifiers.push(match[1]);
+    for (const match of content.matchAll(/url\(\s*["']?([^"')]+)["']?\s*\)/gi)) specifiers.push(match[1]);
+    return [...new Set(specifiers)];
+  }
+  if (TS_EXTENSIONS.includes(extension)) {
     const clean = stripComments(content);
     for (const match of clean.matchAll(/(?:import|export)\s+(?:[\s\S]*?\sfrom\s+)?["']([^"']+)["']/g)) specifiers.push(match[1]);
     for (const match of clean.matchAll(/require\(\s*["']([^"']+)["']\s*\)/g)) specifiers.push(match[1]);
@@ -97,8 +109,11 @@ export function buildDependencyGraph(files: GraphFile[]): DependencyGraph {
         edges.push({ from, to: id });
         continue;
       }
-      if (!specifier.startsWith(".") && !specifier.startsWith("/")) continue;
-      const resolved = resolveRelative(file.path, specifier, known);
+      const external = /^[a-z]+:/i.test(specifier) || specifier.startsWith("//") || specifier.startsWith("#");
+      if (external) continue;
+      // En HTML/CSS las referencias ("app.js", "styles.css") son rutas sin "./".
+      const normalized = specifier.startsWith(".") || specifier.startsWith("/") ? specifier : `./${specifier}`;
+      const resolved = resolveRelative(file.path, normalized, known);
       if (resolved && resolved !== from) edges.push({ from, to: resolved });
     }
   }

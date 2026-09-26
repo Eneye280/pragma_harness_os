@@ -2,25 +2,34 @@ import { useEffect, useRef } from "react";
 
 const FOCUSABLE = 'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
+/**
+ * Pila de traps activos. Solo el trap superior (el último registrado) consume
+ * Escape: así un diálogo anidado no cierra también la ventana que lo contiene.
+ */
+const trapStack: symbol[] = [];
+
 export function useFocusTrap(active: boolean, onEscape: () => void): React.RefObject<HTMLDivElement | null> {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
+  const idRef = useRef<symbol>(Symbol("focus-trap"));
+  const onEscapeRef = useRef(onEscape);
+  onEscapeRef.current = onEscape;
 
   useEffect(() => {
     if (!active) return;
+    const id = idRef.current;
     previouslyFocused.current = document.activeElement as HTMLElement | null;
-    const container = containerRef.current;
+    trapStack.push(id);
 
-    function focusFirst(): void {
-      const target = container?.querySelector<HTMLElement>(FOCUSABLE);
-      target?.focus();
-    }
-    focusFirst();
+    const container = containerRef.current;
+    container?.querySelector<HTMLElement>(FOCUSABLE)?.focus();
 
     function handleKeyDown(event: KeyboardEvent): void {
+      if (trapStack[trapStack.length - 1] !== id) return;
       if (event.key === "Escape") {
         event.preventDefault();
-        onEscape();
+        event.stopPropagation();
+        onEscapeRef.current();
         return;
       }
       if (event.key !== "Tab" || !container) return;
@@ -42,9 +51,11 @@ export function useFocusTrap(active: boolean, onEscape: () => void): React.RefOb
     document.addEventListener("keydown", handleKeyDown, true);
     return () => {
       document.removeEventListener("keydown", handleKeyDown, true);
+      const index = trapStack.lastIndexOf(id);
+      if (index !== -1) trapStack.splice(index, 1);
       previouslyFocused.current?.focus();
     };
-  }, [active, onEscape]);
+  }, [active]);
 
   return containerRef;
 }
