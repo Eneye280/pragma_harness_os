@@ -12,6 +12,8 @@ import {
 import type { ProjectProfile } from "../../shared/profile";
 import { resolveEffectiveSettings } from "../profile/effective";
 import { migrateSettingsV1_0_1, withConfigVersion } from "../migrations/v1_0_1";
+import { resolveSecretBox } from "../security/key";
+import type { SecretBox } from "../security/crypto";
 
 const ProviderSchema = z.object({
   provider: z.enum(["mock", "deepseek", "anthropic", "openai", "ollama"]),
@@ -117,8 +119,10 @@ export function sanitizeIncoming(current: HarnessSettings, incoming: HarnessSett
 export class SettingsStore {
   private settings: HarnessSettings;
   private profileProvider: (() => ProjectProfile | null) | null = null;
+  private secretBox: SecretBox;
 
   constructor(private readonly filePath: string = resolveSettingsPath()) {
+    this.secretBox = resolveSecretBox(this.filePath);
     this.settings = this.load();
   }
 
@@ -135,6 +139,9 @@ export class SettingsStore {
       const validated = SettingsSchema.safeParse(migration.settings);
       if (!validated.success) return structuredClone(DEFAULT_SETTINGS);
       const settings = validated.data as HarnessSettings;
+      if (settings.provider.apiKey) {
+        settings.provider.apiKey = this.secretBox.decrypt(settings.provider.apiKey);
+      }
       const changed = migration.changed || rawVersion !== migration.to;
       if (changed) {
         this.settings = settings;
@@ -205,7 +212,13 @@ export class SettingsStore {
 
   private persist(): void {
     mkdirSync(dirname(this.filePath), { recursive: true });
-    writeFileSync(this.filePath, JSON.stringify(withConfigVersion(this.settings), null, 2), "utf8");
+    const toPersist = withConfigVersion(this.settings);
+    const apiKey = toPersist.provider.apiKey;
+    const payload = {
+      ...toPersist,
+      provider: { ...toPersist.provider, apiKey: this.secretBox.encrypt(apiKey) },
+    };
+    writeFileSync(this.filePath, JSON.stringify(payload, null, 2), "utf8");
   }
 
   get file(): string {
