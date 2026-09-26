@@ -63,6 +63,15 @@ export function App(): React.ReactElement {
   const skillsState = useSkills(workspace.active);
   const agentsState = useAgents(workspace.active);
   const sessionsState = useSessions(workspace.active, chat.sessionId);
+
+  useEffect(() => {
+    const bridge = window.harness?.hotreload;
+    if (!bridge) return;
+    return bridge.onChanged((change) => {
+      if (change.kinds.includes("skills")) skillsState.refresh();
+      if (change.kinds.includes("agents")) agentsState.refresh();
+    });
+  }, [skillsState, agentsState]);
   const refreshSettings = settingsState.refresh;
 
   useEffect(() => {

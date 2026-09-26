@@ -21,6 +21,8 @@ import { registerPluginsHandlers } from "./ipc/plugins-handlers";
 import { registerGraphHandlers } from "./ipc/graph-handlers";
 import { registerVisualHandlers } from "./ipc/visual-handlers";
 import { registerDiagnosticsHandlers } from "./ipc/diagnostics-handlers";
+import { registerHotReloadHandlers } from "./ipc/hotreload-handlers";
+import { HotReloadRegistry } from "./hotreload";
 import { GitStatusService } from "./git";
 import { DependencyGraphService } from "./graph/graph-service";
 import { JsonSessionRepository, SessionStore } from "./sessions";
@@ -81,6 +83,7 @@ app.whenReady().then(() => {
   ]);
   skillCompiler.useEnabled(() => settingsStore.get().skills);
   const agentCatalog = new AgentCatalog();
+  agentCatalog.useRoots(() => [workspace.current()].filter(Boolean));
   configureAgentProvider((domain) => {
     const { agent } = agentCatalog.selectFor(domain, settingsStore.get().agent || null);
     return agent ? { id: agent.id, name: agent.name, prompt: agent.prompt, skills: agent.skills } : null;
@@ -128,6 +131,31 @@ app.whenReady().then(() => {
   });
   configureRagExcludes(() => profileStore.read(workspace.current() ?? "")?.rag?.excludes ?? []);
   updater.init();
+
+  let hotReloadRegistry: HotReloadRegistry | null = null;
+  const startHotReload = (workspacePath: string): void => {
+    hotReloadRegistry?.stop();
+    if (!workspacePath) {
+      hotReloadRegistry = null;
+      return;
+    }
+    const profileDir = join(workspacePath, ".pragma-harness");
+    hotReloadRegistry = new HotReloadRegistry({
+      targets: [
+        { kind: "skills", path: join(workspacePath, "skills"), invalidate: () => skillCompiler.clearCache() },
+        { kind: "agents", path: join(profileDir, "agents"), invalidate: () => agentCatalog.reload() },
+        { kind: "plugins", path: join(profileDir, "plugins"), invalidate: () => undefined },
+        { kind: "profile", path: join(profileDir, "profile.json"), invalidate: () => undefined },
+      ],
+      onChange: (change) => {
+        mainWindow?.webContents.send("hotreload:changed", change);
+      },
+    });
+    hotReloadRegistry.start();
+  };
+  startHotReload(workspace.current());
+  workspace.onChange(startHotReload);
+  registerHotReloadHandlers(() => hotReloadRegistry);
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
