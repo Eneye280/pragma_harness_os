@@ -3,6 +3,8 @@ import { z } from "zod";
 import { FileEditHistory, readWorkspaceFile } from "./file-tools";
 import { loadMcpConfig, redactMcpEnv, routeMcpTool } from "./mcp";
 import { runTerminal } from "./terminal";
+import { runVerifyTool } from "./verify-tools";
+import { checkTerminalCommand } from "./allowlist";
 import { redactSecrets, type ApproveHook, type ConfirmHook, type PermissionMode, type ToolApprovalRequest, type ToolCallInput, type ToolCallRecord, type ToolName, type ToolObservation } from "./types";
 
 export const FileReadArgsSchema = z.object({ path: z.string().min(1) });
@@ -16,6 +18,10 @@ export const McpCallArgsSchema = z.object({
   qualifiedTool: z.string().min(1),
   params: z.record(z.unknown()).default({}),
 });
+export const VerifyArgsSchema = z.object({
+  timeoutMs: z.number().int().positive().max(180000).optional(),
+  domain: z.string().optional(),
+});
 
 export interface RunnerOptions {
   permission: PermissionMode;
@@ -23,6 +29,7 @@ export interface RunnerOptions {
   approveTool?: ApproveHook;
   confirm?: ConfirmHook;
   mcpExecutor?: (route: { serverName: string; toolName: string }, params: Record<string, unknown>) => Promise<string>;
+  sandboxExecutor?: (request: { command: string; args: string[]; workspacePath: string; timeoutMs?: number }) => Promise<{ stdout: string; stderr: string; exitCode: number; durationMs: number; timedOut: boolean }>;
   eventSink?: (eventType: "agent:tool-call" | "agent:observation", payload: unknown, sessionId: string, workspaceHash: string) => void;
 }
 
@@ -50,7 +57,7 @@ export function parseToolCallFromText(llmText: string): ToolCallInput | null {
   try {
     const parsed: unknown = JSON.parse(match[1].trim());
     const schema = z.object({
-      tool: z.enum(["fileRead", "fileEdit", "terminal", "mcp_call"]),
+      tool: z.enum(["fileRead", "fileEdit", "terminal", "mcp_call", "runTests", "runBuild", "runLint"]),
       args: z.record(z.unknown()),
       sessionId: z.string(),
       workspaceHash: z.string(),
@@ -225,12 +232,32 @@ export class ToolRunner {
       }
       case "terminal": {
         const parsedArgs = TerminalArgsSchema.parse(input.args);
-        const terminalResult = await runTerminal({
-          command: parsedArgs.command,
-          args: parsedArgs.args,
-          workspacePath: input.workspacePath,
-          timeoutMs: parsedArgs.timeoutMs,
-        });
+        const allowlist = checkTerminalCommand(parsedArgs.command, parsedArgs.args);
+        if (!allowlist.allowed) {
+          return {
+            callId,
+            tool: input.tool,
+            ok: false,
+            output: "",
+            blocked: true,
+            blockReason: `allowlist: ${allowlist.reason}`,
+            durationMs: Date.now() - startedAt,
+            ts: Date.now(),
+          };
+        }
+        const terminalResult = this.options.sandboxExecutor
+          ? await this.options.sandboxExecutor({
+              command: parsedArgs.command,
+              args: parsedArgs.args,
+              workspacePath: input.workspacePath,
+              timeoutMs: parsedArgs.timeoutMs,
+            })
+          : await runTerminal({
+              command: parsedArgs.command,
+              args: parsedArgs.args,
+              workspacePath: input.workspacePath,
+              timeoutMs: parsedArgs.timeoutMs,
+            });
         return {
           callId,
           tool: input.tool,
@@ -239,6 +266,21 @@ export class ToolRunner {
           stderr: redactSecrets(terminalResult.stderr),
           exitCode: terminalResult.exitCode,
           durationMs: terminalResult.durationMs,
+          ts: Date.now(),
+        };
+      }
+      case "runBuild":
+      case "runTests":
+      case "runLint": {
+        const parsedArgs = VerifyArgsSchema.parse(input.args ?? {});
+        const result = await runVerifyTool(input.tool, input.workspacePath, { timeoutMs: parsedArgs.timeoutMs, domain: parsedArgs.domain });
+        return {
+          callId,
+          tool: input.tool,
+          ok: result.ok,
+          output: `${result.command}\n${result.output}`,
+          exitCode: result.exitCode,
+          durationMs: result.durationMs,
           ts: Date.now(),
         };
       }
