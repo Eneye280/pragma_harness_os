@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { aggregateUsage, type UsageComparison, type UsageEntry } from "@shared/usage";
 import { useFocusTrap } from "../shell/use-focus-trap";
+import { TelemetryCharts } from "./TelemetryCharts";
 
 interface UsageDashboardProps {
   open: boolean;
@@ -84,6 +85,8 @@ export function UsageDashboard({ open, onClose }: UsageDashboardProps): React.Re
               </div>
             </div>
           ) : null}
+
+          <div className="mb-3"><TelemetryCharts buckets={buckets} comparison={comparison} /></div>
 
           <table className="w-full text-left text-[11px]">
             <thead className="text-zinc-500">
