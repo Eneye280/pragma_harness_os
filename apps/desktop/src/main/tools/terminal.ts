@@ -20,6 +20,15 @@ export interface TerminalResult {
 const DEFAULT_TIMEOUT_MS = 15000;
 const MAX_OUTPUT_CHARS = 20000;
 
+const WINDOWS_SHIMS = new Set(["pnpm", "npm", "npx", "yarn", "tsc", "eslint", "vitest", "jest", "node-gyp"]);
+
+export function resolveExecutable(command: string): string {
+  if (process.platform !== "win32") return command;
+  const base = command.toLowerCase();
+  if (WINDOWS_SHIMS.has(base) && !command.toLowerCase().endsWith(".cmd")) return `${command}.cmd`;
+  return command;
+}
+
 function truncateOutput(rawOutput: string): string {
   if (rawOutput.length <= MAX_OUTPUT_CHARS) return rawOutput;
   return `${rawOutput.slice(0, MAX_OUTPUT_CHARS)}\n…[truncated ${rawOutput.length - MAX_OUTPUT_CHARS} chars]`;
@@ -45,10 +54,12 @@ export function runTerminal(request: TerminalRequest): Promise<TerminalResult> {
     : request.command.trim();
 
   return new Promise((resolvePromise) => {
+    const executable = resolveExecutable(parsedCommand.executable);
+    const useShell = process.platform === "win32" && /\.(cmd|bat)$/i.test(executable);
     execFile(
-      parsedCommand.executable,
+      executable,
       parsedCommand.executableArgs,
-      { cwd: workspaceDir, timeout: timeoutMs, windowsHide: true, maxBuffer: 10 * 1024 * 1024 },
+      { cwd: workspaceDir, timeout: timeoutMs, windowsHide: true, maxBuffer: 10 * 1024 * 1024, shell: useShell },
       (executionError, stdout, stderr) => {
         const durationMs = Date.now() - startedAt;
         const timedOut = Boolean(executionError && "killed" in executionError && executionError.killed);

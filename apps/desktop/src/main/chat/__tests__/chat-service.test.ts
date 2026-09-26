@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { ChatService, buildAgentPrompt } from "../chat-service";
+import { ChatService, buildAgentPrompt, parseToolRequest } from "../chat-service";
 import type { ChatStreamEvent } from "../../../shared/chat-events";
 import type { ToolObservation, ToolRunner } from "../../tools";
 
@@ -244,5 +244,20 @@ describe("ChatService", () => {
     expect(seenDiff).toContain("console.log");
     expect(events.some((event) => event.kind === "assistant-delta" && (event as { text: string }).text.includes("Fix requerido"))).toBe(true);
     expect(events.some((event) => event.kind === "harness-step" && (event as { status?: string; label?: string }).status === "blocked")).toBe(true);
+  });
+});
+
+describe("parseToolRequest", () => {
+  it("accepts file, terminal and verification tools", () => {
+    expect(parseToolRequest('```tool\n{"tool":"fileEdit","args":{"path":"a.ts","content":"x"}}\n```')?.tool).toBe("fileEdit");
+    expect(parseToolRequest('```tool\n{"tool":"terminal","args":{"command":"git","args":["status"]}}\n```')?.tool).toBe("terminal");
+    expect(parseToolRequest('```tool\n{"tool":"runTests","args":{}}\n```')?.tool).toBe("runTests");
+    expect(parseToolRequest('```tool\n{"tool":"runBuild","args":{}}\n```')?.tool).toBe("runBuild");
+    expect(parseToolRequest('```tool\n{"tool":"runLint","args":{}}\n```')?.tool).toBe("runLint");
+  });
+
+  it("rejects unknown tools and malformed blocks", () => {
+    expect(parseToolRequest('```tool\n{"tool":"rm-rf","args":{}}\n```')).toBeNull();
+    expect(parseToolRequest("no block here")).toBeNull();
   });
 });
