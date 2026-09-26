@@ -22,6 +22,13 @@ export interface AssistantDoneEvent {
   sessionId: string;
 }
 
+export interface UserMessageEvent {
+  kind: "user-message";
+  sessionId: string;
+  text: string;
+  steer?: boolean;
+}
+
 export interface ToolCallEvent {
   kind: "tool-call";
   sessionId: string;
@@ -69,6 +76,7 @@ export type ChatStreamEvent =
   | HarnessStepEvent
   | AssistantDeltaEvent
   | AssistantDoneEvent
+  | UserMessageEvent
   | ToolCallEvent
   | ToolObservationEvent
   | ChatErrorEvent

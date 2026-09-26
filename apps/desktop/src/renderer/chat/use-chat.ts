@@ -18,6 +18,8 @@ export interface UseChatResult {
   revisePlan: (markdown: string) => void;
   openSession: (id: string) => Promise<void>;
   startNewSession: () => void;
+  steer: (text: string) => void;
+  cancel: () => void;
   reset: () => void;
 }
 
@@ -126,6 +128,17 @@ export function useChat(workspacePath = ""): UseChatResult {
     setIsRunning(false);
   }, [adoptSession]);
 
+  const steer = useCallback((text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    void window.harness?.steer(sessionRef.current, trimmed);
+  }, []);
+
+  const cancel = useCallback(() => {
+    void window.harness?.cancel(sessionRef.current);
+    setIsRunning(false);
+  }, []);
+
   const reset = useCallback(() => {
     dispatch({ type: "reset" });
     setIsRunning(false);
@@ -149,5 +162,5 @@ export function useChat(workspacePath = ""): UseChatResult {
     [],
   );
 
-  return { state, sessionId, isRunning, send, approvePlan, discardPlan, revisePlan, openSession, startNewSession, reset };
+  return { state, sessionId, isRunning, send, approvePlan, discardPlan, revisePlan, openSession, startNewSession, steer, cancel, reset };
 }

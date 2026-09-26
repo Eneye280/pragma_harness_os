@@ -12,7 +12,7 @@ const SCROLL_THRESHOLD = 80;
 const SUGGESTIONS = ["crea un archivo de nota", "agrega un endpoint /users", "revisa la seguridad del último cambio"];
 
 export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement {
-  const { state, isRunning, send } = chat;
+  const { state, isRunning, send, steer, cancel } = chat;
   const [draft, setDraft] = useState("");
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [revealedCount, setRevealedCount] = useState(0);
@@ -54,6 +54,12 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
     setDraft("");
   }
 
+  function submitSteer(): void {
+    if (!draft.trim()) return;
+    steer(draft);
+    setDraft("");
+  }
+
   function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>): void {
     if (event.key === "Enter" && event.shiftKey) return;
     if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
@@ -63,7 +69,8 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
     }
     if (event.key === "Enter") {
       event.preventDefault();
-      submit(false);
+      if (isRunning) submitSteer();
+      else submit(false);
     }
   }
 
@@ -95,11 +102,13 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
 
               {visibleMessages.map((message) =>
                 message.role === "user" ? (
-                  <div
-                    key={message.id}
-                    className="slide-up ml-auto max-w-[85%] rounded-panel border border-harness/30 bg-harness/10 px-3.5 py-2 text-[13px] text-zinc-100"
-                  >
-                    {message.content}
+                  <div key={message.id} className="slide-up ml-auto max-w-[85%]">
+                    {message.steer ? (
+                      <span className="mb-0.5 block text-right text-[10px] text-harness-soft">añadido al run en curso</span>
+                    ) : null}
+                    <div className="rounded-panel border border-harness/30 bg-harness/10 px-3.5 py-2 text-[13px] text-zinc-100">
+                      {message.content}
+                    </div>
                   </div>
                 ) : (
                   <div key={message.id} className="slide-up flex gap-3">
@@ -146,25 +155,39 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={isRunning ? "Harness trabajando…" : "Escribe un mensaje… (Enter envía)"}
+            placeholder={isRunning ? "Añadir al run en curso… (Enter envía al agente)" : "Escribe un mensaje… (Enter envía)"}
             aria-label="Mensaje para el harness"
             className="max-h-40 flex-1 resize-none bg-transparent px-2 py-1.5 text-[13px] text-zinc-200 outline-none placeholder:text-zinc-500"
           />
-          <button
-            type="button"
-            onClick={() => submit(false)}
-            disabled={!draft.trim() || isRunning}
-            aria-label="Send message"
-            className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-control transition-colors",
-              !draft.trim() || isRunning ? "bg-zinc-800 text-zinc-600" : "bg-harness text-white hover:bg-harness-strong",
-            )}
-          >
-            <IconSend width={15} height={15} />
-          </button>
+          {isRunning ? (
+            <button
+              type="button"
+              onClick={cancel}
+              aria-label="Detener el run"
+              title="Detener"
+              className="flex h-8 w-8 items-center justify-center rounded-control border border-red-500/40 bg-red-500/10 text-red-300 transition-colors hover:bg-red-500/20"
+            >
+              <span aria-hidden="true">■</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => submit(false)}
+              disabled={!draft.trim()}
+              aria-label="Send message"
+              className={cn(
+                "flex h-8 w-8 items-center justify-center rounded-control transition-colors",
+                !draft.trim() ? "bg-zinc-800 text-zinc-600" : "bg-harness text-white hover:bg-harness-strong",
+              )}
+            >
+              <IconSend width={15} height={15} />
+            </button>
+          )}
         </div>
         <p className="mx-auto mt-2 w-full max-w-[780px] text-[10px] text-zinc-600">
-          Enter envía · Shift+Enter salto de línea · Ctrl/Cmd+Enter fuerza sin harness
+          {isRunning
+            ? "Enter añade al run en curso (se re-evalúa y continúa) · ■ detiene"
+            : "Enter envía · Shift+Enter salto de línea · Ctrl/Cmd+Enter fuerza sin harness"}
         </p>
       </div>
     </div>
