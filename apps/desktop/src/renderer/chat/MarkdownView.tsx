@@ -1,4 +1,5 @@
 import { parseMarkdown, tokenizeInline, type InlineToken, type MarkdownBlock } from "./markdown";
+import { CodeBlock } from "./CodeBlock";
 
 function renderInlineTokens(tokens: InlineToken[]): React.ReactNode[] {
   return tokens.map((token, index) => {
@@ -32,14 +33,7 @@ const HEADING_SIZES = ["text-base", "text-base", "text-sm", "text-sm", "text-xs"
 function renderBlock(block: MarkdownBlock, index: number): React.ReactNode {
   switch (block.type) {
     case "code":
-      return (
-        <pre
-          key={index}
-          className="overflow-x-auto rounded-control border border-hairline bg-black/40 p-3 font-mono text-[12px] leading-relaxed text-zinc-300"
-        >
-          <code>{block.content}</code>
-        </pre>
-      );
+      return <CodeBlock key={index} lang={block.lang} content={block.content} />;
     case "tool":
       return null;
     case "heading":
