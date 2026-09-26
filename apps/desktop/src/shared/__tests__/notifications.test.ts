@@ -43,11 +43,16 @@ describe("notifications", () => {
     expect(list).toHaveLength(1);
   });
 
-  it("keeps sticky toasts and expires transient ones", () => {
+  it("expires every toast, giving sticky warnings a longer life", () => {
     const now = 1_000_000;
     const transient = createNotification({ kind: "success", title: "ok", source: "app", ts: now - 10_000 });
-    const sticky = createNotification({ kind: "error", title: "boom", source: "chat", ts: now - 60_000 });
-    expect(visibleToasts([transient, sticky], now)).toEqual([sticky]);
+    const stickyFresh = createNotification({ kind: "error", title: "boom", source: "chat", ts: now - 9_000 });
+    expect(visibleToasts([transient, stickyFresh], now)).toEqual([stickyFresh]);
+
+    // A los 11s el aviso pegajoso también se cerró solo.
+    const stickyOld = createNotification({ kind: "warning", title: "ojo", source: "budget", ts: now - 11_000 });
+    expect(visibleToasts([stickyOld], now)).toEqual([]);
+    expect(visibleToasts([transient], now)).toEqual([]);
   });
 
   it("builds budget and chat error notifications", () => {

@@ -53,8 +53,15 @@ export function unreadCount(list: AppNotification[]): number {
   return list.filter((entry) => !entry.read).length;
 }
 
-export function visibleToasts(list: AppNotification[], now = Date.now(), ttlMs = 6000): AppNotification[] {
-  return list.filter((entry) => entry.sticky || now - entry.ts < ttlMs).slice(0, 4);
+/**
+ * Toasts visibles. Todos expiran solos: los avisos duran más (10s) que los
+ * informativos (6s). Ninguno queda pegado en pantalla.
+ */
+export const TOAST_TTL_MS = 6000;
+export const STICKY_TOAST_TTL_MS = 10_000;
+
+export function visibleToasts(list: AppNotification[], now = Date.now(), ttlMs = TOAST_TTL_MS, stickyTtlMs = STICKY_TOAST_TTL_MS): AppNotification[] {
+  return list.filter((entry) => now - entry.ts < (entry.sticky ? stickyTtlMs : ttlMs)).slice(0, 4);
 }
 
 export function notificationFromChatError(message: string): AppNotification {

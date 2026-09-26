@@ -1,10 +1,20 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import type { SessionSummary } from "@shared/session";
 import { FileTree } from "../explorer/FileTree";
 import type { UseExplorerResult } from "../explorer/use-explorer";
 import { cn } from "../lib/cn";
 import { formatRelativeTime } from "../shell/session-utils";
 import { groupSessionsByProject } from "../shell/project-tree";
+import {
+  applyProjectPrefs,
+  isPinned,
+  loadProjectPrefs,
+  saveProjectPrefs,
+  toggleHidden,
+  togglePinned,
+  type ProjectPrefs,
+} from "../shell/project-prefs";
 import { IconFolder, IconSearch } from "./icons";
 
 interface ExplorerPanelProps {
@@ -43,7 +53,24 @@ export function ExplorerPanel({
   const [newFileName, setNewFileName] = useState("");
   const [dropActive, setDropActive] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [prefs, setPrefs] = useState<ProjectPrefs>(() => loadProjectPrefs(window.localStorage));
+  const [menu, setMenu] = useState<{ x: number; y: number; path: string; name: string } | null>(null);
   const query = explorer.search.trim().toLowerCase();
+
+  useEffect(() => {
+    saveProjectPrefs(window.localStorage, prefs);
+  }, [prefs]);
+
+  useEffect(() => {
+    if (!menu) return;
+    const close = (): void => setMenu(null);
+    document.addEventListener("mousedown", close);
+    window.addEventListener("resize", close);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      window.removeEventListener("resize", close);
+    };
+  }, [menu]);
 
   async function createFile(): Promise<void> {
     const name = newFileName.trim();
@@ -83,12 +110,15 @@ export function ExplorerPanel({
 
   // Un solo sidebar: buscador arriba y, debajo, proyectos → sesiones.
   // Se ocultan los proyectos sin sesiones (no mostramos carpetas vacías).
-  const projects = groupSessionsByProject(sessions, activePath, recents)
-    .map((group) => ({
-      ...group,
-      sessions: query ? group.sessions.filter((session) => session.title.toLowerCase().includes(query)) : group.sessions,
-    }))
-    .filter((group) => group.active || group.sessions.length > 0);
+  const projects = applyProjectPrefs(
+    groupSessionsByProject(sessions, activePath, recents)
+      .map((group) => ({
+        ...group,
+        sessions: query ? group.sessions.filter((session) => session.title.toLowerCase().includes(query)) : group.sessions,
+      }))
+      .filter((group) => group.active || group.sessions.length > 0),
+    prefs,
+  );
 
   const hasProject = Boolean(activePath);
   const files = explorer.visibleNodes;
@@ -191,6 +221,10 @@ export function ExplorerPanel({
           return (
             <div key={group.path} className="mb-1">
               <div
+                onContextMenu={(event) => {
+                  event.preventDefault();
+                  setMenu({ x: event.clientX, y: event.clientY, path: group.path, name: group.name });
+                }}
                 className={cn(
                   "group flex items-center gap-1.5 rounded-control px-1 py-1.5 transition-colors",
                   group.active ? "bg-harness/10" : "hover:bg-surface-raised/70",
@@ -204,9 +238,10 @@ export function ExplorerPanel({
                 >
                   {isExpanded ? "▾" : "▸"}
                 </button>
-                <button type="button" onClick={() => onPickRecent(group.path)} title={group.path} className="flex min-w-0 flex-1 items-center gap-2 text-left">
+                <button type="button" onClick={() => onPickRecent(group.path)} title={`${group.path} — click derecho para opciones`} className="flex min-w-0 flex-1 items-center gap-2 text-left">
                   <IconFolder width={15} height={15} className={cn("shrink-0", group.active ? "text-harness-soft" : "text-zinc-500")} />
                   <span className={cn("truncate text-[13px]", group.active ? "font-medium text-zinc-100" : "text-zinc-300")}>{group.name}</span>
+                  {isPinned(prefs, group.path) ? <span className="shrink-0 text-[12px] text-amber-400" title="Fijado" aria-label="Fijado">★</span> : null}
                   <span className="ml-auto shrink-0 rounded-pill bg-surface-raised px-1.5 text-[12px] text-zinc-500">{group.sessions.length}</span>
                 </button>
                 {group.active ? (
@@ -271,9 +306,71 @@ export function ExplorerPanel({
         ) : null}
       </div>
 
-      <div className="border-t border-hairline px-3 py-2 text-[12px] text-zinc-600">
-        {hasProject ? `${projects.length} proyecto(s) · ${files.length} archivos` : "sin proyecto"}
+      <div className="flex items-center gap-2 border-t border-hairline px-3 py-2 text-[12px] text-zinc-600">
+        <span className="min-w-0 flex-1 truncate">{hasProject ? `${projects.length} proyecto(s) · ${files.length} archivos` : "sin proyecto"}</span>
+        {prefs.hidden.length > 0 ? (
+          <button
+            type="button"
+            onClick={() => setPrefs((current) => ({ ...current, hidden: [] }))}
+            className="shrink-0 rounded-control border border-hairline px-2 py-0.5 text-[12px] text-zinc-400 transition-colors hover:text-zinc-100"
+            title="Restaurar los proyectos que quitaste del explorer"
+          >
+            Mostrar ocultos ({prefs.hidden.length})
+          </button>
+        ) : null}
       </div>
+
+      {menu
+        ? createPortal(
+            <div
+              role="menu"
+              aria-label={`Opciones de ${menu.name}`}
+              style={{ position: "fixed", top: menu.y, left: menu.x, zIndex: "var(--phs-z-overlay)" }}
+              className="overlay-surface w-56 p-1.5"
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <p className="px-2.5 pb-1 pt-1 text-[12px] text-zinc-500">{menu.name}</p>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setPrefs((current) => togglePinned(current, menu.path));
+                  setMenu(null);
+                }}
+                className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-left text-[13px] text-zinc-300 hover:bg-harness/15 hover:text-zinc-100"
+              >
+                <span aria-hidden="true">★</span>
+                {isPinned(prefs, menu.path) ? "Quitar de favoritos" : "Fijar (favorito)"}
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  onPickRecent(menu.path);
+                  setMenu(null);
+                }}
+                className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-left text-[13px] text-zinc-300 hover:bg-harness/15 hover:text-zinc-100"
+              >
+                <span aria-hidden="true">▸</span>
+                Trabajar en este proyecto
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                disabled={menu.path === activePath}
+                onClick={() => {
+                  setPrefs((current) => toggleHidden(current, menu.path));
+                  setMenu(null);
+                }}
+                className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-left text-[13px] text-red-300 hover:bg-red-500/10 disabled:opacity-40"
+              >
+                <span aria-hidden="true">✕</span>
+                Quitar del explorer
+              </button>
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }
