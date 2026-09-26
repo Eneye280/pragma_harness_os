@@ -66,6 +66,7 @@ export interface UpdaterBridge {
   check: () => Promise<UpdateStatus>;
   download: () => Promise<UpdateStatus>;
   install: () => Promise<{ ok: boolean }>;
+  feed: () => Promise<{ ok: boolean; available: boolean; reason: string; release: { version: string; notes: string; channel: string } | null }>;
   onStatus: (cb: (status: UpdateStatus) => void) => () => void;
 }
 
@@ -280,6 +281,7 @@ const updater: UpdaterBridge = {
   check: () => ipcRenderer.invoke("updater:check"),
   download: () => ipcRenderer.invoke("updater:download"),
   install: () => ipcRenderer.invoke("updater:install"),
+  feed: () => ipcRenderer.invoke("updater:feed"),
   onStatus: (cb) => {
     const handler = (_e: unknown, status: UpdateStatus) => cb(status);
     ipcRenderer.on("updater:status", handler as never);

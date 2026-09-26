@@ -75,6 +75,13 @@ export const SettingsSchema = z.object({
       maxRetries: z.number().int().min(0).max(5).default(2),
     })
     .default({ rules: [], fallbackModels: [], maxRetries: 2 }),
+  updater: z
+    .object({
+      feedUrl: z.string().default(""),
+      token: z.string().default(""),
+      channel: z.enum(["stable", "beta"]).default("stable"),
+    })
+    .default({ feedUrl: "", token: "", channel: "stable" }),
 });
 
 export function resolveSettingsPath(): string {
@@ -102,6 +109,7 @@ export function sanitizeIncoming(current: HarnessSettings, incoming: HarnessSett
     workspace: incoming.workspace ?? current.workspace,
     tools: incoming.tools ?? current.tools,
     routing: incoming.routing ?? current.routing,
+    updater: incoming.updater ?? current.updater,
   };
 }
 

@@ -93,7 +93,7 @@ app.whenReady().then(() => {
   registerExplorerHandlers(() => mainWindow, workspace);
   registerTerminalHandlers(() => mainWindow, workspace);
   registerSettingsHandlers(() => mainWindow, settingsController, profileStore, workspace);
-  registerUpdaterHandlers(() => mainWindow, updater);
+  registerUpdaterHandlers(() => mainWindow, updater, settingsController);
   registerWorkspaceHandlers(() => mainWindow, workspace);
   registerGitHandlers(workspace);
   registerSkillsHandlers(() => mainWindow, settingsController, workspace);
