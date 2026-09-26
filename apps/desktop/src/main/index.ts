@@ -90,7 +90,7 @@ app.whenReady().then(() => {
   registerUpdaterHandlers(() => mainWindow, updater);
   registerWorkspaceHandlers(() => mainWindow, workspace);
   registerGitHandlers(workspace);
-  registerSkillsHandlers(() => mainWindow, settingsController);
+  registerSkillsHandlers(() => mainWindow, settingsController, workspace);
   registerAgentsHandlers(() => mainWindow, settingsController, agentCatalog);
   registerBundlesHandlers(workspace, profileStore, agentCatalog);
   const sessionStore = new SessionStore(new JsonSessionRepository(join(app.getPath("userData"), "pragma-harness", "sessions")));
