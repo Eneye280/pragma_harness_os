@@ -24,7 +24,7 @@ export function ContextPanel({ snapshot, onOpenFile }: ContextPanelProps): React
   }
 
   return (
-    <div className="flex h-full flex-col bg-surface">
+    <div className="flex h-full flex-col bg-transparent">
       <div className="flex items-center gap-2 border-b border-hairline px-3 py-2">
         <IconActivity width={13} height={13} className="text-harness-soft" />
         <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">Context</span>

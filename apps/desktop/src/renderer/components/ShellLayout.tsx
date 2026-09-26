@@ -53,12 +53,15 @@ export function ShellLayout({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex min-h-0 flex-1">
+      <div className="relative flex min-h-0 flex-1 gap-2 p-2">
         <aside
           aria-label="Explorer"
           aria-hidden={!explorerOpen}
           inert={!explorerOpen ? true : undefined}
-          className={cn("panel-anim shrink-0 overflow-hidden", explorerOpen ? "border-r border-hairline" : "border-r-0")}
+          className={cn(
+            "panel-anim shrink-0 overflow-hidden",
+            explorerOpen ? "glass-strong rounded-sheet" : "",
+          )}
           style={{ width: explorerOpen ? PANEL_WIDTHS.explorer : 0 }}
         >
           <div className="h-full" style={{ width: PANEL_WIDTHS.explorer }}>
@@ -74,7 +77,11 @@ export function ShellLayout({
           </div>
         </aside>
 
-        <main id="main" tabIndex={-1} className="min-w-0 flex-1 outline-none">
+        <main
+          id="main"
+          tabIndex={-1}
+          className="min-w-0 flex-1 overflow-hidden rounded-sheet border border-hairline bg-surface/70 outline-none"
+        >
           {pendingPlan ? (
             <PlanCanvas
               plan={pendingPlan}
@@ -93,7 +100,10 @@ export function ShellLayout({
           aria-label="Context"
           aria-hidden={!contextOpen}
           inert={!contextOpen ? true : undefined}
-          className={cn("panel-anim shrink-0 overflow-hidden", contextOpen ? "border-l border-hairline" : "border-l-0")}
+          className={cn(
+            "panel-anim shrink-0 overflow-hidden",
+            contextOpen ? "glass-strong rounded-sheet" : "",
+          )}
           style={{ width: contextOpen ? PANEL_WIDTHS.context : 0 }}
         >
           <div className="h-full" style={{ width: PANEL_WIDTHS.context }}>
