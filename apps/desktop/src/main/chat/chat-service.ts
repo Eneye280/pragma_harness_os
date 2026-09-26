@@ -8,7 +8,7 @@ import type { ChatSendRequest, ChatStreamEvent } from "../../shared/chat-events"
 import { buildAttachmentNote } from "../../shared/attachments";
 
 const ToolRequestSchema = z.object({
-  tool: z.enum(["fileRead", "fileEdit", "terminal", "mcp_call"]),
+  tool: z.enum(["fileRead", "fileEdit", "terminal", "mcp_call", "runTests", "runBuild", "runLint"]),
   args: z.record(z.unknown()),
 });
 
@@ -294,12 +294,13 @@ export class ChatService {
         const callId = `call-${Date.now().toString(36)}`;
         const toolArgs = pendingToolCall.args;
         const filePath = typeof toolArgs.path === "string" ? toolArgs.path : "scratch.txt";
+        const toolSummary = typeof toolArgs.path === "string" ? `${pendingToolCall.tool} → ${filePath}` : pendingToolCall.tool;
         emit({
           kind: "tool-call",
           sessionId,
           callId,
           tool: pendingToolCall.tool,
-          summary: `fileEdit → ${filePath}`,
+          summary: toolSummary,
           status: "running",
         });
         const toolWorkspacePath =

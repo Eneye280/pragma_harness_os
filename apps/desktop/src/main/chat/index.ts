@@ -13,6 +13,7 @@ import { SandboxRunner } from "../sandbox";
 import { runTerminal } from "../tools";
 import type { CostTracker } from "../cost";
 import { ChatService, type ChatGateway } from "./chat-service";
+import { matchScenario } from "./mock-scenarios";
 import { estimateCostUsd } from "../cost/pricing";
 import type { UsageEntry } from "../../shared/usage";
 
@@ -36,7 +37,18 @@ async function* mockResponder(prompt: string): AsyncGenerator<string> {
   const wantsTests = TEST_INTENT_PATTERN.test(prompt);
   const wantsTerminal = !wantsTests && TERMINAL_INTENT_PATTERN.test(prompt);
   const wantsFile = !wantsTests && !wantsTerminal && TOOL_INTENT_PATTERN.test(prompt);
-  if (wantsTests) {
+  const scenario = matchScenario(prompt);
+  if (scenario) {
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    const scenarioBlock = {
+      tool: scenario.tool,
+      args: scenario.args,
+      sessionId: "mock",
+      workspaceHash: "mock",
+      workspacePath: ".",
+    };
+    yield `\n${scenario.intro}\n\n\`\`\`tool\n${JSON.stringify(scenarioBlock, null, 2)}\n\`\`\`\n`;
+  } else if (wantsTests) {
     await new Promise((resolve) => setTimeout(resolve, 150));
     const verifyBlock = { tool: "runTests", args: {}, sessionId: "mock", workspaceHash: "mock", workspacePath: "." };
     yield `\nCorro los tests:\n\n\`\`\`tool\n${JSON.stringify(verifyBlock, null, 2)}\n\`\`\`\n`;
