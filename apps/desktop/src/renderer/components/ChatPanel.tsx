@@ -225,7 +225,7 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
                         )}
                       </div>
                     ) : null}
-                    <div className="rounded-panel border border-harness/30 bg-harness/10 px-3.5 py-2 text-[13px] text-zinc-100">
+                    <div className="rounded-sheet rounded-br-md border border-harness/30 bg-harness/15 px-3.5 py-2 text-[13px] text-zinc-100 shadow-[0_6px_18px_rgba(0,0,0,0.25)]">
                       {message.content}
                     </div>
                     {message.attachments && message.attachments.length > 0 ? (
@@ -236,10 +236,21 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
                   </div>
                 ) : (
                   <div key={message.id} className="slide-up flex gap-3">
-                    <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-panel bg-zinc-800 text-harness-soft" aria-hidden="true">
+                    <span className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-panel border border-harness/30 bg-harness/15 text-harness-soft" aria-hidden="true">
                       <IconSparkles width={15} height={15} />
                     </span>
-                    <div className="min-w-0 flex-1">
+                    <div className="glass min-w-0 flex-1 rounded-sheet rounded-tl-md px-3.5 py-2.5">
+                      <div className="mb-1 flex items-center gap-2">
+                        <span className="text-[10px] tracking-label text-harness-soft">harness</span>
+                        <button
+                          type="button"
+                          aria-label="Copiar respuesta"
+                          onClick={() => void navigator.clipboard?.writeText(message.content).catch(() => undefined)}
+                          className="ml-auto rounded-control border border-hairline px-2 py-[1px] text-[10px] text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
+                        >
+                          copiar
+                        </button>
+                      </div>
                       <MarkdownView text={message.content} />
                       {message.streaming ? <span className="mt-1 inline-block h-3.5 w-1.5 animate-pulse bg-harness align-text-bottom" /> : null}
                       {message.tasks && message.tasks.length > 0 ? <MessageTasks tasks={message.tasks} /> : null}
@@ -330,7 +341,7 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
           </div>
         ) : null}
         {attachmentError ? <p className="mx-auto mb-1 w-full max-w-[780px] text-[10px] text-red-400">{attachmentError}</p> : null}
-        <div className="mx-auto flex w-full max-w-[780px] items-end gap-2 rounded-panel border border-hairline bg-surface-raised p-2 focus-within:border-harness/50">
+        <div className="glass mx-auto flex w-full max-w-[780px] items-end gap-2 rounded-sheet p-2 focus-within:border-harness/50">
           <input
             ref={fileInputRef}
             type="file"
