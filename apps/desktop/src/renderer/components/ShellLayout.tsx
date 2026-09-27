@@ -87,7 +87,7 @@ export function ShellLayout({
           {previewOpen ? (
             <CodePreview file={previewFile} onClose={onClosePreview} />
           ) : (
-            <ChatPanel chat={chat} />
+            <ChatPanel chat={chat} workspacePath={activePath} onOpenFile={onSelectFile} />
           )}
         </main>
 

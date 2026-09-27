@@ -1,8 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { DependencyGraph } from "@shared/graph";
 import { cn } from "../lib/cn";
 import { IconSend, IconSparkles } from "./icons";
 import { PipelineTimeline } from "../chat/PipelineTimeline";
 import { useAutosizeTextarea } from "../chat/use-autosize-textarea";
+import { buildRunGraph } from "../chat/run-graph";
+import { RunGraphPanel } from "../chat/RunGraphPanel";
+import { useChatView } from "../chat/use-chat-view";
 import { PlanChatCard } from "./PlanChatCard";
 import { QaVerify } from "../qa/QaVerify";
 import { Lightbox, type LightboxImage } from "../ui/Lightbox";
@@ -47,7 +51,13 @@ function isTextFile(file: File): boolean {
   return TEXT_EXTENSIONS.some((extension) => lower.endsWith(extension));
 }
 
-export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement {
+interface ChatPanelProps {
+  chat: UseChatResult;
+  workspacePath: string;
+  onOpenFile: (path: string) => void;
+}
+
+export function ChatPanel({ chat, workspacePath, onOpenFile }: ChatPanelProps): React.ReactElement {
   const { state, isRunning, send, steer, cancel } = chat;
   const [draft, setDraft] = useState("");
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -60,6 +70,15 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const composerRef = useAutosizeTextarea(draft);
+  const [view, setView] = useChatView(workspacePath);
+  const [dependency, setDependency] = useState<DependencyGraph | null>(null);
+
+  useEffect(() => {
+    if (view !== "graph") return;
+    void window.harness?.graph.get().then((next) => setDependency(next ?? null));
+    const off = window.harness?.graph.onUpdated((delta) => setDependency(delta.graph));
+    return () => off?.();
+  }, [view]);
 
   function isNearBottom(): boolean {
     const element = scrollRef.current;
@@ -173,6 +192,25 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
   const { visible: visibleMessages, hiddenCount } = selectVisibleMessages(state.messages, revealedCount);
   const hasConversation = state.messages.length > 0;
 
+  const lastUserText = useMemo(() => {
+    for (let index = state.messages.length - 1; index >= 0; index -= 1) {
+      if (state.messages[index].role === "user") return state.messages[index].content;
+    }
+    return "";
+  }, [state.messages]);
+
+  const runGraph = useMemo(
+    () => buildRunGraph({ request: lastUserText, plan: state.plan, context: state.context, toolCalls: state.toolCalls, dependency }),
+    [lastUserText, state.plan, state.context, state.toolCalls, dependency],
+  );
+
+  function handleAssign(text: string): void {
+    const value = text.trim();
+    if (!value) return;
+    if (isRunning) steer(value);
+    else send(value);
+  }
+
   return (
     <div
       className="relative flex h-full flex-col bg-surface"
@@ -190,6 +228,35 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
       <div aria-live="polite" role="status" className="sr-only">
         {isRunning ? "Harness trabajando" : state.error ? `harness error: ${state.error}` : ""}
       </div>
+
+      <div className="flex shrink-0 items-center gap-2 border-b border-hairline px-3 py-1.5 md:px-5 xl:px-7">
+        <div role="tablist" aria-label="Vista del chat" className="flex items-center gap-1">
+          {(["conversation", "graph"] as const).map((candidate) => (
+            <button
+              key={candidate}
+              type="button"
+              role="tab"
+              aria-selected={view === candidate}
+              onClick={() => setView(candidate)}
+              className={cn(
+                "rounded-control px-2.5 py-1 text-[12px] outline-none transition-colors",
+                view === candidate ? "bg-harness/15 text-harness-soft" : "text-zinc-400 hover:bg-surface-raised hover:text-zinc-200",
+              )}
+            >
+              {candidate === "conversation" ? "Conversación" : "Grafo"}
+            </button>
+          ))}
+        </div>
+        <span className="ml-auto truncate text-[12px] text-zinc-500">
+          {view === "graph"
+            ? `${Math.max(0, runGraph.nodes.length - 1)} archivo(s) en el grafo`
+            : hasConversation
+              ? "hilo activo"
+              : "sin mensajes"}
+        </span>
+      </div>
+
+      {view === "conversation" ? (
       <div ref={scrollRef} onScroll={handleScroll} className="relative flex-1 overflow-y-auto">
         <div className="chat-column flex flex-col gap-4 px-3 py-6 md:px-5 xl:px-7">
           {!hasConversation ? (
@@ -323,8 +390,19 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
           )}
         </div>
       </div>
+      ) : (
+        <div className="relative min-h-0 flex-1">
+          <RunGraphPanel
+            graph={runGraph}
+            running={isRunning}
+            onOpenFile={onOpenFile}
+            onAssign={handleAssign}
+            onStop={() => cancel()}
+          />
+        </div>
+      )}
 
-      {showScrollButton ? (
+      {showScrollButton && view === "conversation" ? (
         <button
           type="button"
           onClick={scrollToBottom}
