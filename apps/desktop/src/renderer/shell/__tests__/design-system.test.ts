@@ -75,6 +75,13 @@ describe("floating design system", () => {
     for (const utility of [".layer-overlay", ".layer-toast", ".overlay-surface", ".field"]) expect(css).toContain(utility);
   });
 
+  it("keeps the chat column fluid (no fixed 780px max in the chat shell)", () => {
+    const css = readFileSync(CSS_PATH, "utf8");
+    expect(css).toContain(".chat-column");
+    const chatPanel = readFileSync(join(RENDERER_DIR, "components", "ChatPanel.tsx"), "utf8");
+    expect(chatPanel).not.toContain("max-w-[780px]");
+  });
+
   it("keeps user-facing copy in Spanish", () => {
     const forbidden = ["Harness Controls", "Dependency graph", "scroll to bottom", "New instinct learned"];
     const offenders: string[] = [];

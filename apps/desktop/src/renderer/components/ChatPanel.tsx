@@ -188,7 +188,7 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
         {isRunning ? "Harness trabajando" : state.error ? `harness error: ${state.error}` : ""}
       </div>
       <div ref={scrollRef} onScroll={handleScroll} className="relative flex-1 overflow-y-auto">
-        <div className="mx-auto flex w-full max-w-[780px] flex-col gap-4 px-6 py-6">
+        <div className="chat-column flex flex-col gap-4 px-3 py-6 md:px-5 xl:px-7">
           {!hasConversation ? (
             <EmptyConversation onPick={(text) => send(text)} />
           ) : (
@@ -329,10 +329,10 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
         </button>
       ) : null}
 
-      <div className="shrink-0 border-t border-hairline bg-surface px-6 py-4">
+      <div className="shrink-0 border-t border-hairline bg-surface px-3 py-4 md:px-5 xl:px-7">
         <PipelineRail steps={state.steps} running={isRunning} />
         {attachments.length > 0 ? (
-          <div className="mx-auto mb-2 w-full max-w-[780px]">
+          <div className="chat-column mb-2">
             <p className="mb-1 text-[12px] text-zinc-500">
               {attachments.length} adjunto(s) · {totalAttachmentTokens(attachments)} tokens estimados
             </p>
@@ -359,8 +359,8 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
             </div>
           </div>
         ) : null}
-        {attachmentError ? <p className="mx-auto mb-1 w-full max-w-[780px] text-[12px] text-red-400">{attachmentError}</p> : null}
-        <div className="glass mx-auto flex w-full max-w-[780px] items-end gap-2 rounded-sheet p-2 focus-within:border-harness/50">
+        {attachmentError ? <p className="chat-column mb-1 text-[12px] text-red-400">{attachmentError}</p> : null}
+        <div className="glass chat-column flex items-end gap-2 rounded-sheet p-2 focus-within:border-harness/50">
           <input
             ref={fileInputRef}
             type="file"
@@ -420,7 +420,7 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
             </button>
           )}
         </div>
-        <div className="mx-auto mt-2 flex w-full max-w-[780px] items-center gap-2">
+        <div className="chat-column mt-2 flex flex-wrap items-center gap-2">
           <QaVerify disabled={isRunning} />
           <p className="text-[12px] text-zinc-600">
             {isRunning
