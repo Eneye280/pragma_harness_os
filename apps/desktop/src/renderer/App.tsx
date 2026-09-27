@@ -28,7 +28,7 @@ import { useGitStatus } from "./git/use-git-status";
 import { useSkills } from "./skills/use-skills";
 import { useAgents } from "./agents/use-agents";
 import { useSessions } from "./sessions/use-sessions";
-import { INITIAL_PANEL_STATE, actionForShortcut, panelReducer } from "./shell/panel-state";
+import { INITIAL_PANEL_STATE, actionForShortcut, panelReducer, type DockTab } from "./shell/panel-state";
 import { isEditableTarget, resolveShellShortcut } from "./shell/shortcuts";
 import { ONBOARDING_STORAGE_KEY, shouldShowOnboarding } from "./shell/onboarding";
 
@@ -171,6 +171,7 @@ export function App(): React.ReactElement {
   const closePalette = useCallback(() => dispatch({ type: "close-palette" }), []);
   const toggleExplorer = useCallback(() => dispatch({ type: "toggle-explorer" }), []);
   const toggleContext = useCallback(() => dispatch({ type: "toggle-context" }), []);
+  const selectDockTab = useCallback((tab: DockTab) => dispatch({ type: "select-dock-tab", tab }), []);
   const openFile = useCallback((path: string) => dispatch({ type: "open-preview", path }), []);
   const closePreview = useCallback(() => dispatch({ type: "close-preview" }), []);
   const toggleTerminal = useCallback(() => dispatch({ type: "toggle-terminal" }), []);
@@ -258,8 +259,9 @@ export function App(): React.ReactElement {
         onOpenNotifications={() => setNotificationsOpen(true)}
       />
       <ShellLayout
-        explorerOpen={panels.explorerOpen}
-        contextOpen={panels.contextOpen}
+        dockOpen={panels.dockOpen}
+        dockTab={panels.dockTab}
+        onSelectDockTab={selectDockTab}
         explorer={explorer}
         chat={chat}
         selectedPath={panels.previewPath}

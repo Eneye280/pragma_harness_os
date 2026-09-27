@@ -7,9 +7,9 @@ export interface TourStep {
 }
 
 export const TOUR_STEPS: TourStep[] = [
-  { id: "explorer", panel: "explorer", title: "Explorador", body: "Aquí abres archivos y ves el árbol del proyecto.", target: '[aria-label="Explorer"]' },
+  { id: "explorer", panel: "explorer", title: "Dock · Explorer", body: "Pestaña Explorer del dock: aquí abres archivos y ves el árbol del proyecto.", target: '[aria-label="Explorer"]' },
   { id: "chat", panel: "chat", title: "Chat del harness", body: "Escribe tu petición; el harness compila reglas, skills y contexto antes del agente.", target: 'textarea[aria-label="Mensaje para el harness"]' },
-  { id: "context", panel: "context", title: "Contexto", body: "Mira qué compiló el harness: skills, RAG, reglas e instintos.", target: '[aria-label="Context"]' },
+  { id: "context", panel: "context", title: "Dock · Contexto", body: "Cambia a la pestaña Context para ver qué compiló el harness: skills, RAG, reglas e instintos.", target: '[aria-label="Context"]' },
 ];
 
 export interface TourState {
