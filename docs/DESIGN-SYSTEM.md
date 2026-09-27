@@ -73,3 +73,16 @@ sutil (Neumorfismo/Soft UI), bordes reales (Skeuomorphism), y jerarquía limpia
   `input/select/textarea`; visibles en claro y oscuro, con placeholder de contraste AA.
 - **Overlays**: `.overlay-surface` (glass fuerte) compartido por palette, menús, popups y
   notificaciones; `.layer-overlay` / `.layer-toast` para el z-index.
+
+## v1.0.3 — chat y grafo
+
+- **Columna del chat fluida**: `.chat-column` (`width: 100%; max-width: min(920px, 100%)`;
+  `margin-inline: auto`) reemplaza el `max-w-[780px]` fijo; el gutter escala por breakpoint
+  (`px-3 → md:px-5 → xl:px-7`). Guarda en test: sin `max-w-[780px]` en `ChatPanel`.
+- **Dock derecho en tabs**: un solo panel lateral con `Explorer | Context` (ARIA `tablist`), el
+  chat ocupa todo el ancho. Ver ADR-0010.
+- **Bloques de código**: números de línea, ajuste de línea opcional y colapso > 24 líneas; lenguajes
+  ampliados (py, rb, rs, go, java, kt, php…) con comentarios y keywords propios.
+- **Grafo del run**: nodos con estados `pending/active/done/error`; el activo pulsa
+  (`.run-node-active`) y las aristas activas se «dibujan» (`.run-edge-active`). Todo cae bajo la
+  regla global de `prefers-reduced-motion`.

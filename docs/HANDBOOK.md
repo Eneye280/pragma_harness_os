@@ -288,3 +288,17 @@ Iteración sobre v1.0.2 enfocada en diseño y claridad, sin tocar el motor:
 - **Plan como grafo**: `PlanCanvas` dibuja las tareas conectadas + pensamiento y verificación.
 - **Release**: workflow `release.yml` que en cada tag `v*` corre el quality gate, construye el
   instalador y publica un Release (draft) con el `.exe`, `.blockmap` y `latest.yml`.
+
+### Chat visual y grafo en vivo (#phs118–#phs127)
+
+- **Shell en tabs**: Explorer y Context viven en un dock derecho con pestañas; el chat ocupa el resto
+  (ADR-0010). `⌘B` / `⇧⌘C` alternan las pestañas; se quitó la barra decorativa del agente que
+  duplicaba la línea de tiempo.
+- **Chat responsive**: la columna es fluida (`.chat-column`, tope 920px) con gutter adaptable.
+- **Composer**: crece con el contenido hasta 260px y luego hace scroll; contador de líneas al pasar de 3.
+- **Código**: resaltado por lenguaje con números de línea, ajuste de línea y colapso de bloques largos.
+- **Adjuntos**: las imágenes se amplían en un lightbox con zoom (rueda o botones) y cierre por Escape.
+- **Grafo del run** (ADR-0011): pestaña **Grafo** en el chat que dibuja la petición como primer nodo y,
+  debajo, los archivos con su acción (`crear/modificar/eliminar/leer`), estado y dependencias, en vivo.
+  Sobre el nodo de petición: **Asignar** (relanza), **Modificar** (edita y reenvía) y **Parar**.
+- **Release**: versión **1.0.3**; el instalador se genera con `pnpm dist`.
