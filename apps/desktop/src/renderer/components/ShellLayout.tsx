@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import type { ExplorerFile } from "@shared/explorer";
 import type { SessionSummary } from "@shared/session";
 import { cn } from "../lib/cn";
@@ -7,12 +8,13 @@ import { ExplorerPanel } from "./ExplorerPanel";
 import { CodePreview } from "../explorer/CodePreview";
 import type { UseChatResult } from "../chat/use-chat";
 import type { UseExplorerResult } from "../explorer/use-explorer";
-import { PANEL_WIDTHS } from "../shell/panel-state";
+import { DOCK_TAB_LABEL, PANEL_WIDTHS, cycleDockTab, type DockTab } from "../shell/panel-state";
 import { TerminalPanel } from "./TerminalPanel";
 
 interface ShellLayoutProps {
-  explorerOpen: boolean;
-  contextOpen: boolean;
+  dockOpen: boolean;
+  dockTab: DockTab;
+  onSelectDockTab: (tab: DockTab) => void;
   explorer: UseExplorerResult;
   chat: UseChatResult;
   selectedPath: string | null;
@@ -38,8 +40,9 @@ interface ShellLayoutProps {
 }
 
 export function ShellLayout({
-  explorerOpen,
-  contextOpen,
+  dockOpen,
+  dockTab,
+  onSelectDockTab,
   explorer,
   chat,
   selectedPath,
@@ -63,38 +66,19 @@ export function ShellLayout({
   onNewSession,
   onOpenSettings,
 }: ShellLayoutProps): React.ReactElement {
+  const tabRefs = useRef<Partial<Record<DockTab, HTMLButtonElement | null>>>({});
+
+  function handleTabKeyDown(event: React.KeyboardEvent): void {
+    if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+    event.preventDefault();
+    const next = cycleDockTab(dockTab, event.key === "ArrowRight" ? 1 : -1);
+    onSelectDockTab(next);
+    tabRefs.current[next]?.focus();
+  }
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="relative flex min-h-0 flex-1 gap-2 p-2">
-        <aside
-          aria-label="Explorer"
-          aria-hidden={!explorerOpen}
-          inert={!explorerOpen ? true : undefined}
-          className={cn(
-            "panel-anim shrink-0 overflow-hidden",
-            explorerOpen ? "glass-strong rounded-sheet" : "",
-          )}
-          style={{ width: explorerOpen ? PANEL_WIDTHS.explorer : 0 }}
-        >
-          <div className="h-full" style={{ width: PANEL_WIDTHS.explorer }}>
-            <ExplorerPanel
-              explorer={explorer}
-              selectedPath={selectedPath}
-              onSelectFile={onSelectFile}
-              onOpenFolder={onOpenFolder}
-              recents={recents}
-              onPickRecent={onPickRecent}
-              openingFolder={openingFolder}
-              activePath={activePath}
-              sessions={sessions}
-              currentSessionId={currentSessionId}
-              runningSessions={runningSessions}
-              onOpenSession={onOpenSession}
-              onNewSession={onNewSession}
-            />
-          </div>
-        </aside>
-
         <main
           id="main"
           tabIndex={-1}
@@ -108,17 +92,61 @@ export function ShellLayout({
         </main>
 
         <aside
-          aria-label="Context"
-          aria-hidden={!contextOpen}
-          inert={!contextOpen ? true : undefined}
+          aria-label="Dock"
+          aria-hidden={!dockOpen}
+          inert={!dockOpen ? true : undefined}
           className={cn(
             "panel-anim shrink-0 overflow-hidden",
-            contextOpen ? "glass-strong rounded-sheet" : "",
+            dockOpen ? "glass-strong rounded-sheet" : "",
           )}
-          style={{ width: contextOpen ? PANEL_WIDTHS.context : 0 }}
+          style={{ width: dockOpen ? PANEL_WIDTHS.dock : 0 }}
         >
-          <div className="h-full" style={{ width: PANEL_WIDTHS.context }}>
-            <ContextPanel snapshot={chat.state.context} onOpenFile={onSelectFile} onOpenSettings={onOpenSettings} />
+          <div className="flex h-full flex-col" style={{ width: PANEL_WIDTHS.dock }}>
+            <div
+              role="tablist"
+              aria-label="Paneles laterales"
+              onKeyDown={handleTabKeyDown}
+              className="flex shrink-0 items-center gap-1 border-b border-hairline px-2 py-1.5"
+            >
+              {(["explorer", "context"] as const).map((tab) => (
+                <DockTabButton
+                  key={tab}
+                  tab={tab}
+                  active={dockTab === tab}
+                  onSelect={onSelectDockTab}
+                  buttonRef={(element) => {
+                    tabRefs.current[tab] = element;
+                  }}
+                />
+              ))}
+            </div>
+
+            <div
+              id="dock-panel"
+              role="tabpanel"
+              aria-labelledby={`dock-tab-${dockTab}`}
+              className="min-h-0 flex-1"
+            >
+              {dockTab === "explorer" ? (
+                <ExplorerPanel
+                  explorer={explorer}
+                  selectedPath={selectedPath}
+                  onSelectFile={onSelectFile}
+                  onOpenFolder={onOpenFolder}
+                  recents={recents}
+                  onPickRecent={onPickRecent}
+                  openingFolder={openingFolder}
+                  activePath={activePath}
+                  sessions={sessions}
+                  currentSessionId={currentSessionId}
+                  runningSessions={runningSessions}
+                  onOpenSession={onOpenSession}
+                  onNewSession={onNewSession}
+                />
+              ) : (
+                <ContextPanel snapshot={chat.state.context} onOpenFile={onSelectFile} onOpenSettings={onOpenSettings} />
+              )}
+            </div>
           </div>
         </aside>
       </div>
@@ -127,5 +155,37 @@ export function ShellLayout({
         <TerminalPanel height={terminalHeight} onResize={onTerminalResize} onClose={onCloseTerminal} />
       ) : null}
     </div>
+  );
+}
+
+function DockTabButton({
+  tab,
+  active,
+  onSelect,
+  buttonRef,
+}: {
+  tab: DockTab;
+  active: boolean;
+  onSelect: (tab: DockTab) => void;
+  buttonRef: (element: HTMLButtonElement | null) => void;
+}): React.ReactElement {
+  return (
+    <button
+      ref={buttonRef}
+      type="button"
+      role="tab"
+      id={`dock-tab-${tab}`}
+      aria-selected={active}
+      aria-controls="dock-panel"
+      aria-label={DOCK_TAB_LABEL[tab]}
+      tabIndex={active ? 0 : -1}
+      onClick={() => onSelect(tab)}
+      className={cn(
+        "rounded-control px-2.5 py-1 text-[12px] outline-none transition-colors",
+        active ? "bg-harness/15 text-harness-soft" : "text-zinc-400 hover:bg-surface-raised hover:text-zinc-200",
+      )}
+    >
+      {DOCK_TAB_LABEL[tab]}
+    </button>
   );
 }

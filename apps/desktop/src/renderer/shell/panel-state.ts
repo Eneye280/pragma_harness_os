@@ -1,8 +1,18 @@
 import type { ShellShortcut } from "./shortcuts";
 
+/** Pestañas del dock lateral derecho. */
+export type DockTab = "explorer" | "context";
+
+export const DOCK_TABS: DockTab[] = ["explorer", "context"];
+
+export const DOCK_TAB_LABEL: Record<DockTab, string> = {
+  explorer: "Explorer",
+  context: "Context",
+};
+
 export interface PanelState {
-  explorerOpen: boolean;
-  contextOpen: boolean;
+  dockOpen: boolean;
+  dockTab: DockTab;
   paletteOpen: boolean;
   previewPath: string | null;
   terminalOpen: boolean;
@@ -12,6 +22,8 @@ export interface PanelState {
 }
 
 export type PanelAction =
+  | { type: "toggle-dock"; tab?: DockTab }
+  | { type: "select-dock-tab"; tab: DockTab }
   | { type: "toggle-explorer" }
   | { type: "toggle-context" }
   | { type: "toggle-palette" }
@@ -26,8 +38,8 @@ export type PanelAction =
   | { type: "close-sessions" };
 
 export const INITIAL_PANEL_STATE: PanelState = {
-  explorerOpen: true,
-  contextOpen: true,
+  dockOpen: true,
+  dockTab: "explorer",
   paletteOpen: false,
   previewPath: null,
   terminalOpen: false,
@@ -36,19 +48,40 @@ export const INITIAL_PANEL_STATE: PanelState = {
   sessionsOpen: false,
 };
 
-export const PANEL_WIDTHS = { explorer: 260, context: 320 } as const;
+export const PANEL_WIDTHS = { dock: 340 } as const;
+export const DOCK_LIMITS = { min: 260, max: 520 } as const;
 export const TERMINAL_LIMITS = { min: 120, max: 560 } as const;
 
 export function clampTerminalHeight(height: number): number {
   return Math.min(TERMINAL_LIMITS.max, Math.max(TERMINAL_LIMITS.min, Math.round(height)));
 }
 
+/**
+ * Alterna el dock en `tab`: si ya está abierto en ese tab, lo cierra; si no,
+ * lo abre (o cambia de tab).
+ */
+function toggleDock(state: PanelState, tab: DockTab): PanelState {
+  if (state.dockOpen && state.dockTab === tab) return { ...state, dockOpen: false };
+  return { ...state, dockOpen: true, dockTab: tab };
+}
+
+/** Siguiente tab del dock al navegar con flechas (roving focus). */
+export function cycleDockTab(current: DockTab, delta: number): DockTab {
+  const index = DOCK_TABS.indexOf(current);
+  const next = (index + delta + DOCK_TABS.length) % DOCK_TABS.length;
+  return DOCK_TABS[next];
+}
+
 export function panelReducer(state: PanelState, action: PanelAction): PanelState {
   switch (action.type) {
+    case "toggle-dock":
+      return toggleDock(state, action.tab ?? state.dockTab);
+    case "select-dock-tab":
+      return { ...state, dockOpen: true, dockTab: action.tab };
     case "toggle-explorer":
-      return { ...state, explorerOpen: !state.explorerOpen };
+      return toggleDock(state, "explorer");
     case "toggle-context":
-      return { ...state, contextOpen: !state.contextOpen };
+      return toggleDock(state, "context");
     case "toggle-palette":
       return { ...state, paletteOpen: !state.paletteOpen };
     case "close-palette":

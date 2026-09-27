@@ -135,8 +135,8 @@ export function TitleBar({
             {
               label: "Paneles",
               items: [
-                { id: "explorer", label: "Explorer", hint: "⌘B", onSelect: onToggleExplorer },
-                { id: "context", label: "Context", hint: "⇧⌘C", onSelect: onToggleContext },
+                { id: "explorer", label: "Dock · Explorer", hint: "⌘B", onSelect: onToggleExplorer },
+                { id: "context", label: "Dock · Context", hint: "⇧⌘C", onSelect: onToggleContext },
                 { id: "terminal", label: "Terminal", hint: "⌘`", onSelect: onToggleTerminal },
               ],
             },

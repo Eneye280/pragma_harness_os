@@ -1,11 +1,19 @@
 import { describe, it, expect } from "vitest";
-import { INITIAL_PANEL_STATE, PANEL_WIDTHS, TERMINAL_LIMITS, actionForShortcut, clampTerminalHeight, panelReducer } from "../panel-state";
+import {
+  INITIAL_PANEL_STATE,
+  PANEL_WIDTHS,
+  TERMINAL_LIMITS,
+  actionForShortcut,
+  clampTerminalHeight,
+  cycleDockTab,
+  panelReducer,
+} from "../panel-state";
 
 describe("Panel layout state", () => {
-  it("starts with side panels open, palette closed, no preview and terminal closed", () => {
+  it("starts with the dock open on Explorer, palette closed, no preview and terminal closed", () => {
     expect(INITIAL_PANEL_STATE).toEqual({
-      explorerOpen: true,
-      contextOpen: true,
+      dockOpen: true,
+      dockTab: "explorer",
       paletteOpen: false,
       previewPath: null,
       terminalOpen: false,
@@ -15,12 +23,30 @@ describe("Panel layout state", () => {
     });
   });
 
-  it("toggles explorer and context independently", () => {
-    const explorerClosed = panelReducer(INITIAL_PANEL_STATE, { type: "toggle-explorer" });
-    expect(explorerClosed.explorerOpen).toBe(false);
-    expect(explorerClosed.contextOpen).toBe(true);
-    const contextClosed = panelReducer(explorerClosed, { type: "toggle-context" });
-    expect(contextClosed.contextOpen).toBe(false);
+  it("toggles the dock per tab: reopen on the same tab closes it", () => {
+    const closed = panelReducer(INITIAL_PANEL_STATE, { type: "toggle-explorer" });
+    expect(closed.dockOpen).toBe(false);
+    expect(closed.dockTab).toBe("explorer");
+
+    const contextOpen = panelReducer(closed, { type: "toggle-context" });
+    expect(contextOpen.dockOpen).toBe(true);
+    expect(contextOpen.dockTab).toBe("context");
+
+    const contextClosed = panelReducer(contextOpen, { type: "toggle-context" });
+    expect(contextClosed.dockOpen).toBe(false);
+  });
+
+  it("selects a dock tab without closing an open dock", () => {
+    const onContext = panelReducer(INITIAL_PANEL_STATE, { type: "select-dock-tab", tab: "context" });
+    expect(onContext).toMatchObject({ dockOpen: true, dockTab: "context" });
+    const reopened = panelReducer({ ...INITIAL_PANEL_STATE, dockOpen: false }, { type: "select-dock-tab", tab: "explorer" });
+    expect(reopened).toMatchObject({ dockOpen: true, dockTab: "explorer" });
+  });
+
+  it("cycles dock tabs for roving focus", () => {
+    expect(cycleDockTab("explorer", 1)).toBe("context");
+    expect(cycleDockTab("context", 1)).toBe("explorer");
+    expect(cycleDockTab("explorer", -1)).toBe("context");
   });
 
   it("opens and closes the palette", () => {
@@ -60,17 +86,17 @@ describe("Panel layout state", () => {
 
   it("does not mutate the previous state", () => {
     const next = panelReducer(INITIAL_PANEL_STATE, { type: "toggle-explorer" });
-    expect(INITIAL_PANEL_STATE.explorerOpen).toBe(true);
+    expect(INITIAL_PANEL_STATE.dockOpen).toBe(true);
     expect(next).not.toBe(INITIAL_PANEL_STATE);
   });
 
-  it("maps shortcuts to actions and keeps canonical panel widths", () => {
+  it("maps shortcuts to actions and keeps the canonical dock width", () => {
     expect(actionForShortcut("toggle-explorer")).toEqual({ type: "toggle-explorer" });
     expect(actionForShortcut("toggle-context")).toEqual({ type: "toggle-context" });
     expect(actionForShortcut("command-palette")).toEqual({ type: "toggle-palette" });
     expect(actionForShortcut("search-files")).toEqual({ type: "toggle-palette" });
     expect(actionForShortcut("toggle-terminal")).toEqual({ type: "toggle-terminal" });
     expect(actionForShortcut("open-settings")).toEqual({ type: "open-settings" });
-    expect(PANEL_WIDTHS).toEqual({ explorer: 260, context: 320 });
+    expect(PANEL_WIDTHS).toEqual({ dock: 340 });
   });
 });
