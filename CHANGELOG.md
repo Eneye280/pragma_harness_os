@@ -11,7 +11,7 @@
 
 ---
 
-## v1.0.3 — en curso
+## v1.0.3 — 2026-09-27
 
 Siguiente release tras `v1.0.2`. Agrupa dos bloques.
 

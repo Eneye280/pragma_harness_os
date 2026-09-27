@@ -230,3 +230,19 @@ nunca queda detrás de un panel.
 El harness trabaja siempre **sobre un proyecto (folder)**. `groupSessionsByProject(sessions,
 activePath, recents)` agrupa las sesiones por `workspacePath` (activo primero, luego recientes) y
 el Explorer las anida bajo cada proyecto. No hay sesión sin proyecto.
+
+## 18. v1.0.3 — chat visual y grafo en vivo
+
+Dos cambios de arquitectura (ADR nuevos):
+
+- **ADR-0010 — dock derecho con pestañas.** `panel-state` pasa a `dockOpen` + `dockTab`
+  (`explorer | context`); un único `<aside aria-label="Dock">` a la derecha con `tablist` ARIA. El
+  chat ocupa todo el ancho restante.
+- **ADR-0011 — `RunGraph` derivado en el renderer.** Contrato en `shared/run-graph.ts`; el builder
+  (`renderer/chat/run-graph.ts::buildRunGraph`) deriva petición → archivos desde `plan-proposed`,
+  `context-assembled`, `tool-call`, `tool-observation` y el `DependencyGraph`, sin canales IPC nuevos.
+
+UI: `.chat-column` fluida, `CodeBlock` con números de línea/wrap/colapso, `Lightbox` de adjuntos y
+`RunGraphPanel` (pestaña Grafo) con iluminación de estados y controles de la petición.
+
+Freeze **v1.0.3**. Cambios de arquitectura → nuevo ADR + bump.

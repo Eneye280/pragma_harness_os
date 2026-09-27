@@ -82,6 +82,13 @@ describe("floating design system", () => {
     expect(chatPanel).not.toContain("max-w-[780px]");
   });
 
+  it("ships the run-graph state animations", () => {
+    const css = readFileSync(CSS_PATH, "utf8");
+    for (const token of ["@keyframes run-edge-draw", "@keyframes run-node-pulse", ".run-edge-active", ".run-node-active"]) {
+      expect(css, token).toContain(token);
+    }
+  });
+
   it("keeps user-facing copy in Spanish", () => {
     const forbidden = ["Harness Controls", "Dependency graph", "scroll to bottom", "New instinct learned"];
     const offenders: string[] = [];
