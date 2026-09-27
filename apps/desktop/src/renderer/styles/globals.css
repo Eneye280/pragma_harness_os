@@ -440,6 +440,30 @@ textarea.bg-transparent:focus {
   }
 }
 
+/* Grafo del run: nodo activo pulsante y arista que se dibuja. */
+@keyframes run-node-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-harness) 38%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 7px transparent;
+  }
+}
+.run-node-active {
+  animation: run-node-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes run-edge-draw {
+  to {
+    stroke-dashoffset: -12;
+  }
+}
+.run-edge-active {
+  stroke-dasharray: 6 6;
+  animation: run-edge-draw 0.8s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
