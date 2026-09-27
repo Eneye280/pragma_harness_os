@@ -2,7 +2,7 @@ import { REQUEST_NODE_ID, type RunGraph } from "@shared/run-graph";
 
 export const RUN_NODE_WIDTH = 196;
 export const RUN_NODE_HEIGHT = 58;
-export const REQUEST_NODE_HEIGHT = 78;
+export const REQUEST_NODE_HEIGHT = 108;
 export const RUN_H_GAP = 30;
 export const RUN_V_GAP = 60;
 

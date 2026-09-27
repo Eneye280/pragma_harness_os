@@ -141,15 +141,15 @@ export function RunGraphPanel({ graph, running, onOpenFile, onAssign, onStop }: 
 
           {request ? (
             <div
-              className="absolute flex flex-col justify-center rounded-control border border-harness/40 bg-harness/15 px-3 py-2 shadow-[var(--phs-elevation-1)]"
+              className="absolute flex flex-col gap-1 rounded-control border border-harness/40 bg-harness/15 px-3 py-2.5 shadow-[var(--phs-elevation-1)]"
               style={{ left: layout.positions.get(REQUEST_NODE_ID)?.x ?? 0, top: 0, width: RUN_NODE_WIDTH, height: REQUEST_NODE_HEIGHT }}
             >
-              <span className="flex items-center gap-1.5">
+              <span className="flex shrink-0 items-center gap-1.5">
                 <span className="text-[12px] uppercase tracking-label text-harness-soft">petición</span>
                 <span className="ml-auto text-[12px] text-zinc-400">{running ? "en curso" : "listo"}</span>
               </span>
-              <p className="mt-0.5 line-clamp-2 text-[12px] text-zinc-100" title={graph.request}>{request.label}</p>
-              <span className="mt-1 flex flex-wrap items-center gap-1">
+              <p className="line-clamp-2 shrink-0 text-[12px] leading-snug text-zinc-100" title={graph.request}>{request.label}</p>
+              <span className="flex flex-wrap items-center gap-1">
                 {running ? (
                   <button type="button" onClick={onStop} className="rounded-control border border-red-500/40 bg-red-500/10 px-2 py-[2px] text-[12px] text-red-300 hover:bg-red-500/20">
                     Parar
