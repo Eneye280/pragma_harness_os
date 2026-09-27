@@ -5,6 +5,7 @@ import { PipelineTimeline } from "../chat/PipelineTimeline";
 import { useAutosizeTextarea } from "../chat/use-autosize-textarea";
 import { PlanChatCard } from "./PlanChatCard";
 import { QaVerify } from "../qa/QaVerify";
+import { Lightbox, type LightboxImage } from "../ui/Lightbox";
 import { MarkdownView } from "../chat/MarkdownView";
 import { ToolCallCard } from "../chat/ToolCallCard";
 import { MessageTasks } from "./MessageTasks";
@@ -55,6 +56,7 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
   const [rememberTool, setRememberTool] = useState(false);
   const [attachmentAnnouncement, setAttachmentAnnouncement] = useState("");
+  const [imagePreview, setImagePreview] = useState<LightboxImage | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const composerRef = useAutosizeTextarea(draft);
@@ -216,12 +218,15 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
                       <div className="mb-1 flex flex-wrap justify-end gap-1.5">
                         {message.attachments.map((attachment) =>
                           attachment.kind === "image" && attachment.dataUrl ? (
-                            <img
+                            <button
                               key={attachment.id}
-                              src={attachment.dataUrl}
-                              alt={attachment.name}
-                              className="h-16 w-16 rounded-control border border-hairline object-cover"
-                            />
+                              type="button"
+                              onClick={() => setImagePreview({ src: attachment.dataUrl!, alt: attachment.name, caption: attachment.name })}
+                              aria-label={`Ampliar ${attachment.name}`}
+                              className="overflow-hidden rounded-control border border-hairline transition-colors hover:border-harness/50"
+                            >
+                              <img src={attachment.dataUrl} alt={attachment.name} className="h-16 w-16 object-cover" />
+                            </button>
                           ) : (
                             <span key={attachment.id} className="rounded-control border border-hairline bg-surface-raised px-2 py-1 text-[12px] text-zinc-400">
                               {attachment.name}
@@ -340,7 +345,14 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
               {attachments.map((attachment) => (
                 <span key={attachment.id} className="flex items-center gap-2 rounded-control border border-hairline bg-surface-raised px-2 py-1">
                   {attachment.kind === "image" && attachment.dataUrl ? (
-                    <img src={attachment.dataUrl} alt={attachment.name} className="h-6 w-6 rounded object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setImagePreview({ src: attachment.dataUrl!, alt: attachment.name, caption: attachment.name })}
+                      aria-label={`Ampliar ${attachment.name}`}
+                      className="overflow-hidden rounded border border-hairline transition-colors hover:border-harness/50"
+                    >
+                      <img src={attachment.dataUrl} alt={attachment.name} className="h-6 w-6 object-cover" />
+                    </button>
                   ) : null}
                   <span className="max-w-[220px] truncate text-[12px] text-zinc-400" title={describeAttachment(attachment)}>
                     {attachment.name}
@@ -433,6 +445,8 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
           </p>
         </div>
       </div>
+
+      {imagePreview ? <Lightbox image={imagePreview} onClose={() => setImagePreview(null)} /> : null}
     </div>
   );
 }
