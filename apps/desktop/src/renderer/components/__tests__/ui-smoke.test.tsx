@@ -144,12 +144,13 @@ describe("UI smoke (render)", () => {
     expect(timeline).toContain("Ejecutar el agente");
   });
 
-  it("renders code with per-language token classes", () => {
+  it("renders code with per-language token classes plus line numbers and wrap control", () => {
     const html = render(<CodeBlock lang="js" content={'const a = "hola"; // nota'} />);
     expect(html).toContain("JS");
     expect(html).toContain("tok-keyword");
     expect(html).toContain("tok-string");
     expect(html).toContain("tok-comment");
+    expect(html).toContain("ajustar");
   });
 
   it("renders the QA verify button", () => {

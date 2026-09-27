@@ -50,6 +50,17 @@ describe("Code tokenizer", () => {
     expect(kinds).toContain("number");
   });
 
+  it("tokenizes the extended languages with their own keywords and comments", () => {
+    expect(tokenizeLine("def greet(name):", "py").map((token) => token.kind)).toContain("keyword");
+    expect(tokenizeLine("# comentario", "py")).toEqual([{ text: "# comentario", kind: "comment" }]);
+    expect(tokenizeLine("puts 'hi' # nota", "ruby").some((token) => token.kind === "comment")).toBe(true);
+    expect(tokenizeLine("fn main() {", "rust").map((token) => token.kind)).toContain("keyword");
+    expect(tokenizeLine("func main() {", "go").map((token) => token.kind)).toContain("keyword");
+    expect(tokenizeLine("public static void main", "java").map((token) => token.kind)).toContain("keyword");
+    expect(tokenizeLine("fun main()", "kotlin").map((token) => token.kind)).toContain("keyword");
+    expect(tokenizeLine("<?php echo 1; ?>", "php").map((token) => token.kind)).toContain("keyword");
+  });
+
   it("highlights different languages differently", () => {
     const cs = tokenizeLine("public void Update() { }", "cs").map((token) => token.kind);
     expect(cs).toContain("keyword");

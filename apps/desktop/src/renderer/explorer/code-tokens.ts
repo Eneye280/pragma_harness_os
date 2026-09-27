@@ -18,7 +18,9 @@ export interface CodeToken {
   kind: CodeTokenKind;
 }
 
-export type LanguageFamily = "js" | "json" | "html" | "css" | "cs" | "lua" | "sql" | "yaml" | "shell" | "glsl" | "text";
+export type LanguageFamily =
+  | "js" | "json" | "html" | "css" | "cs" | "lua" | "sql" | "yaml" | "shell" | "glsl"
+  | "py" | "ruby" | "rust" | "go" | "java" | "kotlin" | "php" | "text";
 
 export function languageFamily(language: string): LanguageFamily {
   const lang = language.trim().toLowerCase();
@@ -29,9 +31,16 @@ export function languageFamily(language: string): LanguageFamily {
   if (["cs", "csharp"].includes(lang)) return "cs";
   if (lang === "lua") return "lua";
   if (lang === "sql") return "sql";
-  if (["yaml", "yml"].includes(lang)) return "yaml";
-  if (["bash", "sh", "shell", "zsh", "powershell", "ps1"].includes(lang)) return "shell";
+  if (["yaml", "yml", "toml", "ini", "cfg", "conf"].includes(lang)) return "yaml";
+  if (["bash", "sh", "shell", "zsh", "powershell", "ps1", "dockerfile", "docker"].includes(lang)) return "shell";
   if (["glsl", "hlsl", "wgsl"].includes(lang)) return "glsl";
+  if (["py", "python"].includes(lang)) return "py";
+  if (["rb", "ruby"].includes(lang)) return "ruby";
+  if (["rs", "rust"].includes(lang)) return "rust";
+  if (["go", "golang"].includes(lang)) return "go";
+  if (lang === "java") return "java";
+  if (["kt", "kotlin"].includes(lang)) return "kotlin";
+  if (lang === "php") return "php";
   return "text";
 }
 
@@ -57,8 +66,54 @@ const KEYWORDS: Record<LanguageFamily, Set<string>> = {
   yaml: new Set(["true", "false", "null", "yes", "no"]),
   shell: new Set(["if", "then", "else", "elif", "fi", "for", "in", "do", "done", "while", "case", "esac", "function", "return", "export", "local", "echo", "cd", "set", "source"]),
   glsl: new Set(["void", "float", "int", "bool", "vec2", "vec3", "vec4", "mat2", "mat3", "mat4", "sampler2D", "uniform", "varying", "attribute", "in", "out", "inout", "const", "return", "if", "else", "for", "while", "discard", "precision", "highp", "mediump", "lowp", "layout", "struct"]),
+  py: new Set([
+    "and", "as", "assert", "async", "await", "break", "class", "continue", "def", "del", "elif", "else",
+    "except", "finally", "for", "from", "global", "if", "import", "in", "is", "lambda", "nonlocal", "not",
+    "or", "pass", "raise", "return", "try", "while", "with", "yield", "True", "False", "None", "self", "match", "case",
+  ]),
+  ruby: new Set([
+    "alias", "and", "begin", "break", "case", "class", "def", "do", "else", "elsif", "end", "ensure", "false",
+    "for", "if", "in", "module", "next", "nil", "not", "or", "redo", "rescue", "retry", "return", "self", "super",
+    "then", "true", "undef", "unless", "until", "when", "while", "yield", "require", "attr_accessor", "attr_reader",
+  ]),
+  rust: new Set([
+    "as", "async", "await", "break", "const", "continue", "crate", "dyn", "else", "enum", "extern", "false",
+    "fn", "for", "if", "impl", "in", "let", "loop", "match", "mod", "move", "mut", "pub", "ref", "return",
+    "self", "Self", "static", "struct", "super", "trait", "true", "type", "unsafe", "use", "where", "while",
+  ]),
+  go: new Set([
+    "break", "case", "chan", "const", "continue", "default", "defer", "else", "fallthrough", "for", "func", "go",
+    "goto", "if", "import", "interface", "map", "package", "range", "return", "select", "struct", "switch", "type",
+    "var", "nil", "true", "false",
+  ]),
+  java: new Set([
+    "abstract", "assert", "boolean", "break", "byte", "case", "catch", "char", "class", "const", "continue",
+    "default", "do", "double", "else", "enum", "extends", "final", "finally", "float", "for", "if", "implements",
+    "import", "instanceof", "int", "interface", "long", "native", "new", "package", "private", "protected", "public",
+    "return", "short", "static", "super", "switch", "synchronized", "this", "throw", "throws", "transient", "try",
+    "void", "volatile", "while", "var", "record", "sealed", "permits",
+  ]),
+  kotlin: new Set([
+    "as", "break", "class", "continue", "do", "else", "false", "for", "fun", "if", "in", "interface", "is", "null",
+    "object", "package", "return", "super", "this", "throw", "true", "try", "typealias", "val", "var", "when",
+    "while", "suspend", "data", "sealed", "override", "private", "public", "protected", "internal", "open",
+    "companion", "init", "by",
+  ]),
+  php: new Set([
+    "abstract", "and", "array", "as", "break", "callable", "case", "catch", "class", "clone", "const", "continue",
+    "declare", "default", "do", "echo", "else", "elseif", "empty", "enum", "extends", "final", "finally", "fn",
+    "for", "foreach", "function", "global", "if", "implements", "include", "instanceof", "interface", "isset",
+    "list", "match", "namespace", "new", "or", "print", "private", "protected", "public", "readonly", "require",
+    "return", "static", "switch", "throw", "trait", "try", "unset", "use", "var", "while", "xor", "yield",
+    "true", "false", "null",
+  ]),
   text: new Set(),
 };
+
+const HASH_COMMENT: LanguageFamily[] = ["yaml", "shell", "py", "ruby", "php"];
+const SLASH_COMMENT: LanguageFamily[] = ["lua", "sql", "glsl", "js", "cs", "rust", "go", "java", "kotlin", "php"];
+const BLOCK_COMMENT: LanguageFamily[] = ["cs", "css", "js", "rust", "go", "java", "kotlin", "php"];
+const DASH_COMMENT: LanguageFamily[] = ["lua", "sql"];
 
 const LITERALS = new Set(["true", "false", "null", "undefined", "nil", "NaN", "Infinity"]);
 const JS_BUILTINS = new Set(["console", "document", "window", "Math", "JSON", "Object", "Array", "String", "Number", "Boolean", "Promise", "Map", "Set", "Date", "RegExp"]);
@@ -88,31 +143,24 @@ function scanLine(line: string, family: LanguageFamily, tokens: CodeToken[]): vo
       i += text.length;
       continue;
     }
-    if ((family === "lua" || family === "sql" || family === "glsl" || family === "js" || family === "cs") && rest.startsWith("//")) {
+    if (SLASH_COMMENT.includes(family) && rest.startsWith("//")) {
       push(tokens, rest, "comment");
       return;
     }
-    if ((family === "lua" || family === "sql") && rest.startsWith("--")) {
+    if (DASH_COMMENT.includes(family) && rest.startsWith("--")) {
       push(tokens, rest, "comment");
       return;
     }
-    if (family === "cs" && rest.startsWith("/*")) {
+    if (BLOCK_COMMENT.includes(family) && rest.startsWith("/*")) {
       const end = rest.indexOf("*/");
       const text = end === -1 ? rest : rest.slice(0, end + 2);
       push(tokens, text, "comment");
       i += text.length;
       continue;
     }
-    if ((family === "yaml" || family === "shell") && ch === "#") {
+    if (HASH_COMMENT.includes(family) && ch === "#") {
       push(tokens, rest, "comment");
       return;
-    }
-    if (family === "css" && rest.startsWith("/*")) {
-      const end = rest.indexOf("*/");
-      const text = end === -1 ? rest : rest.slice(0, end + 2);
-      push(tokens, text, "comment");
-      i += text.length;
-      continue;
     }
 
     // Strings

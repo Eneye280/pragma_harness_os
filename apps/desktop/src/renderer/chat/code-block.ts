@@ -18,9 +18,11 @@ export const TOKEN_CLASS: Record<CodeTokenKind, string> = {
 };
 
 const KNOWN_LANGUAGES = new Set([
-  "ts", "tsx", "js", "jsx", "typescript", "javascript", "json", "yaml", "yml",
-  "cs", "csharp", "glsl", "hlsl", "lua", "sql", "bash", "sh", "shell", "ps1", "powershell",
-  "diff", "patch", "md", "markdown", "html", "htm", "xml", "svg", "css", "scss", "text",
+  "ts", "tsx", "js", "jsx", "typescript", "javascript", "mjs", "cjs", "json", "yaml", "yml", "toml", "ini",
+  "cs", "csharp", "glsl", "hlsl", "wgsl", "lua", "sql", "bash", "sh", "shell", "zsh", "ps1", "powershell",
+  "dockerfile", "docker", "diff", "patch", "md", "markdown", "html", "htm", "xml", "svg", "vue", "css", "scss", "less",
+  "py", "python", "rb", "ruby", "rs", "rust", "go", "golang", "java", "kt", "kotlin", "php",
+  "graphql", "proto", "text",
 ]);
 
 export function sanitizeLang(lang: string): string {
