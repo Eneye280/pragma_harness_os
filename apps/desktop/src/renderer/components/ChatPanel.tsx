@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "../lib/cn";
 import { IconSend, IconSparkles } from "./icons";
 import { PipelineTimeline } from "../chat/PipelineTimeline";
-import { PipelineRail } from "../chat/PipelineRail";
 import { PlanChatCard } from "./PlanChatCard";
 import { QaVerify } from "../qa/QaVerify";
 import { MarkdownView } from "../chat/MarkdownView";
@@ -330,7 +329,6 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
       ) : null}
 
       <div className="shrink-0 border-t border-hairline bg-surface px-3 py-4 md:px-5 xl:px-7">
-        <PipelineRail steps={state.steps} running={isRunning} />
         {attachments.length > 0 ? (
           <div className="chat-column mb-2">
             <p className="mb-1 text-[12px] text-zinc-500">
