@@ -2,6 +2,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { HarnessStepState } from "../../chat/chat-reducer";
 import type { PlanProposal } from "@shared/plan";
+import type { RunGraph } from "@shared/run-graph";
 import type { AppNotification } from "@shared/notifications";
 import { PlanChatCard } from "../PlanChatCard";
 import { PlanCanvas } from "../PlanCanvas";
@@ -13,6 +14,7 @@ import { PipelineTimeline } from "../../chat/PipelineTimeline";
 import { CodeBlock } from "../../chat/CodeBlock";
 import { QaVerify } from "../../qa/QaVerify";
 import { Lightbox } from "../../ui/Lightbox";
+import { RunGraphPanel } from "../../chat/RunGraphPanel";
 
 function memoryStorage() {
   const map = new Map<string, string>();
@@ -157,6 +159,27 @@ describe("UI smoke (render)", () => {
   it("renders the QA verify button", () => {
     const html = render(<QaVerify />);
     expect(html).toContain("Verificar (QA)");
+  });
+
+  it("renders the live run graph with request actions and a file node", () => {
+    const graph: RunGraph = {
+      request: "crea la calculadora",
+      nodes: [
+        { id: "req", kind: "request", label: "crea la calculadora", action: "unknown", status: "done" },
+        { id: "index.html", kind: "file", label: "index.html", path: "index.html", action: "create", status: "active" },
+      ],
+      edges: [{ from: "req", to: "index.html", kind: "targets" }],
+      updatedAt: 0,
+    };
+    const html = render(
+      <RunGraphPanel graph={graph} running onOpenFile={() => undefined} onAssign={() => undefined} onStop={() => undefined} />,
+    );
+    expect(html).toContain("Grafo del run");
+    expect(html).toContain("index.html");
+    expect(html).toContain("crear");
+    expect(html).toContain("Añadir al run");
+    expect(html).toContain("Parar");
+    expect(html).toContain("Modificar");
   });
 
   it("renders the image lightbox with zoom controls", () => {
