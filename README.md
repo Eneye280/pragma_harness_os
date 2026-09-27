@@ -74,12 +74,13 @@ docs/                   HANDBOOK · ARCHITECTURE · PLUGIN-SDK
 
 ## Estado
 
-**SPEC v1.0.8 (frozen).** Acumula v1.0.0/v1.0.1/v1.0.2 (workspace/perfiles, sesiones, adjuntos,
-plan con aprobación, autoría de skills/plugins, RAG, grafo, permisos por tool, sandbox, tools de
-verificación, gate visual, routing, dashboard, health, feed privado, ayuda + tour, hot-reload,
-código resaltado, light/dark, QA runner, terceros, multi-agente, telemetría) y el **rediseño
-v1.0.2.1**: jerarquía y capas únicas, Explorer **proyecto → sesiones**, **pipeline del chat como
-línea de tiempo**, Context con acciones (crear skills / reindexar RAG), **command palette real**,
-notificaciones flotantes con mensajes reales, Settings en secciones con foldouts, tipografía
-mínima 12px más nítida, campos visibles en claro/oscuro y sombras −35%.
+**SPEC v1.0.2 (frozen) · v1.0.3 en curso.** La base acumula v1.0.0/v1.0.1/v1.0.2
+(workspace/perfiles, sesiones, adjuntos, plan con aprobación, autoría de skills/plugins, RAG, grafo,
+permisos por tool, sandbox, tools de verificación, gate visual, routing, dashboard, health, feed
+privado, ayuda + tour, hot-reload, código resaltado, light/dark, QA runner, terceros, multi-agente,
+telemetría). La línea **v1.0.3** reúne el rediseño del shell (capas únicas, Explorer **proyecto →
+sesiones**, **pipeline del chat como línea de tiempo**, Context con acciones, **command palette
+real**, notificaciones reales, Settings con foldouts, tipografía mínima 12px), el endurecimiento a
+producción (memoria del agente, tools tolerantes, QA multi-package-manager, lint, cobertura, tests
+de UI, a11y) y el **chat visual con grafo de ejecución en vivo**.
 Cambios de arquitectura requieren un ADR nuevo y bump de versión. Repo privado — acceso bajo invitación.

@@ -266,10 +266,10 @@ Iteración sobre v1.0.2 enfocada en diseño y claridad, sin tocar el motor:
 
 ---
 
-## v1.0.8 — endurecimiento para producción
+## v1.0.3 — endurecimiento para producción
 
-- **Versionado unificado**: `package.json`, `APP_VERSION` y el tag de git comparten semver (1.0.8);
-  se eliminó el desfase `buildVersion`.
+- **Versionado unificado**: `package.json`, `APP_VERSION` y el tag de git comparten semver (1.0.3,
+  última release v1.0.2); se eliminó el desfase `buildVersion` y las micro-etiquetas `1.0.2.x`.
 - **Agente con memoria**: los últimos turnos de la conversación entran al prompt (`[historial]`).
 - **Tools tolerantes**: además del bloque ` ```tool `, se aceptan bloques `json` y formas sueltas
   (`[fileRead] path`, `fileRead: path`, `fileRead(path)`).
