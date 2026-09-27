@@ -10,7 +10,6 @@ import { CommandPalette } from "../CommandPalette";
 import { ExplorerPanel } from "../ExplorerPanel";
 import { TelemetryCharts } from "../TelemetryCharts";
 import { PipelineTimeline } from "../../chat/PipelineTimeline";
-import { PipelineRail } from "../../chat/PipelineRail";
 import { CodeBlock } from "../../chat/CodeBlock";
 import { QaVerify } from "../../qa/QaVerify";
 
@@ -143,9 +142,6 @@ describe("UI smoke (render)", () => {
     expect(timeline).toContain("Pipeline del harness");
     expect(timeline).toContain("Clasificar la petición");
     expect(timeline).toContain("Ejecutar el agente");
-
-    const rail = render(<PipelineRail steps={steps} running />);
-    expect(rail).toContain("Cargar skills");
   });
 
   it("renders code with per-language token classes", () => {
