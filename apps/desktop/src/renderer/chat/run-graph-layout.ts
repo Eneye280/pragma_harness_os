@@ -1,10 +1,10 @@
 import { REQUEST_NODE_ID, type RunGraph } from "@shared/run-graph";
 
-export const RUN_NODE_WIDTH = 196;
-export const RUN_NODE_HEIGHT = 58;
-export const REQUEST_NODE_HEIGHT = 108;
-export const RUN_H_GAP = 30;
-export const RUN_V_GAP = 60;
+export const RUN_NODE_WIDTH = 220;
+export const RUN_NODE_HEIGHT = 66;
+export const REQUEST_NODE_HEIGHT = 96;
+export const RUN_H_GAP = 48;
+export const RUN_V_GAP = 104;
 
 export interface RunGraphLayout {
   positions: Map<string, { x: number; y: number }>;
@@ -14,9 +14,10 @@ export interface RunGraphLayout {
 
 /**
  * Layout determinista del grafo de ejecución: la petición arriba, al centro, y
- * los archivos en una rejilla debajo. Devuelve posiciones top-left por id.
+ * los archivos en una rejilla debajo con un espaciado holgado. Devuelve
+ * posiciones top-left por id. La interacción (pan/zoom/drag) vive en el panel.
  */
-export function layoutRunGraph(graph: RunGraph, columns = 4): RunGraphLayout {
+export function layoutRunGraph(graph: RunGraph, columns = 3): RunGraphLayout {
   const positions = new Map<string, { x: number; y: number }>();
   const files = graph.nodes.filter((node) => node.kind === "file");
   const cols = Math.max(1, Math.min(columns, Math.max(1, files.length)));
