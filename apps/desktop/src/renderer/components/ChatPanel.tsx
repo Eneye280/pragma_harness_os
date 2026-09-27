@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "../lib/cn";
 import { IconSend, IconSparkles } from "./icons";
 import { PipelineTimeline } from "../chat/PipelineTimeline";
+import { useAutosizeTextarea } from "../chat/use-autosize-textarea";
 import { PlanChatCard } from "./PlanChatCard";
 import { QaVerify } from "../qa/QaVerify";
 import { MarkdownView } from "../chat/MarkdownView";
@@ -56,6 +57,7 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
   const [attachmentAnnouncement, setAttachmentAnnouncement] = useState("");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const composerRef = useAutosizeTextarea(draft);
 
   function isNearBottom(): boolean {
     const element = scrollRef.current;
@@ -378,6 +380,7 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
             +
           </button>
           <textarea
+            ref={composerRef}
             rows={1}
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
@@ -391,8 +394,11 @@ export function ChatPanel({ chat }: { chat: UseChatResult }): React.ReactElement
             }}
             placeholder={isRunning ? "Añadir al run en curso… (Enter envía al agente)" : "Escribe un mensaje… (Enter envía)"}
             aria-label="Mensaje para el harness"
-            className="max-h-40 flex-1 resize-none bg-transparent px-2 py-1.5 text-[13px] text-zinc-200 outline-none placeholder:text-zinc-500"
+            className="flex-1 resize-none bg-transparent px-2 py-1.5 text-[13px] leading-5 text-zinc-200 outline-none placeholder:text-zinc-500"
           />
+          {draft.split("\n").length > 3 ? (
+            <span className="mb-1.5 shrink-0 font-mono text-[12px] text-zinc-600">{draft.split("\n").length} líneas</span>
+          ) : null}
           {isRunning ? (
             <button
               type="button"
