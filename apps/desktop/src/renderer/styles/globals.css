@@ -324,6 +324,13 @@ body {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-harness) 28%, transparent);
 }
 
+/* Columna del chat: fluida, con tope suave (no 780px fijo) y gutter adaptable. */
+.chat-column {
+  width: 100%;
+  max-width: min(920px, 100%);
+  margin-inline: auto;
+}
+
 /* Defaults de campos del app: borde visible aunque la clase no use `.field`. */
 input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
 select,
