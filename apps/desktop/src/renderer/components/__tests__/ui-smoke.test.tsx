@@ -12,6 +12,7 @@ import { TelemetryCharts } from "../TelemetryCharts";
 import { PipelineTimeline } from "../../chat/PipelineTimeline";
 import { CodeBlock } from "../../chat/CodeBlock";
 import { QaVerify } from "../../qa/QaVerify";
+import { Lightbox } from "../../ui/Lightbox";
 
 function memoryStorage() {
   const map = new Map<string, string>();
@@ -156,5 +157,14 @@ describe("UI smoke (render)", () => {
   it("renders the QA verify button", () => {
     const html = render(<QaVerify />);
     expect(html).toContain("Verificar (QA)");
+  });
+
+  it("renders the image lightbox with zoom controls", () => {
+    const html = render(<Lightbox image={{ src: "data:image/png;base64,AAAA", alt: "captura.png" }} onClose={() => undefined} />);
+    expect(html).toContain("captura.png");
+    expect(html).toContain("Acercar");
+    expect(html).toContain("Alejar");
+    expect(html).toContain("Cerrar");
+    expect(html).toContain("100%");
   });
 });
